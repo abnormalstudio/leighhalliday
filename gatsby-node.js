@@ -1,0 +1,204 @@
+const path = require("path");
+const componentWithMDXScope = require("gatsby-mdx/component-with-mdx-scope");
+
+const splitTags = tags => tags.split(",").map(tag => tag.trim());
+
+const pluckTags = articles => {
+  const nestedTags = articles.map(({ node }) => {
+    return splitTags(node.childMdx.frontmatter.tags);
+  });
+  const flattenedTags = nestedTags.reduce(
+    (allTags, articleTags) => allTags.concat(articleTags),
+    []
+  );
+  return flattenedTags.reduce((tagHash, tag) => {
+    if (!tagHash[tag]) {
+      tagHash[tag] = 0;
+    }
+    return { ...tagHash, [tag]: tagHash[tag] + 1 };
+  }, {});
+};
+
+const createArticlePages = (graphql, createPage) =>
+  new Promise((resolve, _) => {
+    graphql(`
+      {
+        allFile(filter: { sourceInstanceName: { eq: "articles" } }) {
+          edges {
+            node {
+              childMdx {
+                id
+                frontmatter {
+                  slug
+                  tags
+                }
+                code {
+                  scope
+                }
+              }
+            }
+          }
+        }
+      }
+    `).then(result => {
+      const articles = result.data.allFile.edges.filter(
+        article => article.node.childMdx
+      );
+
+      articles.forEach(({ node: { childMdx: { id, frontmatter, code } } }) => {
+        const { slug, tags } = frontmatter;
+        const tagRegex = `/${splitTags(tags).join("|")}/`;
+
+        createPage({
+          path: slug,
+          component: componentWithMDXScope(
+            path.resolve("./src/templates/article.tsx"),
+            code.scope,
+            __dirname
+          ),
+          context: {
+            id,
+            tagRegex
+          }
+        });
+      });
+
+      resolve();
+    });
+  });
+
+const createTagPages = (graphql, createPage) =>
+  new Promise((resolve, _) => {
+    graphql(`
+      {
+        allFile(filter: { sourceInstanceName: { eq: "articles" } }) {
+          edges {
+            node {
+              id
+              childMdx {
+                frontmatter {
+                  tags
+                }
+              }
+            }
+          }
+        }
+      }
+    `).then(result => {
+      const articles = result.data.allFile.edges.filter(
+        article => article.node.childMdx
+      );
+      const tagHash = pluckTags(articles);
+
+      Object.keys(tagHash).forEach(tag => {
+        const numArticles = tagHash[tag];
+        let page = 1;
+        const limit = 30;
+
+        for (let i = 0; i < numArticles; i += limit) {
+          let nextUrl = null;
+          if (i + limit < numArticles) {
+            nextUrl = `/tag/${tag}/${page + 1}`;
+          }
+
+          let prevUrl = null;
+          if (page === 2) {
+            prevUrl = `/tag/${tag}`;
+          } else if (page > 2) {
+            prevUrl = `/tag/${tag}/${page - 1}`;
+          }
+
+          createPage({
+            path: page === 1 ? `tag/${tag}` : `tag/${tag}/${page}`,
+            component: path.resolve("./src/templates/tag.tsx"),
+            context: {
+              tag,
+              page,
+              nextUrl,
+              prevUrl,
+              limit,
+              skip: i,
+              tagRegex: `/${tag}/`
+            }
+          });
+          page++;
+        }
+      });
+
+      resolve();
+    });
+  });
+
+const createArticlesPages = (graphql, createPage) =>
+  new Promise((resolve, _) => {
+    graphql(`
+      {
+        allFile(filter: { sourceInstanceName: { eq: "articles" } }) {
+          edges {
+            node {
+              id
+              childMdx {
+                id
+              }
+            }
+          }
+        }
+      }
+    `).then(result => {
+      const articles = result.data.allFile.edges.filter(
+        article => article.node.childMdx
+      );
+      const numArticles = articles.length;
+      let page = 1;
+      const limit = 30;
+
+      for (let i = 0; i < numArticles; i += limit) {
+        let nextUrl = null;
+        if (i + limit < numArticles) {
+          nextUrl = `/articulos/${page + 1}`;
+        }
+
+        let prevUrl = null;
+        if (page === 2) {
+          prevUrl = `/articulos`;
+        } else if (page > 2) {
+          prevUrl = `/articulos/${page - 1}`;
+        }
+
+        createPage({
+          path: page === 1 ? `articulos` : `articulos/${page}`,
+          component: path.resolve("./src/templates/articles.tsx"),
+          context: {
+            page,
+            nextUrl,
+            prevUrl,
+            limit,
+            skip: i
+          }
+        });
+        page++;
+      }
+
+      resolve();
+    });
+  });
+
+exports.createPages = ({ graphql, actions: { createPage } }) => {
+  return Promise.all([
+    createArticlePages(graphql, createPage),
+    createArticlesPages(graphql, createPage),
+    createTagPages(graphql, createPage)
+  ]);
+};
+
+exports.onCreateWebpackConfig = ({ actions }) => {
+  actions.setWebpackConfig({
+    resolve: {
+      alias: {
+        $components: path.resolve(__dirname, "src/components"),
+        $articles: path.resolve(__dirname, "content/articles"),
+        $lib: path.resolve(__dirname, "src/lib")
+      }
+    }
+  });
+};
