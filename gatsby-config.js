@@ -35,6 +35,15 @@ module.exports = {
         icon: "src/images/icon-256x256.png" // This path is relative to the root of the site.
       }
     },
+    {
+      resolve: `gatsby-plugin-google-analytics`,
+      options: {
+        trackingId: "UA-56612129-3",
+        anonymize: true,
+        respectDNT: true,
+        cookieDomain: "paisaencanada.com"
+      }
+    },
     "gatsby-plugin-typescript",
     {
       resolve: "gatsby-mdx",
