@@ -1,3 +1,3 @@
 # Paisa en Canadá
 
-Find me at [https://www.leighhalliday.com](https://www.leighhalliday.com)
+Puedes encontrarme en [https://www.paisaencanada.com](https://www.paisaencanada.com)

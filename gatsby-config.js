@@ -2,7 +2,7 @@ module.exports = {
   siteMetadata: {
     title: "Paisa en Canadá",
     description: "Paisa en Canadá",
-    author: "@leighchalliday"
+    author: "@paisaencanada"
   },
   plugins: [
     "gatsby-plugin-react-helmet",
@@ -27,7 +27,7 @@ module.exports = {
       resolve: `gatsby-plugin-manifest`,
       options: {
         name: "paisa-en-canada",
-        short_name: "leigh",
+        short_name: "paisa-en-canada",
         start_url: "/",
         background_color: "#663399",
         theme_color: "#663399",
