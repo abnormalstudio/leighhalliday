@@ -11,7 +11,7 @@ const Tags = ({ tags }: Props) => (
   <TagList>
     {splitTags(tags).map(tag => (
       <TagItem key={tag}>
-        <Link to={`/tag/${tag}`}>#{tag}</Link>
+        <Link to={`/tags/${tag}`}>#{tag}</Link>
       </TagItem>
     ))}
   </TagList>

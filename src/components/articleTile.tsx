@@ -40,7 +40,7 @@ const ArticleTile = ({
             .slice(0, 3)
             .map(tag => (
               <span key={tag}>
-                <Link to={`/tag/${tag}`}>#{tag}</Link>{" "}
+                <Link to={`/tags/${tag}`}>#{tag}</Link>{" "}
               </span>
             ))}
         </div>

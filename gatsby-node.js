@@ -98,18 +98,18 @@ const createTagPages = (graphql, createPage) =>
         for (let i = 0; i < numArticles; i += limit) {
           let nextUrl = null;
           if (i + limit < numArticles) {
-            nextUrl = `/tag/${tag}/${page + 1}`;
+            nextUrl = `/tags/${tag}/${page + 1}`;
           }
 
           let prevUrl = null;
           if (page === 2) {
-            prevUrl = `/tag/${tag}`;
+            prevUrl = `/tags/${tag}`;
           } else if (page > 2) {
-            prevUrl = `/tag/${tag}/${page - 1}`;
+            prevUrl = `/tags/${tag}/${page - 1}`;
           }
 
           createPage({
-            path: page === 1 ? `tag/${tag}` : `tag/${tag}/${page}`,
+            path: page === 1 ? `tags/${tag}` : `tags/${tag}/${page}`,
             component: path.resolve("./src/templates/tag.tsx"),
             context: {
               tag,

@@ -23,7 +23,7 @@ const ArticleAbout = () => (
         <Image fluid={data.file.childImageSharp.fluid} alt="Marian Serna" />
         <p>Hola! Yo soy Marian Serna, la paisa de esta página.</p>
         <p>
-          <Link to="/sobre">Leer más</Link>
+          <Link to="/acerca">Leer más</Link>
         </p>
       </div>
     )}
