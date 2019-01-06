@@ -30,7 +30,6 @@ const Layout = ({ children }: Props) => (
         <Reset />
         <Global styles={styles.global} />
         <Helmet>
-          <html lang="es" />
           <meta name="viewport" content="width=device-width, initial-scale=1" />
         </Helmet>
         <Header siteTitle={data.site.siteMetadata.title} />
