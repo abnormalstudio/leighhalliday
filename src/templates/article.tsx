@@ -95,7 +95,9 @@ const Article = ({ data }: Props) => {
           </div>
         </article>
 
-        <ArticleAside articles={data.allMdx.edges.map(edge => edge.node)} />
+        <ArticleAside
+          articles={data.allMdx ? data.allMdx.edges.map(edge => edge.node) : []}
+        />
       </div>
     </Layout>
   );

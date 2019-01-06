@@ -20,7 +20,7 @@ const ArticleAbout = () => (
     render={data => (
       <div>
         <H3Line>Sobre Mí</H3Line>
-        <Image fluid={data.file.childImageSharp.fluid} />
+        <Image fluid={data.file.childImageSharp.fluid} alt="Marian Serna" />
         <p>Hola! Yo soy Marian Serna, la paisa de esta página.</p>
         <p>
           <Link to="/sobre">Leer más</Link>

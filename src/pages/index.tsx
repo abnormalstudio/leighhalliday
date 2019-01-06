@@ -93,7 +93,7 @@ const ArticleRow = ({ articles }: ArticleRowProps) => (
   </ArticleRowDiv>
 );
 
-const ArticleRowDiv = styled("div")`
+const ArticleRowDiv = styled.div`
   display: flex;
   justify-content: space-between;
   flex-wrap: wrap;

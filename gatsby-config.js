@@ -29,7 +29,7 @@ module.exports = {
       resolve: `gatsby-plugin-manifest`,
       options: {
         name: "paisa-en-canada",
-        short_name: "paisa-en-canada",
+        short_name: "paisa-ca",
         start_url: "/",
         background_color: "#663399",
         theme_color: "#663399",
