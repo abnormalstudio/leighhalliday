@@ -4,6 +4,7 @@ import { css } from "@emotion/core";
 import YouTubeIcon from "../images/icons/youtube.svg";
 import GitHubIcon from "../images/icons/github.svg";
 import TwitterIcon from "../images/icons/twitter.svg";
+import InstagramIcon from "../images/icons/instagram.svg";
 import SearchIcon from "../images/icons/search.svg";
 
 interface Props {
@@ -26,12 +27,12 @@ const Header = ({ siteTitle, onSearchClick }: Props) => (
         justify-content: center;
       `}
     >
-      <a href="https://www.youtube.com/leighhalliday" title="YouTube">
+      {/* <a href="https://www.youtube.com/leighhalliday" title="YouTube">
         <img src={YouTubeIcon} alt="YouTube" css={styles.icon} />
-      </a>
-      <a href="https://www.github.com/leighhalliday" title="GitHub">
+      </a> */}
+      {/* <a href="https://www.github.com/leighhalliday" title="GitHub">
         <img src={GitHubIcon} alt="GitHub" css={styles.icon} />
-      </a>
+      </a> */}
     </div>
     <div
       css={css`
@@ -63,8 +64,11 @@ const Header = ({ siteTitle, onSearchClick }: Props) => (
         justify-content: center;
       `}
     >
-      <a href="https://www.twitter.com/leighchalliday" title="Twitter">
+      {/* <a href="https://www.twitter.com/leighchalliday" title="Twitter">
         <img src={TwitterIcon} alt="Twitter" css={styles.icon} />
+      </a> */}
+      <a href="https://www.instagram.com/paisa_canada" title="Instagram">
+        <img src={InstagramIcon} alt="Instagram" css={styles.icon} />
       </a>
       <button
         css={css`
