@@ -41,7 +41,7 @@ const queries = [
     indexName: "articles",
     transformer: ({ data }) =>
       data.allMdx.edges.map(({ node }) => ({
-        objectId: node.slug,
+        objectID: node.slug,
         title: node.frontmatter.title,
         tags: splitTags(node.frontmatter.tags),
         date: node.frontmatter.date,
@@ -72,7 +72,7 @@ const queries = [
       */
       return Object.keys(tagHash).map(tag => ({
         tag,
-        objectId: tag,
+        objectID: tag,
         numArticles: tagHash[tag]
       }));
     }
