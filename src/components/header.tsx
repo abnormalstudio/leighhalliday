@@ -25,6 +25,7 @@ const Header = ({ siteTitle, onSearchClick }: Props) => (
         width: 20%;
         display: flex;
         justify-content: center;
+        align-items: center;
       `}
     >
       {/* <a href="https://www.youtube.com/leighhalliday" title="YouTube">
@@ -62,6 +63,7 @@ const Header = ({ siteTitle, onSearchClick }: Props) => (
         width: 20%;
         display: flex;
         justify-content: center;
+        align-items: center;
       `}
     >
       {/* <a href="https://www.twitter.com/leighchalliday" title="Twitter">
