@@ -1,3 +1,82 @@
+require("dotenv").config({
+  path: `.env.${process.env.NODE_ENV}`
+});
+
+const articlesQuery = `{
+  allMdx {
+    edges {
+      node {
+        id
+        timeToRead
+        excerpt(pruneLength: 250)
+        frontmatter {
+          slug
+          title
+          date
+          tags
+        }
+      }
+    }
+  }
+}`;
+
+const tagsQuery = `{
+  allMdx {
+    edges {
+      node {
+        id
+        frontmatter {
+          tags
+        }
+      }
+    }
+  }
+}`;
+
+const splitTags = tags => tags.split(",").map(tag => tag.trim());
+
+const queries = [
+  {
+    query: articlesQuery,
+    indexName: "articles",
+    transformer: ({ data }) =>
+      data.allMdx.edges.map(({ node }) => ({
+        title: node.frontmatter.title,
+        tags: splitTags(node.frontmatter.tags),
+        date: node.frontmatter.date,
+        slug: node.frontmatter.slug,
+        timeToRead: node.timeToRead,
+        excerpt: node.excerpt
+      }))
+  },
+  {
+    query: tagsQuery,
+    indexName: "tags",
+    transformer: ({ data }) => {
+      /*
+      Produce: {tag1: 5, tag2: 1}
+      */
+      const tagHash = data.allMdx.edges.reduce((acc, { node }) => {
+        return splitTags(node.frontmatter.tags).reduce((nodeAcc, tag) => {
+          if (!nodeAcc[tag]) {
+            nodeAcc[tag] = 0;
+          }
+          nodeAcc[tag] += 1;
+          return nodeAcc;
+        }, acc);
+      }, {});
+
+      /*
+      Produce: [{tag: 'tag1', numArticles: 5}, {tag: 'tag2', numArticles: 1}]
+      */
+      return Object.keys(tagHash).map(tag => ({
+        tag,
+        numArticles: tagHash[tag]
+      }));
+    }
+  }
+];
+
 module.exports = {
   siteMetadata: {
     siteUrl: "https://www.paisaencanada.com",
@@ -75,6 +154,14 @@ module.exports = {
         ]
       }
     },
-    "gatsby-plugin-offline"
+    "gatsby-plugin-offline",
+    {
+      resolve: `gatsby-plugin-algolia`,
+      options: {
+        appId: process.env.ALGOLIA_APP_ID,
+        apiKey: process.env.ALGOLIA_API_KEY,
+        queries
+      }
+    }
   ]
 };

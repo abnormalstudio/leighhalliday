@@ -47,7 +47,14 @@ const ArticleTile = ({
         <Link to={`/${slug}`}>
           <h3
             css={css`
-              padding-bottom: 1rem;
+              padding: 0px 1rem 0.75rem 1rem;
+
+              @media (max-width: 1024px) {
+                font-size: 1rem;
+                line-height: 1.25rem;
+                padding-bottom: 0.5rem;
+                margin: 0.5rem 0px;
+              }
             `}
           >
             {title}

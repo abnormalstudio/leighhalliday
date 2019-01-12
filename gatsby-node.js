@@ -1,9 +1,8 @@
 const path = require("path");
-const componentWithMDXScope = require("gatsby-mdx/component-with-mdx-scope");
 
 const splitTags = tags => tags.split(",").map(tag => tag.trim());
 
-const pluckTags = articles => {
+const tagCounts = articles => {
   const nestedTags = articles.map(({ node }) => {
     return splitTags(node.childMdx.frontmatter.tags);
   });
@@ -51,11 +50,7 @@ const createArticlePages = (graphql, createPage) =>
 
         createPage({
           path: slug,
-          component: componentWithMDXScope(
-            path.resolve("./src/templates/article.tsx"),
-            code.scope,
-            __dirname
-          ),
+          component: path.resolve("./src/templates/article.tsx"),
           context: {
             id,
             tagRegex
@@ -88,7 +83,7 @@ const createTagPages = (graphql, createPage) =>
       const articles = result.data.allFile.edges.filter(
         article => article.node.childMdx
       );
-      const tagHash = pluckTags(articles);
+      const tagHash = tagCounts(articles);
 
       Object.keys(tagHash).forEach(tag => {
         const numArticles = tagHash[tag];

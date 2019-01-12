@@ -26,7 +26,7 @@ const ArticleGrid = ({ articles }: Props) => (
     css={css`
       max-width: 1200px;
       margin: 0 auto;
-      margin-top: 3rem;
+      margin-top: 2rem;
       display: grid;
       grid-template-columns: repeat(3, 1fr);
       grid-gap: 5px;

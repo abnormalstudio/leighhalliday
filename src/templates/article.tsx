@@ -88,7 +88,7 @@ const Article = ({ data }: Props) => {
 
           <div
             css={css`
-              margin-top: 3rem;
+              margin-top: 2rem;
             `}
           >
             <MDXRenderer>{code.body}</MDXRenderer>
