@@ -10,10 +10,19 @@ const Navigation = () => (
         justify-content: center;
         margin: 0 auto;
         border-top: 1px solid rgba(0, 0, 0, 0.25);
-        padding: 15px;
+        padding: 1rem;
+        width: 100%;
+
+        @media (max-width: 768px) {
+          padding: 1rem 0.5rem;
+        }
 
         li {
           padding: 0px 1rem;
+
+          @media (max-width: 768px) {
+            padding: 0px 0.25rem;
+          }
         }
 
         a {

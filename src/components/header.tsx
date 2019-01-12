@@ -18,27 +18,25 @@ const Header = ({ siteTitle, onSearchClick }: Props) => (
       max-width: 1200px;
       margin: 2rem auto;
       display: flex;
+      flex-wrap: wrap;
     `}
   >
     <div
       css={css`
         width: 20%;
-        display: flex;
-        justify-content: center;
-        align-items: center;
+        @media (max-width: 1024px) {
+          display: none;
+        }
       `}
-    >
-      {/* <a href="https://www.youtube.com/leighhalliday" title="YouTube">
-        <img src={YouTubeIcon} alt="YouTube" css={styles.icon} />
-      </a> */}
-      {/* <a href="https://www.github.com/leighhalliday" title="GitHub">
-        <img src={GitHubIcon} alt="GitHub" css={styles.icon} />
-      </a> */}
-    </div>
+    />
     <div
       css={css`
         width: 60%;
         text-align: center;
+
+        @media (max-width: 1024px) {
+          width: 100%;
+        }
       `}
     >
       <Link
@@ -64,10 +62,20 @@ const Header = ({ siteTitle, onSearchClick }: Props) => (
         display: flex;
         justify-content: center;
         align-items: center;
+
+        @media (max-width: 1024px) {
+          width: 100%;
+        }
       `}
     >
       {/* <a href="https://www.twitter.com/leighchalliday" title="Twitter">
         <img src={TwitterIcon} alt="Twitter" css={styles.icon} />
+      </a> */}
+      {/* <a href="https://www.youtube.com/leighhalliday" title="YouTube">
+        <img src={YouTubeIcon} alt="YouTube" css={styles.icon} />
+      </a> */}
+      {/* <a href="https://www.github.com/leighhalliday" title="GitHub">
+        <img src={GitHubIcon} alt="GitHub" css={styles.icon} />
       </a> */}
       <a href="https://www.instagram.com/paisa_canada" title="Instagram">
         <img src={InstagramIcon} alt="Instagram" css={styles.icon} />
