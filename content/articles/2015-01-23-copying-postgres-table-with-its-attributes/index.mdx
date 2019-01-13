@@ -1,0 +1,44 @@
+---
+title: Copying Postgres Table with its Attributes
+slug: copying-postgres-table-with-its-attributes
+tags: databases
+date: 2015-01-23
+updated: 2015-01-23
+banner: ../canadaleaf.jpg
+---
+
+## Why do this? 
+ 
+Recently at work we had 1 data model that was getting a bit out of control. When we first modelled the data it made sense, but over time business requirements change and we discovered that the model made more sense to be split in half to satisfy 2 unique models instead of 1. 
+ 
+The data was stored in a `merchants` table, but as we thought about it, it made sense to split it in half and create a `sites` table. Here are the characteristics of what a Merchant is and what a Site is: 
+ 
+### Merchant characteristics 
+ 
+- Has products to sell 
+- Controls where it's products are sold 
+- Has integrations with e-commerce stores 
+- Has giftcards 
+ 
+### Site characteristics 
+ 
+- Products are sold on a site 
+- Chooses which products to sell 
+- Has urls mapped to it 
+- Has theme settings 
+- Has a lot of SEO data 
+ 
+## Copying the table with its attributes 
+ 
+We wanted to essentially create a copy of the table and then subsequently remove the columns from where they don't belong. This will keep all default values, data-types, and not-null settings in check. We also created a new primary id sequence, which starts where the old one left off. 
+ 
+```sql 
+LOCK TABLE merchants; 
+CREATE TABLE sites (LIKE merchants INCLUDING ALL); 
+INSERT INTO sites SELECT * FROM merchants; 
+CREATE SEQUENCE sites_id_seq; 
+SELECT setval('sites_id_seq', (SELECT max(id) FROM merchants)+1); 
+ALTER TABLE sites ALTER COLUMN id SET DEFAULT nextval('sites_id_seq'); 
+``` 
+ 
+The next step - not included below - is to simply remove the columns that are no longer needed from each of the 2 tables.

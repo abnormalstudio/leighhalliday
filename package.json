@@ -1,6 +1,6 @@
 {
-  "name": "paisa-en-canada",
-  "description": "Paisa en Canadá",
+  "name": "leighhalliay",
+  "description": "Leigh Halliday",
   "version": "1.0.0",
   "author": "Leigh Halliday <leighhalliday@gmail.com>",
   "dependencies": {
@@ -54,6 +54,6 @@
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/abnormalstudio/paisa-en-canada"
+    "url": "https://github.com/leighhalliday/leighhalliday"
   }
 }

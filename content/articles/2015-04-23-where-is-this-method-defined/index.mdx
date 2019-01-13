@@ -1,0 +1,74 @@
+---
+title: Where is this method defined?
+slug: where-is-this-method-defined
+tags: ruby-on-rails
+date: 2015-04-23
+updated: 2015-04-23
+banner: ../canadaleaf.jpg
+---
+
+## My problems today
+
+Today I was trying to write a test for a method, and I was expecting certain behaviour that I definitely wasn't getting. Why was this method returning me a valid value when it surely should be failing?
+
+So I started poking around. What if I raise an exception at the beginning of the method? Nothing. How is this even possible?
+
+Then I remembered about the Ruby `Method` object. A handy little object that tells you all sorts of information about your methods. It helped! Turns out the problem was me! I foolishly forgot I had mocked the method out, and that's why I was always getting back the correct result. This is the location of the method it was actually calling:
+
+```["/Users/lhalliday/.rbenv/versions/2.1.2/lib/ruby/gems/2.1.0/gems/rspec-mocks-3.1.3/lib/rspec/mocks/method_double.rb", 59]
+
+```
+
+## Method Object
+
+Ruby provides a very useful object that allows you to dig into the details about your methods. You can find out where the method is defined, who owns it, and how many parameters it receives, among other things.
+
+Here's how it works! All of our code below will use this Llama class.
+
+```ruby
+class Llama
+  def spit
+    "petoui"
+  end
+
+  def greet(name)
+    "Hello #{name}"
+  end
+end
+
+buddy = Llama.new
+```
+
+To get access to the Method object, you simply call the `method` method on your object instance, passing in the name of the method you want details about. For further [details about Method](http://ruby-doc.org/core-2.2.2/Method.html) you can read them in the Ruby docs.
+
+```ruby
+p buddy.method(:spit)
+#<Method: Llama#spit>
+```
+
+The next bit of useful info we can glean about our `spit` method is about who owns it. This is useful if you have a larger object hierarchy and you're not sure which object it is coming from. Or it's useful when you forget that you're mocking out a method and can't figure out why the real one isn't being called!
+
+```ruby
+p buddy.method(:spit).owner
+# LLama
+"llama".method(:gsub).owner
+# String
+```
+
+What about how many parameters the method expects to receive?
+
+```ruby
+p buddy.method(:spit).parameters
+# []
+p buddy.method(:greet).parameters
+# [[:req, :name]]
+```
+
+Now, the method that helped me out the most today: `source_location`. This will tell you the exact file and line number that the method is called on. If the method wasn't defined by you (comes from Ruby core), it will return nil.
+
+```ruby
+p buddy.method(:spit).source_location
+# ["location.rb", 2]
+p buddy.method(:clone).source_location
+# nil
+```

@@ -150,18 +150,18 @@ const createArticlesPages = (graphql, createPage) =>
       for (let i = 0; i < numArticles; i += limit) {
         let nextUrl = null;
         if (i + limit < numArticles) {
-          nextUrl = `/articulos/${page + 1}`;
+          nextUrl = `/articles/${page + 1}`;
         }
 
         let prevUrl = null;
         if (page === 2) {
-          prevUrl = `/articulos`;
+          prevUrl = `/articles`;
         } else if (page > 2) {
-          prevUrl = `/articulos/${page - 1}`;
+          prevUrl = `/articles/${page - 1}`;
         }
 
         createPage({
-          path: page === 1 ? `articulos` : `articulos/${page}`,
+          path: page === 1 ? `articles` : `articles/${page}`,
           component: path.resolve("./src/templates/articles.tsx"),
           context: {
             page,

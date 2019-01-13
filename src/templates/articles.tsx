@@ -37,10 +37,10 @@ interface Props {
 const Articles = ({ data, pageContext: { page, prevUrl, nextUrl } }: Props) => {
   return (
     <Layout>
-      <SEO title={`Artículos - Página ${page}`} />
+      <SEO title={`Articles - Page ${page}`} />
 
       <Single>
-        <H1Line>Artículos {page > 1 && <span>- página {page}</span>}</H1Line>
+        <H1Line>Articles {page > 1 && <span>- page {page}</span>}</H1Line>
 
         <ArticleGrid articles={data.allMdx.edges.map(edge => edge.node)} />
 
@@ -50,9 +50,9 @@ const Articles = ({ data, pageContext: { page, prevUrl, nextUrl } }: Props) => {
               text-align: center;
             `}
           >
-            {prevUrl && <Link to={prevUrl}>Página Anterior</Link>}
+            {prevUrl && <Link to={prevUrl}>Prev</Link>}
             {prevUrl && nextUrl && " "}
-            {nextUrl && <Link to={nextUrl}>Proxima Página</Link>}
+            {nextUrl && <Link to={nextUrl}>Next</Link>}
           </div>
         ) : null}
       </Single>

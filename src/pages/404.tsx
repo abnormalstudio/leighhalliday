@@ -3,10 +3,10 @@ import { Layout, SEO, H1Line, Single } from "$components";
 
 const NotFoundPage = () => (
   <Layout>
-    <SEO title="404: Extraviado" />
+    <SEO title="404: Missing" />
     <Single>
-      <H1Line>Extraviado 🦉</H1Line>
-      <p>Ups! La página a la que intentas llegar no existe.</p>
+      <H1Line>Missing 🦉</H1Line>
+      <p>The page you were trying to reach does not exist.</p>
     </Single>
   </Layout>
 );

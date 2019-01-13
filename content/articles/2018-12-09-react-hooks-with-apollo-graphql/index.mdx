@@ -1,0 +1,238 @@
+---
+title: React Hooks with Apollo GraphQL
+slug: react-hooks-with-apollo-graphql
+tags: react, apollo, graphql, hooks
+date: 2018-12-09
+updated: 2018-12-09
+banner: ../canadaleaf.jpg
+---
+
+import { YouTube } from "$components";
+
+With React 16.7 we were [introduced to hooks](https://reactjs.org/docs/hooks-intro.html). A way to allow things like state, refs, and lifecycle functions to live inside functional components, functionality once only available in class based components.
+
+The great thing about hooks though is that libraries can take the base hooks of `useState`, `useEffect`, `useRef`, and build on top of them to have custom hooks which encapsulate more complicated logic.
+
+In this article we'll look at how to use hooks with the Apollo GraphQL library. The final version of the app we're [working with is here](https://github.com/leighhalliday/github-stars-graphql/tree/link-state-youtube).
+
+<YouTube id="lcM6Kju61AQ" />
+
+## Setup
+
+First things first you'll need to make sure you're on a version of React that supports hooks... anything `16.7.0` (including alpha versions) should be good!
+
+Now we can install the library which provides the ability to use hooks with Apollo with the command `yarn add react-apollo-hooks`.
+
+Lastly, we need to make sure we have a new provider in-place, allowing us to use hooks anywhere in our application. Your top level component should end up with something along the lines of:
+
+```jsx
+// other imports
+import { ApolloProvider } from "react-apollo";
+import { ApolloProvider as ApolloProviderHooks } from "react-apollo-hooks";
+import apolloClient from "./apolloClient";
+
+// inside render function:
+<ApolloProvider client={apolloClient}>
+  <ApolloProviderHooks client={apolloClient}>
+    {/* everything else inside*/}
+  </ApolloProviderHooks>
+</ApolloProvider>;
+```
+
+## Queries with useQuery
+
+With everything installed it's time to convert our code using the `Query` component to use the `useQuery` hook.
+
+### Before with Query
+
+The typical way you've used the `Query` component up to this point is to have it inside of the JSX you're returning from the component. Inside of the `Query` component you'll have a render prop function as its child, receiving `{data, loading}` and any of the other variables you might require as returned from the query's result.
+
+```jsx
+// other imports
+import { Query } from "react-apollo";
+
+export default class StarredRepos extends React.Component {
+  render() {
+    return (
+      <div>
+        <Query query={STARRED_REPOS_QUERY} variables={{ numRepos: 25 }}>
+          {({ data, loading }) => {
+            if (loading) {
+              return <span>Loading...</span>;
+            }
+
+            return data.viewer.starredRepositories.nodes.map(node => (
+              <Repository data={node} key={node.id} />
+            ));
+          }}
+        </Query>
+      </div>
+    );
+  }
+}
+```
+
+### After with useQuery
+
+For the conversion to use hooks, you'll need to ensure your component is a functional component. Now, instead of having `Query` nested inside of your JSX, you can have it at the top of the function. Here you can pass in the query along with any variables or other options needed. I'll explain what `suspend: false` means below the code example. As a result you get `{data, loading}` and any other variables typically returned from the query result.
+
+```jsx
+// other imports
+import { useQuery } from "react-apollo-hooks";
+
+export default function StarredRepos() {
+  const { data, loading } = useQuery(STARRED_REPOS_QUERY, {
+    variables: { numRepos: 25 },
+    suspend: false
+  });
+
+  if (loading) {
+    return <span>Loading...</span>;
+  }
+
+  return data.viewer.starredRepositories.nodes.map(node => (
+    <Repository data={node} key={node.id} />
+  ));
+}
+```
+
+### useQuery with Suspense
+
+Above I mentioned we'll talk about what the `suspend: false` option was. By default the `useQuery` function relies on [Suspense](https://reactjs.org/docs/code-splitting.html#suspense) to handle what to display when in a loading state. For this to work, you'll need to have a component higher up the tree wrapping the code in a `Suspense` component, providing it with a `fallback` prop of what to display while the query is still loading.
+
+```jsx
+// In App.jsx
+// other imports
+import React, { Suspense } from "react";
+
+// inside render function
+<Suspense fallback={<span>Suspense loading...</span>}>
+  <StarredRepos />
+</Suspense>;
+```
+
+By having this code in place, we can make our `StarredRepos` component even simpler, relying on `Suspense` to show the fallback when the query is loading.
+
+```jsx
+// other imports
+import { useQuery } from "react-apollo-hooks";
+
+export default function StarredRepos() {
+  const { data } = useQuery(STARRED_REPOS_QUERY, {
+    variables: { numRepos: 25 }
+  });
+
+  return data.viewer.starredRepositories.nodes.map(node => (
+    <Repository data={node} key={node.id} />
+  ));
+}
+```
+
+## Mutations with useMutation
+
+<YouTube id="2gD5pyC2dY4" />
+
+The `useMutation` hook functions similarly to the `useQuery` hook we looked at above. A typical mutation with the `Mutation` component looks like this:
+
+```jsx
+// other imports
+import { Mutation } from "apollo-react";
+
+const SET_LANGUAGE_FILTER = gql`
+  mutation SetLanguageFilter($language: String) {
+    setLanguageFilter(language: $language) @client
+  }
+`;
+
+export default function Filters() {
+  return (
+    <Mutation mutation={SET_LANGUAGE_FILTER}>
+      {setLanguageFilter => (
+        <button
+          onClick={() => {
+            setLanguageFilter({ variables: { language: "Ruby" } });
+          }}
+        >
+          Ruby
+        </button>
+      )}
+    </Mutation>
+  );
+}
+```
+
+Let's see what the same code would look like using the `useMutation` hook.
+
+```jsx
+// other imports
+import { Mutation } from "apollo-react";
+
+const SET_LANGUAGE_FILTER = gql`
+  mutation SetLanguageFilter($language: String) {
+    setLanguageFilter(language: $language) @client
+  }
+`;
+
+export default function Filters() {
+  const setLanguageFilter = useMutation(SET_LANGUAGE_FILTER);
+
+  return (
+    <button
+      onClick={() => {
+        setLanguageFilter({ variables: { language: "Ruby" } });
+      }}
+    >
+      Ruby
+    </button>
+  );
+}
+```
+
+## Difference more pronounced when combined
+
+If you have a component which includes both a `Mutation` and a `Query`, the result is even more improved because your code looks less like a Christmas tree (example below).
+
+```jsx
+export default function MyComponent() {
+  return (
+    <Mutation mutation={MY_MUTATION}>
+      {myMutation => (
+        <Query query={MY_QUERY}>
+          {({ data }) => (
+            <button
+              onClick={() => {
+                myMutation();
+              }}
+            >
+              {data}
+            </button>
+          )}
+        </Query>
+      )}
+    </Mutation>
+  );
+}
+```
+
+When the code above is converted to use hooks it becomes a lot easier to read and reason about. The reason for this is because it's flatter, flows from top to bottom, has separated the data logic from the display logic, and ends up being 5 lines less code in the process!
+
+```jsx
+export default function MyComponent() {
+  const myMutation = useMutation(MY_MUTATION);
+  const { data } = useQuery(MY_QUERY);
+
+  return (
+    <button
+      onClick={() => {
+        myMutation();
+      }}
+    >
+      {data}
+    </button>
+  );
+}
+```
+
+## Conclusion
+
+In all of the the examples above, the code using hooks comes out looking quite a bit cleaner and easier to wrap your head around than the corresponding examples using the `Query` and `Mutation` examples. Try using hooks today and see what you think for yourself!

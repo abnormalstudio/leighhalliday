@@ -1,0 +1,133 @@
+---
+title: Using apollo-link-rest to use GraphQL with your RESTful endpoints
+slug: using-apollo-link-rest
+tags: react, apollo, graphql, rest
+date: 2018-11-06
+updated: 2018-11-06
+banner: ../canadaleaf.jpg
+---
+
+import { YouTube } from "$components";
+
+So you've updated your React code to use GraphQL, but there's those 2 RESTful API endpoints that you still have to integrate with... what do you do? You could use `fetch` or `axios` with your favorite state management tool, but now you have 2 ways of accessing data, the GraphQL with Apollo way, and the RESTful way.
+
+[apollo-link-rest](https://www.apollographql.com/docs/link/links/rest.html) let's you integrate with RESTful endpoints through GraphQL using Queries and Mutations, just like you would do with your GraphQL API. In this article we'll walk through how to set up your Apollo Links to take advantage of this library.
+
+You can [find the final version of the code here](https://github.com/leighhalliday/github-stars-graphql/tree/link-rest).
+
+<YouTube id="yvoGCY7N_fg" />
+
+## Installing apollo-link-rest
+
+If you're using ApolloBoost as your Apollo client, I recommend switching at this point to configure your Apollo client manually... a bit more work but a lot more flexibility. In the video below I walk through the process of doing this transition:
+
+<YouTube id="VB31K3DQlxk" />
+
+Next we'll want to install the package with `yarn add apollo-link-rest` and import the package into the file where we are configuring our Apollo client.
+
+```js
+import { RestLink } from "apollo-link-rest";
+```
+
+Once we've imported the package we can create a new instance of the `RestLink` class passing in any config options we need. With the simplest setup, you only have to pass in the `uri` where your RESTful endpoint is located at.
+
+```js
+const restLink = new RestLink({
+  uri: "https://githubstatus.herokuapp.com"
+});
+```
+
+And finally we can add this `restLink` variable into our array of Apollo Links. You'll want to place it before your `HttpLink` because that is a terminating link, so if it comes after that it'll never arrive there.
+
+```js
+const client = new ApolloClient({
+  link: ApolloLink.from([errorLink, stateLink, restLink, authLink, httpLink]),
+  cache
+});
+```
+
+## Querying our REST endpoint
+
+With our `RestLink` in place, we can now perform a Query on the RESTful endpoint. It'll look almost identical to a normal Query with a couple small differences:
+
+- You'll need to provide a `@rest` directive which provides the `path` to visit on the endpoint `uri`, along with a `type` argument that tells Apollo how to store the result of this Query in the cache.
+- The name of the query (`StatusQuery`) does not matter, and nor does the field that comes before the `@rest` directive... but the fields you request much match what is returned by the RESTful endpoint.
+
+In our case, the response coming from the endpoint looks like:
+
+```json
+{
+  "status": "good",
+  "last_updated": "2018-11-02T21:25:17Z"
+}
+```
+
+We can now access this field by requesting `data.status.status`, giving us the value of "good" as shown in the JSON example above.
+
+```js
+import React from "react";
+import gql from "graphql-tag";
+import { Query } from "react-apollo";
+import styled from "styled-components";
+
+const STATUS_QUERY = gql`
+  query statusQuery {
+    status @rest(type: "Status", path: "/") {
+      status
+    }
+  }
+`;
+
+const StatusLabel = styled.span`
+  position: absolute;
+  top: 5px;
+  right: 5px;
+`;
+
+export default function Status() {
+  return (
+    <Query query={STATUS_QUERY}>
+      {({ data, loading }) => {
+        if (loading) {
+          return <StatusLabel>loading...</StatusLabel>;
+        }
+        return <StatusLabel>{data.status.status}</StatusLabel>;
+      }}
+    </Query>
+  );
+}
+```
+
+## Working with multiple endpoints
+
+The simple setup above won't work if you want to communicate with multiple endpoints. To solve this you'll want to set up your `RestLink` using the `endpoints` option:
+
+```js
+const restLink = new RestLink({
+  endpoints: {
+    githubstatus: {
+      uri: "https://githubstatus.herokuapp.com"
+    }
+  }
+});
+```
+
+And this will force you to specify which endpoint you're querying in your GraphQL query:
+
+```js
+const STATUS_QUERY = gql`
+  query statusQuery {
+    status @rest(path: "/", type: "Status", endpoint: "githubstatus") {
+      status
+    }
+  }
+`;
+```
+
+## Mutations with REST
+
+You can also [perform Mutations](https://www.apollographql.com/docs/link/links/rest.html#mutation) with `RestLink` by specifying the `method` argument inside of the `@rest` directive... which would have one of the values `POST`, `PUT`, `PATCH`, `DELETE`, etc...
+
+## Conclusion
+
+The apollo-link-rest package provides a great way to integrate RESTful endpoints into your React code that predominantly communicates with GraphQL APIs. It allows you to Query and Mutate your data using a single interface, keeping your code more consistent and avoiding having to introduce other libraries to handle these REST API calls.

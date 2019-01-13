@@ -1,0 +1,73 @@
+---
+title: Why doesn't my code work outside of Rails?
+slug: why-doesnt-my-code-work-outside-rails
+tags: ruby-on-rails
+date: 2015-02-19
+updated: 2015-02-19
+banner: ../canadaleaf.jpg
+---
+
+## Situation
+
+Maybe you originally wrote some code for a Rails project that you're trying to use in another framework, in an automation script, or in a Gem that you're extracting out of your project. Have you ever run into an error saying something along the lines of `undefined method 'minutes' for 2:Fixnum (NoMethodError)`? I got that error when trying this code `2.minutes.from_now`, which is code that I use fairly often in my Rails projects when dealing with time.
+
+The reason it works in Rails and it doesn't work when I am outside of the Rails framework is because Rails has monkey-patched a large number of the core Ruby classes.
+
+## What is monkey-patching?
+
+Ruby allows you to modify classes during run-time. Unlike some languages, a Ruby class is never closed. You can take a class, any class, even a Ruby standard library one, open it up and add other methods to it. This process of changing classes run-time is known as **monkey-patching** in the Ruby community.
+
+Take the example below where I am implementing a simplified version of a monkey-patch that Rails does. I'm taking the Ruby standard library class Numeric (parent of all number based classes in Ruby such as Integer and Float), opening it back up and adding a `minutes` method to it, which will convert minutes into seconds.
+
+```ruby
+puts Numeric.instance_methods(false).include?(:minutes)
+
+class Numeric
+  def minutes
+    self * 60
+  end
+end
+
+puts Numeric.instance_methods(false).include?(:minutes)
+puts 2.minutes
+```
+
+Ruby gives us a way to ask a class which instance methods it has. We can check before to make sure the class doesn't have the `minutes` method, and then to check again after to make sure it is now there.
+
+When I run this code in the console I get the following:
+
+```
+false
+true
+120
+```
+
+## Is it controversial?
+
+Yes, quite! It's generally advisable to avoid monkey-patching whenever possible. In fact, some Ruby frameworks such as the [Lotus framework](http://lotusrb.org/) have decided to avoid monkey-patching all-together.
+
+> If you use Lotus, you employ less DSLs and more objects, zero monkey-patching, separation of concerns between MVC layers. Each library is designed to be small (under 500LOCs), fast and testable.
+
+[Taken from Luca's article introducing Lotus.](http://lucaguidi.com/2014/06/23/introducing-lotus.html)
+
+## What has Rails patched?
+
+If we look at the [Rails source code, in the active-support core_ext folder](https://github.com/rails/rails/tree/master/activesupport/lib/active_support/core_ext) we get a good overview of the Ruby standard classes that have been monkey-patched... quite a few of them! Even the famous/controversial one which adds a `forty_two` accessor to Ruby's Array class.
+
+```ruby
+class Array
+  def forty_two
+    self[41]
+  end
+end
+```
+
+Joking and controversy aside, I think many of the methods they've added make developing in Rails a pleasure. As I've mentioned above, I often use the `60.seconds.ago` code when working with time, and I've found the [deep_merge method added to Hash](https://github.com/rails/rails/blob/master/activesupport/lib/active_support/core_ext/hash/deep_merge.rb) to be extremely useful too.
+
+## Tips for your own monkey-patching
+
+[Justin Weiss](https://twitter.com/justinweiss) recently wrote an article on [how to monkey-patch without making a mess](http://www.justinweiss.com/blog/2015/01/20/3-ways-to-monkey-patch-without-making-a-mess/) which provides some great insights into the do's and don'ts of monkey-patching.
+
+My recommendation is to avoid it unless you have an extremely good reason to do so, especially when modifying an existing method, as it makes it hard for a developer working on a project to know which version of the method they are working with.
+
+I'd even go so far as to say that when you are building a Gem, never monkey-patch the core Ruby library.

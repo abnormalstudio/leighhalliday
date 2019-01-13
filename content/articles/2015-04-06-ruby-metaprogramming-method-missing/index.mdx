@@ -1,0 +1,147 @@
+---
+title: Ruby Metaprogramming - Method Missing
+slug: ruby-metaprogramming-method-missing
+tags: ruby-on-rails
+date: 2015-04-06
+updated: 2015-04-06
+banner: ../canadaleaf.jpg
+---
+
+## What is method_missing?
+
+`method_missing` is a method that ruby gives you access inside of your objects a way to handle situations when you call a method that doesn't exist. It's sort of like a Begin/Rescue, but for method calls. It gives you one last chance to deal with that method call before an exception is raised.
+
+## What does it look like?
+
+`method_missing` accepts 3 parameters.
+
+1. The first is the name of the method you were trying to call.
+2. The second is the args (`*args`) that were passed to the method.
+3. The third is a block (&block) that was passed to the method.
+
+The 2nd and 3rd params may be empty if the method was called without arguments, but they are there anyway for you to use and/or pass on to another method.
+
+```ruby
+def method_missing(m, *args, &block)
+end
+```
+
+## Using method_missing
+
+I can immediately think of 2 uses for using method_missing in your code.
+
+1. **Dealing with repetitive methods that function the same**: I recently wrote an article on [creating a DSL in Ruby](http://www.leighhalliday.com/creating-ruby-dsl). For the example I created a DSL for generating HTML tags. I didn't want to define a method for every single HTML tag, so instead I just used method_missing, to sort of dynamically create HTML tags as they were called.
+2. **Delegating method calls to another object**: You could write a simple presenter and define your own delegation method using `method_missing`. This is the example I am going to present below. Most likely you would want to use [SimpleDelegator](http://ruby-doc.org/stdlib-2.1.0/libdoc/delegate/rdoc/SimpleDelegator.html) to implement this, but for the sake of demoing how it works we will do it ourselves.
+
+## Creating a Presenter
+
+### Using Delegation and Method Missing
+
+We are going to create a Presenter class. The purpose of the class is to accept an object in the constructor, and any methods we call that aren't specifically implemented by our Presenter will be delegated to the object it was instantiated with.
+
+```ruby
+class Presenter
+  attr_accessor :object
+
+  def initialize(object)
+    self.object = object
+  end
+
+  # If a method we call is missing, pass the call onto
+  # the object we delegate to.
+  def method_missing(m, *args, &block)
+    puts "Delegating #{m}"
+    object.send(m, *args, &block)
+  end
+end
+```
+
+We are going to extend from our Presenter class to create a UserPresenter, specifically used for presenting User objects.
+
+```ruby
+class UserPresenter < Presenter
+
+  # We just want to display the first letter of the last name
+  def last_name
+    "#{object.last_name[0]}."
+  end
+
+  def full_name
+    "#{first_name} #{last_name}"
+  end
+
+end
+
+# A mini User object to work with
+User = Struct.new(:first_name, :last_name, :age)
+user = User.new("Leigh", "Halliday", 30)
+user_presenter = UserPresenter.new(user)
+
+puts user_presenter.full_name
+puts user_presenter.age
+```
+
+Here is the output for our calls above. Notice that it delegates the `first_name` method to the User object, as well as the `age` method, but `last_name` isn't delegated because we wrote our own method to handle it.
+
+```
+Delegating first_name
+Leigh H.
+Delegating age
+30
+```
+
+## Re-Creating the Alias method
+
+To illustrate `method_missing` being used another way, we'll re-implement the `alias` method, calling it `mimic`. What we'll do is create a `mimic` method which is called at the class level. Its job is to build a lookup table of the different aliases our methods have.
+
+Once we call a method that doesn't exist, our code will attempt to find an alias for that method before having to fail.
+
+```ruby
+class Mimic
+  @@mimic_lookup = {}
+
+  def self.mimic(to, from)
+    @@mimic_lookup[to] = from
+  end
+
+  def method_missing(m, *args, &block)
+    if @@mimic_lookup.include?(m.to_sym)
+      self.send(@@mimic_lookup[m.to_sym], *args, &block)
+    else
+      raise ArgumentError.new("Method `#{m}` doesn't exist.")
+    end
+  end
+
+  def respond_to?(method_name, include_private = false)
+    @@mimic_lookup.include?(method_name.to_sym) || super
+  end
+end
+
+class Alpaca < Mimic
+  mimic :saludar, :greet
+
+  def greet
+    puts "Hey there"
+  end
+end
+
+buddy = Alpaca.new
+p buddy.respond_to?(:saludar)
+buddy.saludar
+buddy.welcome
+```
+
+We see that it was able to successfully greet using the alias `saludar` (Spanish for greet), and then it correctly raised an exception when we called the `welcome` method.
+
+```
+true
+Hey there
+alias.rb:13:in `method_missing': Method `welcome` doesn't exist. (ArgumentError)
+	from alias.rb:31:in `<main>'
+```
+
+As pointed out in an article by thoughtbot about `method_missing`, it's always [good to override the respond_to? method](https://robots.thoughtbot.com/always-define-respond-to-missing-when-overriding) when you are working with `method_missing`.
+
+I recommend [Metaprogramming Ruby 2](https://amzn.to/2pyq8pm) to go deeper on this subject.
+
+<a target="_blank"  href="https://www.amazon.com/gp/product/1941222129/ref=as_li_tl?ie=UTF8&camp=1789&creative=9325&creativeASIN=1941222129&linkCode=as2&tag=leigh0b-20&linkId=ae80a179b3b0373ea64894f5d30026e9"><img border="0" src="//ws-na.amazon-adsystem.com/widgets/q?_encoding=UTF8&MarketPlace=US&ASIN=1941222129&ServiceVersion=20070822&ID=AsinImage&WS=1&Format=_SL160_&tag=leigh0b-20" ></a><img src="//ir-na.amazon-adsystem.com/e/ir?t=leigh0b-20&l=am2&o=1&a=1941222129" width="1" height="1" border="0" alt="" style="border:none !important; margin:0px !important;" />

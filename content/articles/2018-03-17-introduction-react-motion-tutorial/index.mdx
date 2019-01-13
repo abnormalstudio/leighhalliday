@@ -1,0 +1,130 @@
+---
+title: Introduction to React Motion Tutorial
+slug: introduction-react-motion-tutorial
+tags: frontend
+date: 2018-03-17
+updated: 2018-03-17
+banner: ../canadaleaf.jpg
+---
+
+import { YouTube } from "$components";
+
+[React Motion](https://github.com/chenglou/react-motion) is an animation library loved within the React community. I have to say that having some experience with libraries like GSAP, it isn't the easiest to comprehend, but its power comes from the ability to directly tie animations to your state. Just like React, state dictates when your React components will render, and likewise, state dictates the animations in React motion.
+
+In this demo we'll animate a div which contains the weekly forecast into and off of the screen. Let's say we have this code below:
+
+```javascript
+<Forecast>
+  {weather.forecast.map(daily => (
+    <Daily
+      key={daily.date}
+      date={daily.date}
+      low={daily.low}
+      high={daily.high}
+    />
+  ))}
+</Forecast>
+```
+
+In the above code `Forecast` is a styled-component, so in reality it is just a `div`. In the examples below we won't include the mapping that happens inside of the Forecast component because it isn't required for this example.
+
+## Video tutorial
+
+If you'd prefer a video tutorial of this article, please check out my YouTube video below.
+
+<YouTube id="ZUbUgSQqjD4" />
+
+## Introducing React Motion
+
+To start with React Motion, we'll want to import 2 libraries:
+
+```javascript
+import { Motion, spring } from "react-motion";
+```
+
+`Motion` will be used to wrap around our `Forecast` component and `spring` is a function which controls the speed in which a number will animate from its beginning value to the ending value. Let's show the final version of the animation below, and then we'll break down the different parts of it.
+
+```javascript
+<Motion
+  defaultStyle={{ x: -200, opacity: 0 }}
+  style={{
+    x: spring(showForecast ? 0 : -200),
+    opacity: spring(showForecast ? 1 : 0)
+  }}
+>
+  {style => (
+    <Forecast
+      style={{
+        transform: `translateX(${style.x}px)`,
+        opacity: style.opacity
+      }}
+    >
+      mapping daily forecast...
+    </Forecast>
+  )}
+</Motion>
+```
+
+<div style="text-align: center;">
+  <img
+    src="https://s3.amazonaws.com/leighhalliday/manual/react-motion.gif"
+    alt="react-motion gif"
+  />
+</div>
+
+## Default Style & Style
+
+The `Motion` component receives 2 props, `defualtStyle` and `style`. `defaultStyle` is an object which defines the initial values that you wish to animate. In this case we'll be animating an `x` value which will start at -200, and `opacity` which starts at 0.
+
+The `style` prop is an object of what the values **should** be at any point in time. If `defualtStyle` is the `from` of the animation, `style` is the `to` (in gsap terminology).
+
+But you'll notice that the `style` prop isn't so simple. `x: spring(showForecast ? 0 : -200)` what we're actually doing is tying it to the state, specifically the `showForecast` value of the state which is a boolean value. So what we're saying is that if `showForecast` is `true`, we want the value to be 0, but if it is `false`, it should be back at -200.
+
+## What about spring?
+
+So what does `spring` do then? It's a function which controls the animation's speed. If the value went from -200 to 0 instantly, it wouldn't appear to be animating, it would just happen. `spring` causes it to gradually transition from it's `from` to its `to`.
+
+`spring` can be sent a 2nd parameter which is an object that could look like this: `{stiffness: 170, damping: 26}`. This terminology comes from physics, but essentially `stiffness` controls the speed of the animation, and `damping` controls the bounciness. [This page](https://chenglou.github.io/react-motion/demos/demo5-spring-parameters-chooser/) provides a playground for determining which stiffness and damping settings are right from you.
+
+In React Motion you never define how many milliseconds the animation will take, it is only controlled by stiffness and damping.
+
+## Using the animated values
+
+The `Motion` component wants to receive a function as its child.
+
+```javascript
+<Motion>{style => <Forecast>contents</Forecast>}</Motion>
+```
+
+This function is passed the current `style` as its being animated from one value to another... so it is being constantly called as the values change. It might look like this:
+
+```javascript
+{ x: -150.25, opacity: 0.264 }
+```
+
+So now that we have the values as they are being animated, we can use them with an inline style to change the css properties.
+
+```javascript
+<Motion>
+  {style => (
+    <Forecast
+      style={{
+        transform: `translateX(${style.x}px)`,
+        opacity: style.opacity
+      }}
+    >
+      mapping daily forecast...
+    </Forecast>
+  )}
+</Motion>
+```
+
+We're using the `style` object to change the `transform` css property and the `opacity` property. Now as these inline styles change, and our Forecast component slides onto the screen, it is because the `x` value went from -200 (px) to 0 (px). And the opacity went from 0 (invisible) to 1 (visible).
+
+Now all you need to animate the Forecast component into and off of the screen is to change the state's `showForecast` value, and as its changed, `spring` and `Motion` will animate the properties back and forth.
+
+## Conclusion
+
+Today we looked at React Motion, one of the many animation libraries out there, but one that works particularly well with React. Other great libraries to look into are [popmotion.io](https://popmotion.io), [anime.js](http://animejs.com/), [gsap](https://greensock.com/gsap), and [react-transition-group](https://github.com/reactjs/react-transition-group). I highly recommend following [Sarah Drasner](https://twitter.com/sarah_edo) when it comes to animations on the web, and she has a great book called [SVG Animations](https://amzn.to/2Gk7BqA) which comes with a full chapter on React integration.
+
+<a target="_blank"  href="https://www.amazon.com/gp/product/1491939702/ref=as_li_tl?ie=UTF8&camp=1789&creative=9325&creativeASIN=1491939702&linkCode=as2&tag=leigh0b-20&linkId=ab6175aa5ba7b3457ba6f7e8f8baa303"><img border="0" src="//ws-na.amazon-adsystem.com/widgets/q?_encoding=UTF8&MarketPlace=US&ASIN=1491939702&ServiceVersion=20070822&ID=AsinImage&WS=1&Format=_SL160_&tag=leigh0b-20" ></a><img src="//ir-na.amazon-adsystem.com/e/ir?t=leigh0b-20&l=am2&o=1&a=1491939702" width="1" height="1" border="0" alt="" style="border:none !important; margin:0px !important;" />

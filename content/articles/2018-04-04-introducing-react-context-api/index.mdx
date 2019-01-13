@@ -1,0 +1,226 @@
+---
+title: Introducing the React Context API
+slug: introducing-react-context-api
+tags: frontend
+date: 2018-04-04
+updated: 2018-04-04
+banner: ../canadaleaf.jpg
+---
+
+import { YouTube } from "$components";
+
+The new [React Context API](https://reactjs.org/docs/context.html) is touted (at least on Twitter and a number of articles) as solving the need to use a state management tool, when I think in reality what it solves is easy dependency injection: Take something that lives at the top of your app and directly inject it into a lower level component without having to pass it all the way down.
+
+<YouTube id="yzQ_XulhQFw" />
+
+The code used in the Gallery example further down [can be found here](https://github.com/leighhalliday/easy-mobx-redux-comparison/tree/context). Credit to [Marian Serna](https://github.com/marianserna) for creating the code which this example is based off of.
+
+Michel Weststrate, the creator of MobX says:
+
+<blockquote class="twitter-tweet" data-lang="en"><p lang="en" dir="ltr">context is not a state management mechanism but more DI. It didn&#39;t change anything in term of what is possible, just cleaned and finally formalized the api. So imho the answer to that question is the same as in React 16.2</p>&mdash; Michel Weststrate (@mweststrate) <a href="https://twitter.com/mweststrate/status/981445519116468225?ref_src=twsrc%5Etfw">April 4, 2018</a></blockquote>
+<script async src="https://platform.twitter.com/widgets.js" charset="utf-8"></script>
+
+## What it solves
+
+Let's start with a scenario fairly common in React, where you have your state living at the top level of your app. Let's look at a simple component tree below:
+
+```yaml
+- App
+  - Header
+  - HeaderUser
+  - Main
+  - UserSettings
+  - SettingsForm
+```
+
+In this scenario we'd most likely have our state live in the `App` component and we'd have to pass down the user's information 2 levels to display it in the `HeaderUser` component and 3 levels to display it in `SettingsForm`. Now let's say `SettingsForm` wants to update the state, you'd have to pass a function from `App -> Main -> UserSettings -> SettingsForm`... the worst!
+
+The most common thing at this point would be to reach for [Redux](https://redux.js.org/) or [MobX](https://mobx.js.org/) and extract the state out of your component tree, having it live with the state management's store.
+
+With the new React context API, you may think before immediately reaching for an external state management library. It essentially gives you an easy way to have state live at the top level in your component tree (`App` in this case) but "inject" it as a prop in a lower level component in the state tree. In this case we can inject the user's data directly into `HeaderUser` and `SettingsForm`, and also inject a function that modifies the state directly into `SettingsForm` without having to pass it down the entire tree.
+
+## Context Overview
+
+The new context API consists essentially of 3 things: Context, Provider, and Consumer. Context is somewhat of a "container" that you create which allows you to define the Provider and the Consumer of that context.
+
+A Provider is a concept that let's you say: Here is a value which I'm defining (or providing, hence the name) up here at the top of my component tree, expecting that it will be used (or consumed in other words) lower down in the tree.
+
+A Consumer works hand-in-hand with the Context's Provider, essentially allowing you to reach into your Context, and easily inject the Context's value into a component, skipping many levels in the component tree.
+
+In practical terms, you can directly inject the user's data into the `HeaderUser` component, or directly into the `SettingsForm` component, without having to pass it all the way down.
+
+## Gallery
+
+We'll now start to look at a simple React gallery which searches and displays images from the unsplash API. The component tree looks like:
+
+```yaml
+- App
+  - Form
+  - Status
+  - Images
+  - Image
+```
+
+What we'll end up with is this, which looks sort of intense, but we're just injecting something from the provider into our component using a consumer.
+
+```yaml
+- GalleryProvider
+  - GalleryConsumer
+  - App
+  - GalleryConsumer
+  - Form
+  - GalleryConsumer
+  - Status
+  - GalleryConsumer
+  - Images
+  - Image
+```
+
+## Context
+
+To use the new Context API we first have to create a Context, using the `React.createContext()` function. From the Context we can access its Provider and Consumer.
+
+```jsx
+export const GalleryContext = React.createContext();
+```
+
+## Provider
+
+To provide a bite-size example of the provider (which be expanded to a real example below), we'll define a GalleryProvider functional component, which renders the `props.children` inside of the `GalleryContext.Provider` component. So what's happening? By doing this, we can access the provider's value "Hot stuff" through the Consumer at any level lower in the component tree.
+
+```jsx
+const GalleryProvider = props => (
+  <GalleryContext.Provider value="Hot stuff">
+    {props.children}
+  </GalleryContext.Provider>
+);
+```
+
+A pattern I've been following is to define a component named `GalleryProvider` which encapsulates the Context's state, and provides the `GalleryContext.
+
+```jsx
+export class GalleryProvider extends React.Component {
+  state = {
+    term: "",
+    images: [],
+    status: "initial"
+  };
+
+  fetchImages = async term => {
+    this.setState({ term });
+    const response = await axios.get("https://api.unsplash.com/search/photos");
+    this.setState({
+      status: "done",
+      images: response.data.results
+    });
+  };
+
+  render() {
+    return (
+      <GalleryContext.Provider
+        value={{ ...this.state, fetchImages: this.fetchImages }}
+      >
+        {this.props.children}
+      </GalleryContext.Provider>
+    );
+  }
+}
+```
+
+Our `value` here is an object which consists of all the properties from the state plus a function allowing components at a lower level to fetch images from the API, and therefore modify the state.
+
+To use this provider, you simply wrap it around your top level component.
+
+```jsx
+ReactDOM.render(
+  <GalleryProvider>
+    <App />
+  </GalleryProvider>,
+  document.getElementById("root")
+);
+```
+
+## Consumer
+
+Now that we've set up our Context and have created the Provider which wraps our app at the top level, we can now inject its `value` into any of our lower level components. Let's say we want to inject the `fetchImages` function into our Form component. We'd start by declaring the `<GalleryContext.Consumer>` component. It's child is a function which receives the `value` which was given to `<GalleryContext.Provider>` inside of the `GalleryProvider` component. This function must return what it wants to render, which in this case is the `<Form />` component.
+
+```jsx
+<GalleryContext.Consumer>
+  {({ fetchImages }) => <Form fetchImages={fetchImages} />}
+</GalleryContext.Consumer>
+```
+
+## Refactoring to separate component + "connected component"
+
+When thinking of how to organize an app which uses React Context, I wanted to avoid having the Consumer code in the same file as the component which it "wraps"... the reason for this is because it makes it difficult to test the component in isolation.
+
+Let's look at how we might organize the Form component:
+
+```yaml
+- components
+  - Form
+  - Form.js
+  - index.js
+  - ... etc
+```
+
+In the `index.js` file we can have the wrapped version of our Form component.
+
+```jsx
+import React from "react";
+import { GalleryContext } from "../../contexts/GalleryContext";
+import Form from "./Form";
+
+export default props => (
+  <GalleryContext.Consumer>
+    {({ fetchImages }) => <Form {...props} fetchImages={fetchImages} />}
+  </GalleryContext.Consumer>
+);
+```
+
+What we have done here is sort of mimic what happens when you use `@inject('Store')` in MobX or `connect()` with Redux. We've created a higher-order component, which translates to a function which takes in the props coming from its parent and returns an enhanced Form component, which now receives all incoming props plus the `fetchImages` function given to use through the consumer.
+
+### Watch out for this gotcha
+
+For a while I was trying the code below, which was failing horribly. It was incorrect for 2 reasons... it ends up exporting an object, not a class or a function which React expects. Plus it provides no way to pass props from the parent into the Form component. You need that function `(props) => { return consumer }` shown above.
+
+```jsx
+import React from "react";
+import { GalleryContext } from "../../contexts/GalleryContext";
+import Form from "./Form";
+
+export default (
+  <GalleryContext.Consumer>
+    {({ fetchImages }) => <Form {...props} fetchImages={fetchImages} />}
+  </GalleryContext.Consumer>
+);
+```
+
+### Testing
+
+Because we separated the actual Form component from the higher-order component which injects our context's value, we can easily test it just by passing the props that it expects to receive.
+
+```jsx
+import Form from "./Form";
+
+it("triggers calls fetchImages on form submission", () => {
+  const spy = sinon.spy();
+  const wrapper = mount(<Form fetchImages={spy} />);
+
+  wrapper
+    .find("form")
+    .first()
+    .simulate("submit");
+
+  expect(spy.calledOnce).toBe(true);
+});
+```
+
+## Conclusion
+
+I think I'd still have to recommend against reaching for the Context API right away. My rules to follow would be:
+
+- Stick with local component state when it is something confined to that component itself or maybe 1 level below.
+- When things get larger, switch to using MobX or Redux, but if you're writing a library which needs dependency injection, like MobX and Redux both do, by all means use the context API.
+
+In my opinion for the average app it doesn't really provide an improvement for the typical React app already happily using a state management library. But hey, it's good to know which tools you have in the toolbox.

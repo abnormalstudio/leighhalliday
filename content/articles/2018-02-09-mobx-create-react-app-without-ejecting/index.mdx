@@ -1,0 +1,53 @@
+---
+title: MobX in Create React App Without Ejecting
+slug: mobx-create-react-app-without-ejecting
+tags: frontend
+date: 2018-02-09
+updated: 2018-02-09
+banner: ../canadaleaf.jpg
+---
+
+import { YouTube } from "$components";
+
+You do not have to eject from create-react-app to get support for decorators and other babel plugins. MobX works fantastic with decorators and I've always been ejecting to get that working... but there is no longer a need to do that!
+
+In this video we'll take a look at how we can get MobX working with decorators without having to eject from create-react-app. We'll be using a package called [react-app-rewired](https://github.com/timarney/react-app-rewired) to accomplish this.
+
+<YouTube id="v3sJUzFXhz4" />
+
+The full code is [https://github.com/leighhalliday/mobx-decorators-without-ejecting](https://github.com/leighhalliday/mobx-decorators-without-ejecting)
+
+## Packages Used
+
+Here is a list of the packages we used in this demo:
+
+- react-app-rewired
+- react-app-rewire-mobx
+- babel-plugin-styled-components
+
+## Files Changed
+
+In `config-overrides.js`:
+
+```js
+const { injectBabelPlugin } = require("react-app-rewired");
+const rewireMobX = require("react-app-rewire-mobx");
+
+module.exports = function override(config, env) {
+  config = injectBabelPlugin("babel-plugin-styled-components", config);
+  config = rewireMobX(config, env);
+
+  return config;
+};
+```
+
+In `package.json` modify the scripts to be:
+
+```js
+"scripts": {
+  "start": "react-app-rewired start",
+  "build": "react-app-rewired build",
+  "test": "react-app-rewired test --env=jsdom",
+  "eject": "react-app-rewired eject"
+}
+```

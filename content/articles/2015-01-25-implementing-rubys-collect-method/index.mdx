@@ -1,0 +1,71 @@
+---
+title: Implementing Ruby's Collect Method
+slug: implementing-rubys-collect-method
+tags: ruby-on-rails
+date: 2015-01-25
+updated: 2015-01-25
+banner: ../canadaleaf.jpg
+---
+
+## Ruby's Collect method 
+ 
+Ruby's `collect` method is part of the Enumerable mixin; a mixin which provides very useful and powerful methods for collection objects. `collect` is a method I use all the time and recently wrote about in my article [Working with enumerables: Four powerful collection methods](http://www.leighhalliday.com/posts/working-with-enumerables-four-powerful-collection-methods). 
+ 
+`collect` allows you to transform each element of your collection object (Array, Hash, or your own object) into something else, ending up with an Array. 
+ 
+Here's a simple example of taking an Array of integers and multiplying each of them by 2. 
+ 
+```ruby 
+[1, 2, 3].collect{ |num| num * 2 } 
+# [2, 4, 6] 
+``` 
+ 
+## Re-implementing the Collect method 
+ 
+I wanted to create my own `collect` method to see how it is implemented. It turns out that it is done quite easily, in about 5 lines of code. I should say that the one use-case I don't cover is when no block is passed to the method, in which case an Enumerator is usually returned. 
+ 
+We'll add our new `kollect` (so the names don't conflict) to the Enumerable module. Looping through our collection, we'll apply the block to each element, adding the returned result to a new Array that is being created. 
+ 
+```ruby 
+module Enumerable 
+  def kollect 
+    new_ary = [] 
+    self.each do |elem| 
+      new_ary << yield(elem) 
+    end 
+    new_ary 
+  end 
+end 
+``` 
+ 
+If we compare this to Ruby's source code, it essentially does the same thing, but is a lot simpler because we are working with Ruby itself, and not C. 
+ 
+```c 
+rb_ary_collect(VALUE ary) 
+{ 
+  long i; 
+  VALUE collect; 
+ 
+  RETURN_SIZED_ENUMERATOR(ary, 0, 0, ary_enum_length); 
+  collect = rb_ary_new2(RARRAY_LEN(ary)); 
+  for (i = 0; i < RARRAY_LEN(ary); i++) { 
+    rb_ary_push(collect, rb_yield(RARRAY_AREF(ary, i))); 
+  } 
+  return collect; 
+} 
+``` 
+ 
+## Using our new Collect method 
+ 
+Now all that is left is to see if the `kollect` method actually works! I wanted to try it using both the normal block syntax, but also the short-hand &:method_name syntax, to ensure both work. 
+ 
+```ruby 
+names = ["leigh", "marian"] 
+ 
+puts names.kollect(&:upcase).inspect 
+# ["LEIGH", "MARIAN"] 
+puts names.kollect{ |name| name.upcase }.inspect 
+# ["LEIGH", "MARIAN"] 
+``` 
+ 
+Great! In both cases it takes the names in the Array and converts them to upper-case.

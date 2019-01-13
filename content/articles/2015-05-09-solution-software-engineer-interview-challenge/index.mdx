@@ -1,0 +1,163 @@
+---
+title: My solution to #5 Software Engineer challenge
+slug: solution-software-engineer-interview-challenge
+tags: ruby-on-rails
+date: 2015-05-09
+updated: 2015-05-09
+banner: ../canadaleaf.jpg
+---
+
+## The challenge
+
+Write a program that outputs all possibilities to put + or - or nothing between the numbers 1, 2, ..., 9 (in this order) such that the result is always 100. For example: 1 + 2 + 34 – 5 + 67 – 8 + 9 = 100.
+
+## Apparently every Software Engineer should be able to solve this in less than 1 hour
+
+I could not. I eventually did come up with a solution to it, using another solution by [Reginald Braithwaite](https://twitter.com/raganwald) in Javascript as inspiration. The [original post](https://blog.svpino.com/2015/05/07/five-programming-problems-every-software-engineer-should-be-able-to-solve-in-less-than-1-hour) claimed that you should be able to solve all 5 of the challenges in under an hour, under the pressure of an interview. I worked on this on my own, comfortably at home on a Saturday... I still found it challenging.
+
+I've been programming professionally for over 10 years, and I think it's ridiculous to expect or assume that everyone should be able to do specific kinds of "trick" problems that most likely will never come up except under very specific conditions in the workplace, depending where you work of course.
+
+That being said, I wanted to give it a try... it never hurts to practice and get some experience working on a new problem.
+
+## My solution in Ruby
+
+```ruby
+def solutions(acc, rem)
+  # Are there remaining numbers to deal with?
+  if rem.size == 0
+    if sum_array_with_operators(acc.reverse) == 100
+      puts acc.join(" ")
+    end
+  else
+    head, *tail = *rem
+
+    if acc.size == 0
+      solutions([head], tail)
+    else
+      solutions(acc + [:+, head], tail)
+      solutions(acc + [:-, head], tail)
+    end
+
+    # concatenate
+    if tail.size > 0
+      tail[0] = (head * 10) + tail[0]
+      solutions(acc, tail)
+    end
+  end
+end
+
+# Arrives like this [1, :+, 2, :-, 3, :+, 5]
+def sum_array_with_operators(arr)
+  if arr.size == 1
+    arr[0]
+  else
+    num, operator, *tail = *arr
+    sum_array_with_operators(tail).send(operator, num)
+  end
+end
+
+solutions([], (1..9).to_a)
+```
+
+Output:
+
+```
+1 + 2 + 3 - 4 + 5 + 6 + 78 + 9
+1 + 2 + 34 - 5 + 67 - 8 + 9
+1 + 23 - 4 + 5 + 6 + 78 - 9
+1 + 23 - 4 + 56 + 7 + 8 + 9
+12 + 3 + 4 + 5 - 6 - 7 + 89
+12 + 3 - 4 + 5 + 67 + 8 + 9
+12 - 3 - 4 + 5 - 6 + 7 + 89
+123 + 4 - 5 + 67 - 89
+123 - 4 - 5 - 6 - 7 + 8 - 9
+123 + 45 - 67 + 8 - 9
+123 - 45 - 67 + 89
+```
+
+## Notes about my solution
+
+### The general strategy
+
+My strategy was to use recursive function calls to come up with the solution to this problem. Essentially what I did was loop through an array of numbers (recursively), and for each one go down 3 different pathways: Adding, subtracting, or concatenating the next number.
+
+### Tracking the pathways
+
+I kept track of all the different pathways in the `acc` variable. The solutions would end up looking something like this: `[1, :+, 2, :-, 3, :+, 5, :-, 67]`. It was an array of numbers with operators between them. The `rem` variables contained all the numbers in the array I hadn't yet dealt with.
+
+### Calculating the pathways
+
+Once I had the pathways which looked like this `[1, :+, 2, :-, 3, :+, 5, :-, 67]`, I created a method to go through the numbers, applying the operand to the numbers on either side of it.
+
+I also did this recursively, and I used a bit of Ruby metaprogramming magic to get this done. These two solutions below are the same thing. When you write `5 + 5`, you are actually calling the `+` method on the Integer 5, passing in the value 6.
+
+```ruby
+5 + 6
+5.send(:+, 6)
+```
+
+When I first started this I was getting the wrong solution and couldn't figure out for the longest time why... until I got the idea of starting at the right and working backwards. You'll notice that when I call the method I call `.reverse` on the array.
+
+### Heads and Tails
+
+In functional programming a concept which is extremely popular and useful is the concept of a head and tail of an array.
+
+```ruby
+list = [1,2,3]
+# head = 1
+# tail = [2,3]
+```
+
+To do this in Ruby, I found a [blog post by Avdi Grimm](http://devblog.avdi.org/2010/01/31/first-and-rest-in-ruby/) which came up with a handy solution to get the head and tail of an array using the splat `*` operator:
+
+```ruby
+head, *tail = *list
+```
+
+### Displaying the solutions
+
+Once I knew if the total added up to 100, all I had to do was display that particular solution. Since it was an array, all I had to do was join the elements together with a space. `[1, :+, 2].join(" ")`. The `:+` symbol will automatically get converted to a string of `"+"`.
+
+## Reginald's solution in JS
+
+[Originally posted here](http://www.es6fiddle.net/i9h7385g/), this was the solution I enjoyed the most.
+
+```js
+function solutions(accumulatedOutput, runningTotal, ...numbers) {
+  if (numbers.length === 0) {
+    if (runningTotal == 100) console.log(accumulatedOutput);
+  } else {
+    const [first, ...butFirst] = numbers;
+
+    if (accumulatedOutput !== "") {
+      // case one, addition
+      solutions(
+        `${accumulatedOutput}+${first}`,
+        runningTotal + first,
+        ...butFirst
+      );
+
+      // case two, subtraction
+      solutions(
+        `${accumulatedOutput}-${first}`,
+        runningTotal - first,
+        ...butFirst
+      );
+    } else solutions(`${first}`, first, ...butFirst);
+
+    // case three, catenation
+    if (butFirst.length > 0) {
+      const [second, ...butSecond] = butFirst;
+
+      solutions(
+        accumulatedOutput,
+        runningTotal,
+        first * 10 + second,
+        ...butSecond
+      );
+    }
+  }
+}
+
+solutions("", 0, 1, 2, 3, 4, 5, 6, 7, 8, 9);
+```

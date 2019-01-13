@@ -1,0 +1,116 @@
+---
+title: FizzBuzz in Elixir
+slug: fizzbuzz-in-elixir
+tags: elixir
+date: 2015-05-15
+updated: 2015-05-15
+banner: ../canadaleaf.jpg
+---
+
+## Intro... learning Elixir 
+ 
+This is my first post in the new __Elixir__ category I've set up on my site. I'm new to Elixir and functional programming in general, aside from a __Scala__ course I've done on Coursera. 
+ 
+__Ruby__ is the language I'm currently most comfortable with, so I'll tend to view things from that lens, which is a highly mutable, highly object oriented language. Even though Ruby and Elixir are very different in many respects, so far I've felt a feeling of familiarity when working in Elixir. 
+ 
+This feeling of familiarity could be because the syntax has a very similar feel to it, metaprogramming is prominent in the language, and both allow you to pass functions (or lambdas) around as values.  
+ 
+But that's about where it stops. There are no objects in Elixir, which is the cornerstone of Ruby. Data is immutable in Elixir, where most things are mutable (can be changed) in Ruby. There are many other differences too... but I haven't learned those yet because I'm only just beginning! 
+ 
+## FizzBuzz 
+ 
+FizzBuzz is a programming quiz you always hear about being used in interviews... to separate those who have basic programming knowledge from those who don't. Funny enough I've actually never seen it in an interview though. 
+ 
+The basic premise goes like this: For the numbers 1 - 100, print Fizz if it is divisible by 3, Buzz if it is divisible by 5, FizzBuzz if divisible by 3 and 5, and just print the number if none of those are true. 
+ 
+## FizzBuzz in Elixir 
+ 
+Here is the solution I came up with in Elixir. I'll explain it more below! 
+ 
+```elixir 
+whichfizz = fn 
+  (0, 0, _) -> "FizzBuzz" 
+  (0, _, _) -> "Fizz" 
+  (_, 0, _) -> "Buzz" 
+  (_, _, n) -> n 
+end 
+ 
+fizzbuzz = fn (n) -> 
+  whichfizz.(rem(n, 3), rem(n, 5), n) 
+end 
+ 
+IO.inspect Enum.map(1..100, fizzbuzz) 
+``` 
+ 
+This may look familiar, but maybe slightly little strange for a Ruby developer. The `whichbuzz` function is saved to a variable... nothing crazy there (very similar to a lambda), but looking closer you'll notice that this function actually has 4 "heads"/definitions... each with their own body.  
+ 
+It reads a little like a case statement, but this is something called function argument pattern matching in Elixir. Elixir looks at the arguments being passed to the function and decides which is the most appropriate to call. There are all sorts of ways you can pattern match the incoming arguments and it turns out to be one of the most powerful aspects of Elixir. 
+ 
+One thing I'd like to point out is the `_` value that you see in the function head definitions. This a way in Elixir to say "I don't really care what value is passed in here, because I'm not going to use it anyway." 
+ 
+## FizzBuzz in Ruby 
+ 
+A similar solution in Ruby might look like this. It uses 2 lambdas to help solve the problem, but because we can't do pattern matching in Ruby, I've used an if statement instead. 
+ 
+```ruby 
+whichfizz = ->(a, b, n) { 
+  if (a == 0 && b == 0) 
+    "FizzBuzz" 
+  elsif (a == 0) 
+    "Fizz" 
+  elsif (b == 0) 
+    "Buzz" 
+  else 
+    n.to_s 
+  end 
+} 
+ 
+fizzbuzz = ->(n) { 
+  whichfizz.(n % 3, n % 5, n) 
+} 
+ 
+p (1..100).map(&fizzbuzz) 
+``` 
+ 
+A more object oriented solution might look like this: 
+ 
+```ruby 
+class Fiznum 
+  attr_accessor :num 
+ 
+  def initialize(num) 
+    self.num = num 
+  end 
+ 
+  def fizzbuzz? 
+    num % 15 == 0 
+  end 
+ 
+  def fizz? 
+    num % 3 == 0 
+  end 
+ 
+  def buzz? 
+    num % 5 == 0 
+  end 
+ 
+  def to_s 
+    if fizzbuzz? 
+      "FizzBuzz" 
+    elsif fizz? 
+      "Fizz" 
+    elsif buzz? 
+      "Buzz" 
+    else 
+      num.to_s 
+    end 
+  end 
+ 
+end 
+ 
+p (1..100).map{|n| Fiznum.new(n).to_s} 
+``` 
+ 
+## Concluding thoughts 
+ 
+I'm finding Elixir very exciting, and I'm having a ton of fun writing code in it... very similar to how I feel writing Ruby! I look forward to writing more articles about the language and patterns found in it, making comparisons to how things might be done in Ruby.

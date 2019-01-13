@@ -83,7 +83,7 @@ const Article = ({ data }: Props) => {
             `}
           >
             {date}
-            {updated && <span>, actualizado {updated}</span>}
+            {updated && <span>, updated {updated}</span>}
           </div>
 
           <div
@@ -113,8 +113,8 @@ export const pageQuery = graphql`
         slug
         title
         tags
-        date(formatString: "MMMM D, YYYY", locale: "es")
-        updated(formatString: "MMMM D, YYYY", locale: "es")
+        date(formatString: "MMM D, YYYY", locale: "en")
+        updated(formatString: "MMM D, YYYY", locale: "en")
         banner {
           childImageSharp {
             fluid(maxWidth: 850) {
@@ -141,8 +141,8 @@ export const pageQuery = graphql`
             slug
             title
             tags
-            date(formatString: "MMMM D, YYYY", locale: "es")
-            updated(formatString: "MMMM D, YYYY", locale: "es")
+            date(formatString: "MMM D, YYYY", locale: "en")
+            updated(formatString: "MMM D, YYYY", locale: "en")
             banner {
               childImageSharp {
                 fluid(maxWidth: 200) {

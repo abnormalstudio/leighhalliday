@@ -32,13 +32,13 @@ const Navigation = () => (
       `}
     >
       <li>
-        <Link to="/">Inicio</Link>
+        <Link to="/">Home</Link>
       </li>
       <li>
-        <Link to="/articulos">Artículos</Link>
+        <Link to="/articles">Articles</Link>
       </li>
       <li>
-        <Link to="/acerca">Acerca De</Link>
+        <Link to="/about">About</Link>
       </li>
     </ul>
   </nav>

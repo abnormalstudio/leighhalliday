@@ -1,0 +1,239 @@
+---
+title: Easy MobX and Redux Comparison
+slug: easy-mobx-redux-comparison
+tags: frontend
+date: 2018-03-13
+updated: 2018-03-13
+banner: ../canadaleaf.jpg
+---
+
+import { YouTube } from "$components";
+
+In this article/video we'll start with a simple React app made with create-react-app that uses component state (setState) as its state management. We'll then take it from component state to MobX, and then again from component state to Redux. During the process we'll see what is similar and different between the two approaches.
+
+The code we are looking at is asynchronous, so we'll see how each library handles async code differently.
+
+The repository lives at [https://github.com/leighhalliday/easy-mobx-redux-comparison](https://github.com/leighhalliday/easy-mobx-redux-comparison) and contains 3 branches:
+
+- master: The component state version
+- mobx: The MobX version
+- redux: The Redux version
+
+<YouTube id="CA8w-zNmnpc" />
+
+## Component State to MobX
+
+In MobX our data lives in a **Store**, which has at its easiest, `observable` properties and `action` functions which can modify the store's values.
+
+```js
+import { observable, action, runInAction } from "mobx";
+import axios from "axios";
+
+export default class GalleryStore {
+  @observable term = "";
+  @observable images = [];
+  @observable status = "initial";
+
+  @action
+  fetchImages = async term => {
+    this.status = "searching";
+    this.term = term;
+    this.images = [];
+
+    try {
+      const response = await axios.get(
+        "https://api.unsplash.com/search/photos",
+        {
+          params: {
+            client_id: "abcdef",
+            query: term
+          }
+        }
+      );
+      this.setImages(response.data.results);
+    } catch (error) {
+      runInAction(() => {
+        this.status = "error";
+      });
+    }
+  };
+
+  @action
+  setImages = images => {
+    this.images = images;
+    this.status = "done";
+  };
+}
+```
+
+We gain the ability to `inject` our store into our components and make them act as `observer`'s to the changes in the store, by wrapping a `Provider` component around our top level component.
+
+```jsx
+import { Provider } from "mobx-react";
+
+import GalleryStore from "./stores/GalleryStore";
+const galleryStore = new GalleryStore();
+
+ReactDOM.render(
+  <Provider galleryStore={galleryStore}>
+    <App />
+  </Provider>,
+  document.getElementById("root")
+);
+```
+
+### Inject MobX into React
+
+Now we can inject the store into our component, which will pass our whole store as a prop which in this case is called `galleryStore` (defined in the Provider).
+
+```jsx
+import { inject, observer } from "mobx-react";
+
+@inject("galleryStore")
+@observer
+export default class App extends React.Component {
+  // render, componentDidMount, etc...
+}
+```
+
+<img
+  src="https://res.cloudinary.com/leighhalliday/image/upload/f_auto,q_auto:good/v1521922809/mobx-diagram.png"
+  alt="mobx data flow"
+/>
+
+## Component State to Redux
+
+In Redux everything begins by calling the `createStore` function, passing a `reducer`, the initial state, and then `applyMiddleware(thunk)`, which in this case allows us to use the `thunk` middleware to handle asynchronous code.
+
+```js
+import { createStore, applyMiddleware } from "redux";
+import thunk from "redux-thunk";
+
+import reducer from "./reducer";
+
+export default createStore(
+  reducer,
+  {
+    term: "",
+    images: [],
+    status: "initial"
+  },
+  applyMiddleware(thunk)
+);
+```
+
+Our `reducer` modifies the state, based on the data coming when `action`s are `dispatch`ed to it. We want to take a copy of our state, and then modify it based on the action's type:
+
+```js
+export default (state = {}, action) => {
+  switch (action.type) {
+    case "BEGIN_SEARCH":
+      return {
+        ...state,
+        term: action.term,
+        images: [],
+        status: "searching"
+      };
+    case "DONE_SEARCH":
+      return {
+        ...state,
+        images: action.images,
+        status: "done"
+      };
+    case "ERROR_SEARCH":
+      return {
+        ...state,
+        status: "error"
+      };
+    default:
+      return state;
+  }
+};
+```
+
+The reducer is called when an `action creator` (function) dispatches an `action` (an object). In our case, we had to return a function which receives `dispatch`, because we are dealing with asynchronous code (handled by `thunk`).
+
+```js
+import axios from "axios";
+
+const fetchImages = term => {
+  return async dispatch => {
+    dispatch({
+      type: "BEGIN_SEARCH",
+      term
+    });
+
+    try {
+      const response = await axios.get(
+        "https://api.unsplash.com/search/photos",
+        {
+          params: {
+            client_id: "abcdefg",
+            query: term
+          }
+        }
+      );
+      dispatch({
+        type: "DONE_SEARCH",
+        images: response.data.results
+      });
+    } catch (error) {
+      dispatch({
+        type: "ERROR_SEARCH"
+      });
+    }
+  };
+};
+
+export { fetchImages };
+```
+
+### Connecting Redux to React
+
+To connect our Redux store to React we need to use the `connect` function. But before we can do that, we must first wrap our top level component in a Provider.
+
+```jsx
+import { Provider } from "react-redux";
+import store from "./store";
+
+ReactDOM.render(
+  <Provider store={store}>
+    <App />
+  </Provider>,
+  document.getElementById("root")
+);
+```
+
+Connect wants 2 functions, typically called `mapStateToProps` and `mapDispatchToProps`. This allows us to pass state into our component, and action creators which can dispatch actions to the reducer which will modify the state.
+
+```js
+const mapStateToProps = state => {
+  return {
+    term: state.term,
+    images: state.images,
+    status: state.status
+  };
+};
+
+const mapDispatchToProps = dispatch => {
+  return {
+    fetchImages: term => {
+      dispatch(fetchImages(term));
+    }
+  };
+};
+
+export default connect(
+  mapStateToProps,
+  mapDispatchToProps
+)(App);
+```
+
+<img
+  src="https://res.cloudinary.com/leighhalliday/image/upload/f_auto,q_auto:good/v1521922809/redux-diagram.jpg"
+  alt="redux data flow"
+/>
+
+## Conclusion
+
+I hope you enjoyed a comparison between MobX and Redux! Redux is the most popular state management tool out there, but MobX is what I enjoy most... maybe because in my heart of hearts I like the "style" of object-oriented programming? Either way they are both great libraries and it's good to know what their differences are!

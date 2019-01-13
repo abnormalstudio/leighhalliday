@@ -1,0 +1,235 @@
+---
+title: Recursion in Elixir
+slug: recursion-in-elixir
+tags: elixir
+date: 2015-05-30
+updated: 2015-05-30
+banner: ../canadaleaf.jpg
+---
+
+## Intro 
+ 
+I recently wrote an article on [Recursion in Ruby](http://www.leighhalliday.com/recursion-in-ruby), and this is meant to be its Elixir counterpart. It will provide a way to compare solving the same problems in both languages and a chance to talk about some of their differences. 
+ 
+## Heads & Tails 
+ 
+What would normally be an `array` in other languages is a `list` in Elixir. A list is actually represented as a linked list. A linked list is a pretty simple concept... you have the `head` of the list, which is your actual data: A number, a string, etc... and you have the `tail`, which points to the rest of your list. 
+ 
+```elixir 
+list = [1,2,3,4,5] 
+``` 
+ 
+Looking at this list, the head is `1`, and the tail is `[2,3,4,5]`. This is an important concept in languages which use recursion a lot, because you'll want to process the head of the list, and then re-run the same function on the tail of it. 
+ 
+## Pattern matching 
+ 
+Pattern matching is another key aspect of Elixir (and functional programming languages in general). It allows you to assign variables based on patterns. 
+ 
+``` 
+list = [1,2,3,4,5] 
+[head | tail] = list 
+``` 
+ 
+This as you might guess takes the head of the list and puts it into the head variable, and the tail of the list into the tail variable. 
+ 
+Your method arguments can also have patterns like this in them: 
+ 
+``` 
+def myfunc([head | tail]) do 
+  # something 
+end 
+myfunc([1,2,3,4,5]) 
+``` 
+ 
+Again it goes a step further in Elixir where you can have multiple definitions of the same method, and it will choose the appropriate one to call based on which pattern matches correctly. 
+ 
+``` 
+def myfunc([head | tail]) do 
+  # we have head and tail 
+end 
+ 
+def myfunc([]) do 
+  # we have empty list 
+end 
+ 
+myfunc([1,2,3,4,5]) 
+myfunc([]) 
+``` 
+ 
+## Ending recursion 
+ 
+In Ruby I had to have an `if` statement to help determine when to stop recursion... something to check if the array was empty or some other clause to break the recursion. 
+ 
+In Elixir you can accomplish this by providing different method definitions... one definition will stop your recursion (an empty list []), while another will perform the work and continue the recursion. 
+ 
+If you were summing the values in a list, you could end the recursion by returning 0 when there is an empty array. 
+ 
+```elixir 
+def myfunc([]) do 
+  0 
+end 
+``` 
+ 
+## Tail call optimization 
+ 
+[Tail call optimization](http://en.wikipedia.org/wiki/Tail_call) is a technique that allows the compiler to call a function without using any additional stack space. This is achieved by making the function end (or return) with a call to another function... in this case itself because we are focusing on recursion. 
+ 
+A method that is not tail call optimized: 
+ 
+```elixir 
+def sum_no_tail([]) do 
+  0  
+end 
+   
+def sum_no_tail([head | tail]) do 
+  head + sum_no_tail(tail)  
+end 
+ 
+sum_no_tail([1,2,3,4,5]) # 15 
+``` 
+ 
+Now the same thing written in a tail optimized form: 
+ 
+```elixir 
+def sum(list, acc \\ 0) 
+ 
+def sum([], acc) do 
+  acc 
+end 
+ 
+def sum([head | tail], acc) do 
+  sum(tail, acc + head) 
+end 
+ 
+sum([1,2,3,4,5]) # 15 
+``` 
+ 
+## Setting default values 
+ 
+In Elixir you can set default argument values by declaring a method without a body, utilizing the format `arg \\ value` to denote what the default value is. 
+ 
+```elixir 
+def sum(list, acc \\ 0) 
+``` 
+ 
+## Examples 
+ 
+### Factorials 
+ 
+Factorials in math are written like `6!` and are the result of `6 * 5 * 4 * 3 * 2 * 1`. 
+ 
+```elixir 
+defmodule MyRecur do 
+  def fact(num, acc \\ 1) 
+ 
+  def fact(0, acc) do 
+    acc 
+  end 
+ 
+  def fact(num, acc) do 
+    fact(num - 1, acc * num) 
+  end 
+end 
+ 
+MyRecur.fact(6) # 720 
+``` 
+ 
+### Fibonacci 
+ 
+I heard a funny definition of Fibonacci that goes like this: "Fibonacci - A problem used to teach recursion in computer science." The first 10 Fibonacci numbers go like this: 0, 1, 1, 2, 3, 5, 8, 13, 21, 34 - The next number is the sum of the previous 2 numbers. While not the most efficient Fibonacci solution, it'll do the trick when the goal is to demonstrate recursion! 
+ 
+```elixir 
+defmodule MyRecur do 
+  def fib(n) when is_integer(n) and n > 1 do 
+    map(Enum.to_list(1..n), &fibn(&1)) 
+  end 
+ 
+  defp fibn(n, current \\ 0, next \\ 1) 
+  defp fibn(0, current, _next), do: current 
+  defp fibn(n, current, next), do: fibn(n - 1, next, current + next) 
+end 
+ 
+MyRecur.fib(10) # [1, 1, 2, 3, 5, 8, 13, 21, 34, 55] 
+``` 
+ 
+### Summing List 
+ 
+```elixir 
+defmodule MyRecur do 
+  def sum(list, acc \\ 0) 
+ 
+  def sum([], acc) do 
+    acc 
+  end 
+ 
+  def sum([head | tail], acc) do 
+    sum(tail, acc + head) 
+  end 
+end 
+ 
+MyRecur.sum([1,2,3,4,5]) # 15 
+``` 
+ 
+### Mapping List 
+ 
+```elixir 
+defmodule MyRecur do 
+  def map(list, f, acc \\ []) 
+ 
+  def map([head | tail], f, acc) do 
+    map(tail, f, acc ++ [f.(head)]) 
+  end 
+ 
+  def map([], _f, acc) do 
+    acc 
+  end 
+end 
+ 
+MyRecur.map([1,2,3,4,5], fn (elem) -> elem * elem end) 
+# [1, 4, 9, 16, 25] 
+``` 
+ 
+### Reducing List 
+ 
+```elixir 
+defmodule MyRecur do 
+  def reduce([head | tail], acc, f) do 
+    reduce(tail, f.(head, acc), f) 
+  end 
+ 
+  def reduce([], acc, _f) do 
+    acc 
+  end 
+end 
+ 
+# Join 
+MyRecur.reduce(["A", "AB", "ABC"], "", fn 
+  (elem, "") -> elem 
+  (elem, acc) -> "#{acc} #{elem}" 
+end) 
+# "A AB ABC" 
+ 
+# Sum 
+IO.inspect MyRecur.reduce([1,2,3,4,5], 0, fn (acc, elem) -> acc + elem end) 
+# 15 
+ 
+# Longest String 
+MyRecur.reduce(["A", "AB", "ABC"], "", 
+  fn (acc, elem) -> 
+    if String.length(acc) > String.length(elem) do 
+      acc 
+    else 
+      elem 
+    end 
+  end 
+) 
+# "ABC" 
+ 
+# Count 
+MyRecur.reduce([1,2,3,4,5], 0, fn (_elem, acc) -> acc + 1 end) 
+# 5 
+ 
+# Map 
+MyRecur.reduce([1,2,3,4,5], [], fn (elem, acc) -> acc ++ [elem * elem] end) 
+# [1, 4, 9, 16, 25] 
+```

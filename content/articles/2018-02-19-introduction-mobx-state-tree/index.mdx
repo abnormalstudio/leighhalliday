@@ -1,0 +1,57 @@
+---
+title: Introduction to MobX State Tree
+slug: introduction-mobx-state-tree
+tags: frontend
+date: 2018-02-19
+updated: 2018-02-19
+banner: ../canadaleaf.jpg
+---
+
+import { YouTube } from "$components";
+
+MobX State Tree takes something which is awesome (MobX) and brings it to the next level. You can now define your own typed models, made up of typed fields, and have them all nested together in a tree. You still get all of the same beautifully hidden immutability that comes with MobX, and the lack of boilerplate that you see in Redux, but now with type safety and an easy way to split up large "stores" into multiple composable models.
+
+## Model Example
+
+Here's an example of what a model looks like in MobX State Tree:
+
+```js
+import { types } from "mobx-state-tree";
+import Item from "./Item";
+
+const ItemList = types
+  .model("ItemList", {
+    items: types.array(Item)
+  })
+  .actions(self => ({
+    add(item) {
+      self.items.push({
+        ...item,
+        quantity: parseInt(item.quantity, 10),
+        price: parseFloat(item.price)
+      });
+    },
+    remove(item) {
+      self.items.splice(self.items.indexOf(item), 1);
+    }
+  }))
+  .views(self => ({
+    total() {
+      return self.items.reduce((sum, item) => sum + item.total(), 0);
+    }
+  }));
+
+export default ItemList;
+```
+
+A model is comprised of 3 main sections:
+
+1. Observable properties of the model.
+2. Actions which can change these observable properties.
+3. Views which can perform calculations on the model's properties.
+
+## Demo Time
+
+Please check out the video below to see an introduction to MobX State Tree.
+
+<YouTube id="pPgOrecfcg4" />

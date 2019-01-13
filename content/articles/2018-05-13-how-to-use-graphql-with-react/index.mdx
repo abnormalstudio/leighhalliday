@@ -1,0 +1,121 @@
+---
+title: How to use GraphQL with React
+slug: how-to-use-graphql-with-react
+tags: frontend
+date: 2018-05-13
+updated: 2018-05-13
+banner: ../canadaleaf.jpg
+---
+
+import { YouTube } from "$components";
+
+GraphQL is an amazing new(ish) paradigm for communicating with APIs, made popular by Facebook but since then used by many companies including Shopify and as we will see in this article, GitHub. If you're completely new to GraphQL, I recommend the [how to GraphQL](https://www.howtographql.com/) website, which covers both frontend and backend.
+
+In this article we'll be hooking up a React app to the GitHub GraphQL API using the Apollo libraries. In a previous article I showed how to use [map, reduce, and filter](https://www.leighhalliday.com/map-reduce-filter-and-pie-charts) to recreate a pie chart, utilizing some hard-coded data. It's time to make that data live!
+
+<YouTube id="AUiUZ29pae4" />
+
+If you'd like to follow along, there are [starting](https://github.com/leighhalliday/graphql-git/tree/graphql-start) and [finished](https://github.com/leighhalliday/graphql-git/tree/graphql-done) branches of this project.
+
+## Installing packages
+
+For this article we'll need to add 4 additional packages to our React app:
+
+- graphql: Not something you'll interact with directly, but required for some of the other packages we'll use.
+- graphql-tag: A package used for writing/parsing GraphQL queries.
+- apollo-boost: The easiest way to get up and running with Apollo and GraphQL.
+- react-apollo: Tying together Apollo with our React code.
+
+## Setting up our client and provider
+
+In order to use Apollo and have it know which API to interact with, as well as providing overrides for things like headers sent along with each request, we'll need to set up a "client", provided to use from the apollo-boost package.
+
+In this case we'll pass along the authorization header required by GitHub.
+
+```js
+// src/index.js
+import ApolloClient from "apollo-boost";
+
+const client = new ApolloClient({
+  uri: "https://api.github.com/graphql",
+  request: async operation => {
+    operation.setContext({
+      headers: {
+        authorization: `token ${process.env.REACT_APP_GITHUB_TOKEN}`
+      }
+    });
+  }
+});
+```
+
+Instead of hard-coding the GitHub token, we'll embed it using an environment variable. create-react-app and webpack will grab this value from the `.env.local` file, or the file which corresponds to the environment you're working in.
+
+We can now wrap the `ApolloProvider` around our `App` component, which is about as high up the component tree as we can get! This will allow us to execute queries (or mutations) anywhere inside of our React app.
+
+```jsx
+// src/index.js
+import { ApolloProvider } from "react-apollo";
+
+ReactDOM.render(
+  <ApolloProvider client={client}>
+    <App />
+  </ApolloProvider>,
+  document.getElementById("root")
+);
+```
+
+## Writing the query
+
+Now that we've set up our Apollo client & provider, it's time to write our GraphQL query, asking GitHub for the exact details we're interested in.
+
+```js
+// src/components/App.jsx
+import gql from "graphql-tag";
+
+const REPOSITORIES = gql`
+  {
+    viewer {
+      repositories(last: 100, isFork: false) {
+        nodes {
+          name
+          description
+          url
+          languages(first: 5) {
+            nodes {
+              color
+              name
+            }
+          }
+        }
+      }
+    }
+  }
+`;
+```
+
+The `viewer` is you (or me), the authenticated user. Any time GitHub is going to return an "array" of items, or something that could be paginated, you'll end up having to ask for its `nodes` (which are the items themselves that you're asking for, in this case repositories and languages).
+
+## Executing the query
+
+In the same file, we can now use the `Query` component to execute the query that we wrote above. What we must provide as its child is a render prop function, a function which will receive the `data` and `loading` state from our query, and it's up to us to decide what we want to render.
+
+```jsx
+// src/components/App.jsx in render function
+import { Query } from "react-apollo";
+
+<Query query={REPOSITORIES} variables={{}}>
+  {({ data, loading }) =>
+    loading ? (
+      <span>I am loading your data...</span>
+    ) : (
+      <TopLanguages repositories={data.viewer.repositories} />
+    )
+  }
+</Query>;
+```
+
+If you're interested in how the `TopLanguages` component works, make sure to check out [this article](https://www.leighhalliday.com/map-reduce-filter-and-pie-charts).
+
+## Conclusion
+
+We made it! We're now up and running with GraphQL in our React app. We used 4 packages to do so, most notably the [Apollo](https://www.apollographql.com/) library. The great thing about Apollo is that it acts as a cache... if you ask for the same data in 2 places within your app, it'll actually only make a single request, or only ask for the data it is missing.

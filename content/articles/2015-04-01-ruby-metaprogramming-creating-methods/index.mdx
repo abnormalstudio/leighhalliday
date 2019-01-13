@@ -1,0 +1,120 @@
+---
+title: Ruby Metaprogramming - Creating Methods
+slug: ruby-metaprogramming-creating-methods
+tags: ruby-on-rails
+date: 2015-04-01
+updated: 2015-04-01
+banner: ../canadaleaf.jpg
+---
+
+## Creating Methods 
+ 
+In this post I'll be discussing another aspect of metaprogramming in Ruby. The ability to create methods dynamically, during runtime. There are many reasons to do this, but one of them is to allow you to write generator methods to help you avoid writing repetitive code. 
+ 
+## The Long Way 
+ 
+It's generally a good practice in Ruby to not access instance variables directly but instead through getter and setter methods. Unless something fancy is happening, these methods don't really do much other than get a value and set a value to the instance variable. 
+ 
+```ruby 
+class Alpaca 
+  def initialize 
+    @name 
+  end 
+ 
+  def name 
+    @name 
+  end 
+ 
+  def name=(value) 
+    @name = value 
+  end 
+end 
+ 
+buddy = Alpaca.new("Buddy") 
+buddy.name # Buddy 
+``` 
+ 
+This is really annoying to write... and thankfully Ruby comes with an easy way to get this same functionality with only having to write a single line of code. 
+ 
+## Enter attr_accessor! 
+ 
+Ruby comes with 3 methods to help you create instance variable getters and setters. `attr_reader` creates a getter, `attr_writer` creates a setter, and `attr_accessor` creates both. To use this we just have to declare it at the top of our class, and Ruby will essentially create our getters and setters for us! 
+ 
+```ruby 
+class Alpaca 
+  attr_accessor :name 
+  def initialize(name) 
+    self.name = name 
+  end 
+end 
+ 
+buddy = Alpaca.new("Buddy") 
+puts buddy.name # "Buddy" 
+``` 
+ 
+## Let's do this ourselves 
+ 
+Because Ruby it is a dynamic language that allows us to create (and remove) methods during runtime, let's try to essentially re-create what Ruby has done for us with the `attr_accessor` code. We'll call it `getset`, `getter`, and `setter`. 
+ 
+We can use the `define_method` method to dynamically create a new method. It accepts the name of the method, and we pass it a block of code, which will become the body of our new method. 
+ 
+To complete this code, we'll also use the `instance_variable_get` and `instance_variable_set` methods to dynamically get and set our instance variables directly. 
+ 
+```ruby 
+# Let's create a base class to extend from.  
+# This class contains the code generator methods that we'll be using. 
+class Base 
+  def self.getset(*args) 
+    args.each do |field| 
+      getter(field) 
+      setter(field) 
+    end 
+  end 
+ 
+  def self.getter(*args) 
+    args.each do |field| 
+      define_method(field) do 
+        instance_variable_get("@#{field}") 
+      end 
+    end 
+  end 
+ 
+  def self.setter(*args) 
+    args.each do |field| 
+      define_method("#{field}=") do |value| 
+        instance_variable_set("@#{field}", value) 
+      end 
+    end 
+  end 
+end 
+ 
+# Now let's create a class and utilize our getset generator 
+class Alpaca < Base 
+  # We'll create accessors for :name and :age 
+  getset :name, :age 
+ 
+  def initialize(name, age) 
+    self.name = name 
+    self.age  = age 
+  end 
+end 
+ 
+buddy = Alpaca.new("Buddy", 24) 
+# Let's call our methods and make sure they return what we expect 
+puts buddy.name # Buddy 
+puts buddy.age # 24 
+ 
+# Let's see if our object responds to the new methods we created 
+puts buddy.respond_to?(:name) # true 
+puts buddy.respond_to?(:name=) # true 
+``` 
+ 
+## Concluding thoughts 
+ 
+If you're a Rails developer, you've probably called methods which were dynamically generated before whether you knew it or not. Your Rails models have had methods created dynamically for each attribute on that model. This is the reason why you can call `@user.name` without having to create a getter method for the `name` attribute. 
+ 
+Another example of a way I've used this technique before is when working with money fields in my Rails models. The values are stored in cents in the database, but often you just want to display the dollar equivalent to your user. To do this we have a code generator to define `money_fields` which creates methods for each of the fields and provides methods to easily get/set the values in either cents or in dollars. 
+ 
+I recommend [Metaprogramming Ruby 2](https://amzn.to/2pyq8pm) to go deeper on this subject. 
+ 
+<a target="_blank"  href="https://www.amazon.com/gp/product/1941222129/ref=as_li_tl?ie=UTF8&camp=1789&creative=9325&creativeASIN=1941222129&linkCode=as2&tag=leigh0b-20&linkId=ae80a179b3b0373ea64894f5d30026e9"><img border="0" src="//ws-na.amazon-adsystem.com/widgets/q?_encoding=UTF8&MarketPlace=US&ASIN=1941222129&ServiceVersion=20070822&ID=AsinImage&WS=1&Format=_SL160_&tag=leigh0b-20" ></a><img src="//ir-na.amazon-adsystem.com/e/ir?t=leigh0b-20&l=am2&o=1&a=1941222129" width="1" height="1" border="0" alt="" style="border:none !important; margin:0px !important;" />

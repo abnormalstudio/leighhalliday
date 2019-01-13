@@ -1,0 +1,116 @@
+---
+title: The Basics of PSQL
+slug: the-basics-of-psql
+tags: databases
+date: 2014-12-07
+updated: 2014-12-07
+banner: ../canadaleaf.jpg
+---
+
+### Overview
+
+PSQL is the command line tool for accessing the PostgreSQL database. I recommend anyone using Postgres to at least learn the basics of how to navigate around and feel comfortable working in this tool. Even for those used to only dealing with data through an ORM like ActiveRecord in Rails, or for those who prefer Navicat for querying data, learning a simple tool like PSQL will go a long way. The next time you're on the server and there is no GUI in site, you'll feel comfortable instead of stressed.
+
+### Connecting and Exiting
+
+To connect to PSQL, unsurprisingly, you enter the command `psql` from the command line. Once you've done that, you'll be plopped into a screen that looks like this:
+
+```
+psql (9.3.5)
+Type "help" for help.
+
+lhalliday=#
+```
+
+This is where it all begins and where we'll enter all the commands from here on out. At any point if you wish to exit the PSQL shell, simply type `\q`.
+
+### Navigating Databases
+
+In PostgreSQL, there is a hierarchy to the data:
+
+- Databases
+  - Tables
+    - Columns
+
+You can think of databases of a bucket for all the data relating to a website. To see which databases are available to you, type the `\l` command. You'll see something similar to the following:
+
+```
+lhalliday=# \l
+                                       List of databases
+       Name        |   Owner   | Encoding |   Collate   |    Ctype    |    Access privileges
+-------------------+-----------+----------+-------------+-------------+-------------------------
+ flipgive_dev      | lhalliday | UTF8     | en_CA.UTF-8 | en_CA.UTF-8 |
+ flipgive_test1    | lhalliday | UTF8     | en_CA.UTF-8 | en_CA.UTF-8 |
+ idioma            | lhalliday | UTF8     | en_CA.UTF-8 | en_CA.UTF-8 |
+ idioma_test       | lhalliday | UTF8     | en_CA.UTF-8 | en_CA.UTF-8 |
+```
+
+To choose which database you'd like to work with you use the `\c db_name` command.
+
+```
+lhalliday=# \c paisita
+You are now connected to database "paisita" as user "lhalliday".
+paisita=#
+```
+
+### Navigating Tables
+
+Now that we're inside the **paisita** database. Let's see which tables are available to us. To do that we use the `\dt` command.
+
+```
+
+paisita=# \dt
+                 List of relations
+ Schema |         Name          | Type  |   Owner
+--------+-----------------------+-------+-----------
+ public | categories            | table | lhalliday
+ public | category_translations | table | lhalliday
+ public | idioma_phrases        | table | lhalliday
+ public | post_translations     | table | lhalliday
+ public | posts                 | table | lhalliday
+ public | schema_migrations     | table | lhalliday
+ public | setting_translations  | table | lhalliday
+ public | settings              | table | lhalliday
+ public | uploads               | table | lhalliday
+ public | user_translations     | table | lhalliday
+ public | users                 | table | lhalliday
+(11 rows)
+```
+
+To see the details of a table, you simply type `\d table_name`.
+
+```
+paisita=# \d users
+                                                Table "public.users"
+             Column              |            Type             |                     Modifiers
+---------------------------------+-----------------------------+----------------------------------------------------
+ id                              | integer                     | not null default nextval('users_id_seq'::regclass)
+ name                            | character varying           | not null
+ email                           | character varying           | not null
+ linkedin                        | character varying           |
+ twitter                         | character varying           |
+ crypted_password                | character varying           | not null
+ salt                            | character varying           | not null
+ remember_me_token               | character varying           |
+ remember_me_token_expires_at    | timestamp without time zone |
+ reset_password_token            | character varying           |
+ reset_password_token_expires_at | timestamp without time zone |
+ reset_password_email_sent_at    | timestamp without time zone |
+ upload_id                       | integer                     |
+ github                          | character varying           |
+ snippet                         | text                        |
+Indexes:
+    "users_pkey" PRIMARY KEY, btree (id)
+    "index_users_on_remember_me_token" btree (remember_me_token)
+    "index_users_on_reset_password_token" btree (reset_password_token)
+```
+
+To select or perform SQL within the console, you simply write it as normal, remembering to end your statements with a **;**
+
+```
+paisita=# select count(*) from users;
+ count
+-------
+     1
+(1 row)
+```

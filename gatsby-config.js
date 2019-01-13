@@ -81,10 +81,11 @@ const queries = [
 
 module.exports = {
   siteMetadata: {
-    siteUrl: "https://www.paisaencanada.com",
-    title: "Paisa en Canadá",
-    description: "Paisa en Canadá",
-    author: "@paisaencanada"
+    siteUrl: "https://www.leighhalliday.com",
+    title: "Leigh Halliday",
+    description:
+      "Leigh is a developer at FlipGive & ABNORMAL studio. He writes about Ruby, Rails, React, and JavaScript.",
+    author: "@leighchalliday"
   },
   plugins: [
     "gatsby-plugin-react-helmet",

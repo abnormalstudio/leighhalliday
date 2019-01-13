@@ -1,0 +1,137 @@
+---
+title: Building a CLI in Ruby with GLI
+slug: building-cli-ruby-with-gli
+tags: ruby-on-rails
+date: 2015-11-25
+updated: 2015-11-25
+banner: ../canadaleaf.jpg
+---
+
+Typically in Rails apps we use [rake tasks](https://github.com/ruby/rake) as a way to interact with our application through the command line. We're all familiar with running code like `rake db:migrate`, or custom rake tasks that we create ourselves. 
+ 
+There is another way to create CLI programs in Ruby with a very nice interface, and that is with a gem called [GLI](https://github.com/davetron5000/gli). GLI provides a nice DSL to define the different tasks and which flags, switches, and arguments each one expects to receive. It also allows you to see a list of available commands that you can run and what options they are expecting. 
+ 
+## Getting started with a CLI 
+ 
+I've created a small [demo setup](https://github.com/leighhalliday/gli_demo) to show how you might go about setting up commands with GLI. 
+ 
+In the Gemfile there is only a single gem: `gli`. The directory structure has a `bin` folder where I've put a single executable file (our way in to the CLI), and a `lib` folder which will contain the code for this project and the different commands that are supported. 
+ 
+The `commander` executable file is a Ruby script which sets up some namespaces and brings the `gli` code into the file. It sets a name for this program, sets a few options, and then has a line which requires a file in `../lib/cli`, which will bring in the rest of the code which will be used. Remember to make this file executable using the `chmod` command. Without this you won't be able to execute it from the command line. I have set the permissions to `-rwxr-xr-x` with the command `chmod 755 bin/commander`. 
+ 
+```ruby 
+#!/usr/bin/env ruby 
+ 
+# If you want to run this inside a Rails app 
+# require_relative '../config/environment' 
+ 
+require 'gli' 
+ 
+module Commander 
+  module CLI 
+    include GLI::App 
+    extend self 
+ 
+    program_desc 'CLI demo application' 
+    subcommand_option_handling :normal 
+    arguments :strict 
+ 
+    require_relative '../lib/cli' 
+ 
+    exit run(ARGV) 
+  end 
+end 
+``` 
+ 
+The file found in `lib/cli.rb` doesn't contain too much code and really just includes the files which contain each command... in our case a single one called `test.rb`. 
+ 
+```ruby 
+module Commander 
+  module CLI 
+    require_relative 'cli/test' 
+  end 
+end 
+``` 
+ 
+Without even looking at the `test.rb` file, let's run the `./bin/commander` program from the command line to see its output: 
+ 
+``` 
+NAME 
+    commander - CLI demo application 
+ 
+SYNOPSIS 
+    commander [global options] command [command options] [arguments...] 
+ 
+GLOBAL OPTIONS 
+    --help - Show this message 
+ 
+COMMANDS 
+    help - Shows a list of commands or help for one command 
+    test - A test command 
+``` 
+ 
+GLI shows us which commands are available along with a description for what each one does. 
+ 
+## The command itself 
+ 
+We've seen that there is a single command called `test`. Let's take a look at what it does and how it is defined. 
+ 
+```ruby 
+module Commander 
+  module CLI 
+    desc 'A test command' 
+    arg_name '<args>...', %i(:multiple) 
+    command :test do |c| 
+      c.desc 'Pass a provider argument' 
+      c.flag :provider, type: String 
+ 
+      c.desc 'Process file async' 
+      c.switch 'async' 
+ 
+      c.action do |global_options, options, args| 
+        p global_options 
+        p options 
+        p args 
+      end 
+    end 
+  end 
+end 
+``` 
+ 
+This file defines the `test` command along with all of the different flags and switches that it has. The `action` method and its block of code is where the actual processing is done. In our case, all it does is print out the different options and arguments which were passed to it so we can see what it looks like. This is where you would call out to other classes in your codebase to do the actual work. 
+ 
+By running `./bin/commander test --help` we can see what this command is expecting along with some information about it. 
+ 
+``` 
+NAME 
+    test - A test command 
+ 
+SYNOPSIS 
+    commander [global options] test [command options] <args>... 
+ 
+COMMAND OPTIONS 
+    --[no-]async   - Process file async 
+    --provider=arg - Pass a provider argument (default: none) 
+``` 
+ 
+If we run the actual command with this line `./bin/commander test --provider nope --async arg1 arg2` we'll get this output from our script: 
+ 
+```ruby 
+{"help"=>false, :help=>false} 
+{"provider"=>"nope", :provider=>"nope", "async"=>true, :async=>true} 
+["arg1", "arg2"] 
+``` 
+ 
+## CLI within a Rails app 
+ 
+This example doesn't live within a Rails app but it is quite easy to do so. You'll see in the commander file that I have this line commented out: 
+ 
+```ruby 
+require_relative '../config/environment' 
+``` 
+ 
+By uncommenting that, it will import the Rails environment and you then have access to the models and other code found in your Rails app. 
+ 
+## Conclusion 
+ 
+GLI is a nice tool to build a CLI with in Ruby! Give it a try for when you have complicated actions that you want to initiate from the command line.

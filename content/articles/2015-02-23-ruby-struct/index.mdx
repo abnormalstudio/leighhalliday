@@ -1,0 +1,137 @@
+---
+title: The simple but powerful Ruby Struct
+slug: ruby-struct
+tags: ruby-on-rails
+date: 2015-02-23
+updated: 2015-02-23
+banner: ../canadaleaf.jpg
+---
+
+## What is a Struct? 
+ 
+A Struct in Ruby is one of the built-in classes which basically acts a little like a normal custom user-created class, but provides some nice default functionality and shortcuts when you don't need a full-fledged class. Below I'll discuss some of the different places you might want to use a Struct, but first let's look into what a Struct looks like and a comparable class. 
+ 
+Working with a Struct: 
+ 
+```ruby 
+SelectOption = Struct.new(:display, :value) do 
+  def to_ary 
+    [display, value] 
+  end 
+end 
+ 
+option_struct = SelectOption.new("Canada (CAD)", :cad) 
+ 
+puts option_struct.display 
+# Canada (CAD) 
+puts option_struct.to_ary.inspect 
+# ["Canada (CAD)", :cad] 
+``` 
+ 
+Working with a Class: 
+ 
+```ruby 
+class SelectOption 
+ 
+  attr_accessor :display, :value 
+ 
+  def initialize(display, value) 
+    @display = display 
+    @value   = value 
+  end 
+ 
+  def to_ary 
+    [display, value] 
+  end 
+ 
+end 
+ 
+option_struct = SelectOption.new("USA (USD)", :usd) 
+ 
+puts option_struct.display 
+# USA (USD) 
+puts option_struct.to_ary.inspect 
+# ["USA (USD)", :usd] 
+``` 
+ 
+You can see that in this example we get the same functionality using a Struct vs a Class, but the Struct saves us from writing an initializer method and defining attr_accessor methods. 
+ 
+## Why should I use a Struct? 
+ 
+You don't _have_ to use a Struct, but it is there for certain situations where it can make your life easier. A few places that I've used them before are below. 
+ 
+### As a temporary data structure 
+ 
+Take an example of a from date and a to date when filtering data from a form. Instead of using these 2 values everywhere you need them, maybe you'd like to have a bit more structured data, and define a FilterRange Struct, which has a from_date and to_date, and maybe even a method to count the number of days between the two dates. Sure you could create a class for this, but maybe that's overkill for now and a small Struct could help clean up your code. 
+ 
+### As internal class data 
+ 
+Another way to use a Struct is within another Class. In the example below, after a Person object is initialized, we can work with the Address struct that encapsulates all of the address fields into a single Struct object. 
+ 
+```ruby 
+class Person 
+ 
+  Address = Struct.new(:street_1, :street_2, :city, :province, :country, :postal_code) 
+ 
+  attr_accessor :name, :address 
+ 
+  def initialize(name, opts) 
+    @name = name 
+    @address = Address.new(opts[:street_1], opts[:street_2], opts[:city], opts[:province], opts[:country], opts[:postal_code]) 
+  end 
+ 
+end 
+ 
+leigh = Person.new("Leigh Halliday", { 
+  street_1: "123 Road", 
+  city: "Toronto", 
+  province: "Ontario", 
+  country: "Canada", 
+  postal_code: "M5E 0A3" 
+}) 
+ 
+puts leigh.address.inspect 
+# <struct Person::Address street_1="123 Road", street_2=nil, city="Toronto", province="Ontario", country="Canada", postal_code="M5E 0A3"> 
+``` 
+ 
+### As a testing stub 
+ 
+Structs are also an easy way to stub out objects when testing. As long as they respond the same way as the object you are stubbing out, you're free to use them! 
+ 
+Here we are testing that our Brewer object brews a cup of coffee correctly. We don't want to have to deal with all of the normal DRM that KCup provides as a wonderful service to the consumer, so let's just create a small stub object that we can use to validate our brew. 
+ 
+```ruby 
+KCup = Struct.new(:size, :brewing_time, :brewing_temp) 
+colombian = KCup.new(:small, 60, 85) 
+ 
+brewer = Brewer.new(colombian) 
+expect(brewer.brew).to eq(true) 
+``` 
+ 
+## Struct vs. OpenStruct 
+ 
+OpenStruct acts very similarly to Struct, except that it doesn't have a defined list of attributes. It can accept a hash of attributes when instantiated, and you can add new attributes to the object dynamically. It isn't as fast as Struct, but it is more flexible. 
+ 
+An example taken from the Ruby documentation on OpenStruct: 
+ 
+```ruby 
+australia = OpenStruct.new(:country => "Australia", :population => 20_000_000) 
+p australia   # -> <OpenStruct country="Australia" population=20000000> 
+``` 
+ 
+## New in Ruby 2.3 
+ 
+As of Ruby 2.3 you can now use the `dig` method to access attributes within a Struct instance. Because Struct, OpenStruct, Hash, Array all have the `dig` method, you can dig through any combination of them. 
+ 
+```ruby 
+# Define 2 different Structs 
+Vendor = Struct.new(:name, :address) 
+Product = Struct.new(:name, :vendor, :price) 
+ 
+# Create instances of them 
+localFarmer = Vendor.new('Farmer Brown', { city: 'Toronto' }) 
+duck = Product.new('Duck Egg', localFarmer, 0.25) 
+ 
+# Dig through the Structs + Hash to get value 
+puts duck.dig(:vendor, :address, :city) # Toronto 
+```

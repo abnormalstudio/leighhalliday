@@ -40,8 +40,8 @@ const IndexPage = () => (
                 slug
                 title
                 tags
-                date(formatString: "MMMM D, YYYY", locale: "es")
-                updated(formatString: "MMMM D, YYYY", locale: "es")
+                date(formatString: "MMM D, YYYY", locale: "en")
+                updated(formatString: "MMM D, YYYY", locale: "en")
                 banner {
                   childImageSharp {
                     fluid(maxWidth: 800) {
@@ -62,7 +62,7 @@ const IndexPage = () => (
 
       return (
         <Layout>
-          <SEO title="Home" keywords={["gatsby", "application", "react"]} />
+          <SEO title="Home" />
           <ArticleRow articles={topArticles} />
           <Single>
             <ArticleGrid articles={restArticles} />

@@ -1,0 +1,65 @@
+---
+title: Requiring Uniqueness in Rails
+slug: requiring-uniqueness-in-rails
+tags: ruby-on-rails
+date: 2015-04-30
+updated: 2015-04-30
+banner: ../canadaleaf.jpg
+---
+
+## How to ensure your values are unique 
+ 
+It's often the case that you want to ensure that you've got uniqueness in your data. You only want an email address to be used once... otherwise what would happen when that person tries to log in? Which user account would you log in with? 
+ 
+There are other cases too, for example when you're dealing with giftcards. You only want that giftcard number or coupon code to be used a single time. 
+ 
+Rails has an easy way to handle this, but the problem is that it isn't enough. I'll explain why below. 
+ 
+## Validating for uniqueness 
+ 
+Rails has a handy validator to ensure that records are unique. You simply write `validates :field, uniqueness: true`, and it will do its best to make sure that the field has a unique value. 
+ 
+You can also add an extra option: `case_sensitive: false`, which will ensure that it won't allow EMAIL@email.com to be saved if email@email.com is in the database. Postgres is case sensitive, so you really need this if you want to ensure uniqueness. 
+ 
+Alternatively you could downcase the value before saving it to the database, which is a perfectly valid option, but not something you'd probably want to do with something where the case matters... like the name of something or a coupon code. 
+ 
+```ruby 
+class Brand < ActiveRecord::Base 
+  validates :slug, uniqueness: true 
+  validates :name, uniqueness: { case_sensitive: false } 
+end 
+``` 
+ 
+## This isn't enough! 
+ 
+It might not happen for a while... but it'll come back to bite you if you only rely on Rails for ensuring uniqueness. Here's how it works and why it will hurt you, especially as your traffic increases. 
+ 
+When you try to save a record, these steps happen: 
+1. Query the database to see if this value already exists. 
+2. If there is a record, validation is false. 
+3. If there is no record, validation is true. 
+ 
+The problem happens when you have 2 users at the same time trying to create a user account with the same email address. 
+1. USER1 - Query the database to see if this value already exists. 
+2. USER2 - Query the database to see if this value already exists. 
+3. USER1 - OK, doesn't exist, let's insert the record. 
+4. USER2 - OK, doesn't exist, let's insert the record. 
+ 
+What you now end up with is the same email in there twice... bad times lie ahead for you my friend. 
+ 
+## Unique indexes are the solution 
+ 
+The key is to push the work to the database, which handles uniqueness much better and won't allow you to run into this problem. To do this you can add a unique index to your table on the column you'd like unique. 
+ 
+One point about Postgres is that it is case-sensitive. So you can create your own index manually, forcing it to be a unique index on the downcase (or lower) version of the string. 
+ 
+```ruby 
+execute <<-SQL 
+  CREATE UNIQUE INDEX brand_lower_name_idx ON brands (LOWER(name)); 
+SQL 
+add_index :brands, :slug, unique: true 
+``` 
+ 
+## Final Thoughts 
+ 
+I recommend doing both approaches to ensure uniqueness. Having the validation in Rails will ensure that you get nice error messages to show to your users, but also having the validation done at the database level will ensure that your data stays clean. A side benefit of having the index is that it will also speed up your queries when Rails checks to see if the value is unique.

@@ -1,0 +1,274 @@
+---
+title: Creating a Ruby DSL
+slug: creating-ruby-dsl
+tags: ruby-on-rails
+date: 2015-03-12
+updated: 2015-03-12
+banner: ../canadaleaf.jpg
+---
+
+## Overview 
+ 
+I've been in Colombia for the last month visiting family, and last week I had the opportunity to hang out with the [Medellin.rb meetup](http://www.meetup.com/medellin-rb/). It was led by [Oscar Rendon](https://twitter.com/orendon) and it was all about DSLs in Ruby. It was also a fun challenge to try to think and talk about programming in Spanish... not something I do every day. 
+ 
+## What is a DSL? 
+ 
+The [definition from Wikipedia](http://en.wikipedia.org/wiki/Domain-specific_language) of what a DSL is: 
+> A domain-specific language (DSL) is a computer language specialized to a particular application domain. This is in contrast to a general-purpose language (GPL), which is broadly applicable across domains, and lacks specialized features for a particular domain. 
+ 
+A DSL is like a mini language inside of a language. It's a specific syntax for describing a domain/area of your application. Think of a DSL like a mini game within a game... like when you were raising/racing Chocobos in Final Fantasy 7. A DSL in Ruby is still written in Ruby, it just provides a nicer interface and language for performing common tasks. 
+ 
+## DSLs you have seen 
+ 
+You may not have realized it, but if you write Rails applications you most likely work with a variety of DSLs every day. Below are a few examples of some commons ones! 
+ 
+### Rails Routing 
+ 
+```ruby 
+Rails.application.routes.draw do 
+  root 'pages#home' 
+  resources :pages, only: [:index, :show] 
+end 
+``` 
+ 
+### Rspec 
+ 
+```ruby 
+describe Array do 
+  describe "includes_subset?" do 
+    it "finds subsets" do 
+      a = [1,2,3,4,5] 
+      b = [1,2] 
+      expect(a.includes_subset?(b)).to eq(true) 
+    end 
+  end 
+end 
+``` 
+ 
+### Rake Tasks 
+ 
+```ruby 
+namespace :backup do 
+  desc "Backup assets" 
+  task :assets => :environment do 
+    tar_assets 
+  end 
+end 
+``` 
+ 
+### Capistrano 
+ 
+```ruby 
+role :app, %w{deploy@localhost} 
+ 
+server 'localhost', 
+  user: 'deploy', 
+  roles: %w{app}, 
+  ssh_options: { 
+    keys: %w(/home/deploy/.ssh/id_rsa), 
+    auth_methods: 'publickey' 
+  } 
+``` 
+### DB Migrations 
+ 
+```ruby 
+class CreateUploads < ActiveRecord::Migration 
+  def change 
+    create_table :uploads do |t| 
+      t.string :name 
+      t.attachment :file 
+      t.timestamps 
+    end 
+  end 
+end 
+``` 
+ 
+## Blocks Are Key to DSLs 
+ 
+Knowing how blocks work is crucial to understanding how DSLs work. I think of a block in Ruby as basically just a chunk of code that you can pass around to other methods. If you're used to writing Javascript you're definitely comfortable passing around functions, and blocks in Ruby are fairly similar to that. 
+ 
+```ruby 
+double = ->(num) { 
+  num * 2 
+} 
+puts double.call(2) 
+# 4 
+``` 
+ 
+### Passing Blocks 
+ 
+You've most likely used blocks before when calling the `each` method on an Array, or the `collect` method. 
+ 
+```ruby 
+[1, 2, 3].each do |item| 
+  puts item * 2 
+end 
+# 2, 4, 6 
+``` 
+ 
+What you are doing is passing the block of code between `do` and `end` to the `each` method of the Array class. 
+ 
+### Receiving Blocks 
+ 
+On the recipients side, there are a couple ways to receive the block that was passed. The first way is via the `yield` keyword in Ruby. `yield` will call the block of code that was passed to the method. You can even pass variables to the block of code. 
+ 
+```ruby 
+class Array 
+  def each 
+    array_size = self.size - 1 
+    for i in 0..array_size 
+      yield self[i] 
+    end 
+  end 
+end 
+``` 
+ 
+There is an alternate way of receiving a block of code that is called a named-block. This essentially allows you to save the block of code to a variable, which gives you the flexibility to pass the block on to another method. If you wish to execute the code inside of the block, you can do so via the `call` method on it. 
+ 
+```ruby 
+class Array 
+  def each(&block) 
+    array_size = self.size - 1 
+    for i in 0..array_size 
+      block.call self[i] 
+    end 
+  end 
+end 
+``` 
+ 
+### Block Context 
+ 
+Normally a block has the context of the place it was instantiated. It is possible to change this, to be the place where it is being called, but to do this instead of doing the usual `yield` or `block.call()`, you call it via the `instance_eval(&block)` method. 
+ 
+```ruby 
+class Dummy 
+ 
+  def initialize 
+    @name = "Inside" 
+  end 
+ 
+  def print_name(&block) 
+    # Has outside context 
+    block.call 
+    # Has inside context 
+    instance_eval(&block) 
+  end 
+ 
+end 
+ 
+@name = "Outside" 
+ 
+Dummy.new.print_name do 
+  puts @name 
+end 
+ 
+# Outside 
+# Inside 
+``` 
+ 
+## Creating our own DSL 
+ 
+In the Medellín Ruby meetup we finished things up by doing a Code Kata. In groups of 3 we tried to create a Ruby DSL to generate HTML. The output was to look like the following, and below is how the DSL should be called. To each HTML element you can pass text, options (html attributes), and a block. All are optional. 
+ 
+```html 
+<html> 
+  <body> 
+    <div id="container"> 
+      <ul class="pretty"> 
+        <li class="active">Item 1</li> 
+        <li>Item 2</li> 
+      </ul> 
+    </div> 
+  </body> 
+</html> 
+``` 
+ 
+```ruby 
+output = FancyMarkup.new.document do 
+  body do 
+    div id: "container" do 
+      ul class: "pretty" do 
+        li "Item 1", class: :active 
+        li "Item 2" 
+      end 
+    end 
+  end 
+end 
+``` 
+ 
+The solution I eventually came up with (after some serious refactoring) is below. I used some Ruby meta-programming by not actually defining methods for each HTML element, but rather utilizing `method_missing` as a catch-all, which then passes the element name, the args, and the block on to the `tag` method, which does the heavy lifting of generating the HTML. 
+ 
+One other thing I utilized here was that you can also check if a block was actually passed to the method by using the `block_given?` method. 
+ 
+```ruby 
+class FancyMarkup 
+ 
+  attr_accessor :indents, :html 
+ 
+  def initialize 
+    @indents = 0 
+    @html = "" 
+  end 
+ 
+  # Catch-all method to avoid creating methods 
+  # for each HTML element. 
+  def method_missing(m, *args, &block) 
+    tag(m, args, &block) 
+  end 
+ 
+  # The first method called when creating an 
+  # HTML document. 
+  def document(*args, &block) 
+    tag(:html, args, &block) 
+  end 
+ 
+  private 
+ 
+  # Create the HTML tag 
+  # @param (String|Symbol) HTML tag (ul, li, strong, etc...) 
+  # @param (Array) Can contain a String of text or a Hash of attributes 
+  # @param (Block) An optional block which will further nest HTML 
+  def tag(html_tag, args, &block) 
+    content = find_content(args) 
+    options = html_options(find_options(args)) 
+ 
+    html << "\n#{indent}<#{html_tag}#{options}>#{content}" 
+    if block_given? 
+      @indents += 1 
+      instance_eval(&block) 
+      @indents -= 1 
+      html << "\n#{indent}" 
+    end 
+    html << "</#{html_tag}>" 
+  end 
+ 
+  # Searching the tag arguments, find the text/context element. 
+  def find_content(args) 
+    args.detect{|arg| arg.is_a? String} 
+  end 
+ 
+  # Searching the tag arguments, find the hash/attributes element 
+  def find_options(args) 
+    args.detect{|arg| arg.is_a? Hash} || {} 
+  end 
+ 
+  # Indent output number of spaces 
+  def indent 
+    "  " * indents 
+  end 
+ 
+  # Build html options string from Hash 
+  def html_options(options) 
+    options.collect{|key, value| 
+      value = value.to_s.gsub('"', '\"') 
+      " #{key}=\"#{value}\"" 
+    }.join("") 
+  end 
+end 
+``` 
+ 
+## Final Thoughts 
+ 
+After writing this article I've realized just how important blocks are to Ruby. Learning them well and understanding how DSLs work will improve the Ruby code that you write. One new thing I learned at the Medellín meetup was how to switch the context in which the block executes in, which allows you to avoid having to pass `self` to the block and then having to call all methods with a prefix, like we do when creating a Rails DB migration (Example: `t.string :name`).  
+ 
+Last but not least, the Ruby community is awesome! Thanks!!

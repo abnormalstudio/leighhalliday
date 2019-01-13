@@ -83,7 +83,7 @@ const ArticleGrid = ({ articles }: Props) => (
             font-size: 0.75rem;
           `}
         >
-          LEER MÁS
+          READ MORE
         </Link>
       </article>
     ))}

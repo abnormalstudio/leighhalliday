@@ -1,0 +1,102 @@
+---
+title: What is Rack?
+slug: what-is-rack
+tags: ruby-on-rails
+date: 2015-02-13
+updated: 2015-02-13
+banner: ../canadaleaf.jpg
+---
+
+## The basics of Rack 
+ 
+Taken from the [Rack website](http://rack.github.io/):  
+ 
+> Rack provides a minimal interface between webservers supporting Ruby and Ruby frameworks.  
+ 
+It gives a large number of webservers (Unicorn, Puma, Phusion Passenger, WEBrick) a common way of communicating with the most common Ruby frameworks (Ruby on Rails, Sinatra, Lotus, Padrino). It allows both parties to speak HTTP the same way. 
+ 
+## What a Rack application consists of 
+ 
+A Rack application is any object that responds to the `call` method. The `call` method is passed an `env` variable, and is expected to respond with an array that consists of 3 items. 
+- [HTTP status code](http://en.wikipedia.org/wiki/List_of_HTTP_status_codes) (200, 400, etc...) 
+- A Hash of headers 
+- The body of the response... an object that responds to `each` (an Array for example) 
+ 
+Here is an example of a simple Rack application: 
+ 
+```ruby 
+# config.ru 
+require 'rack' 
+ 
+class HelloApp 
+  def self.call(env) 
+    [200, {'Content-Type' => 'text/html'}, ["Hello there."]] 
+  end 
+end 
+ 
+run HelloApp 
+``` 
+ 
+Now if we were to run `rackup` from the command line and visit `http://localhost:9292` in the browser, we should see `Hello there.` We've created our first simple Rack application. 
+ 
+The `env` variable that is passed to the `call` method contains a Hash with information about the environment in which this application is being run and also about the incoming HTTP request. This information is passed from the webserver to your Rack application. 
+ 
+## Rack and Rails 
+ 
+As I mentioned earlier, Rack allows webservers to talk with Ruby frameworks, one of those being Ruby on Rails. In a basic sense, Rails is simply a Rack application, albeit a little more sophisticated than the one above. 
+ 
+When you create a new Rails application, you'll notice that it creates a file named `config.ru` in the root folder of your app. This file is used by webservers to bootstrap your Rails application. 
+ 
+```ruby 
+require ::File.expand_path('../config/environment',  __FILE__) 
+run Rails.application 
+``` 
+ 
+## Rack middleware 
+ 
+### What is middleware? 
+ 
+Middleware in Rack is something that allows you to chain a series of calls together, which can modify or halt request data before reaching the ultimate end of the Rack application. 
+ 
+We can use middleware to add headers to the HTTP response (how long the request took to process, how many more calls before the person is rate-limited), we can modify the body of the response (replacing images with another image, injecting something into our HTML), etc... 
+ 
+### Creating our own middleware 
+ 
+A simple example below is one that times how long it takes to process the request and outputs that to the standard output. 
+ 
+```ruby 
+class Timer 
+  def initialize(app) 
+    @app = app 
+  end 
+ 
+  def call(env) 
+    before = Time.now.to_f 
+    status, headers, body = @app.call env 
+    puts "#{(Time.now.to_f - before) * 1000.0} milliseconds." 
+    [status, headers, body] 
+  end 
+end 
+``` 
+ 
+The middleware captures the before time, calls `@app.call(env)`, which gives control to the next middleware, captures the response, prints the time, and then returns the response. We could have also modified any part of the `env` Hash, and/or modified the body before returning it. 
+ 
+The way you add middleware is by using the `use` keyword instead of the usual `run` keyword. An example of this is below: 
+ 
+```ruby 
+app = Rack::Builder.new do 
+  use Timer 
+  run HelloApp 
+end 
+run app 
+``` 
+ 
+Middleware are called in order, and it is their responsibility to keep the chain continuing by calling `call` on the next app. If you've used the [Express framework in Node](http://expressjs.com/) you are probably already familiar with middleware as it is heavily used there. 
+ 
+### Available Rack middleware 
+ 
+In the Rack GitHub repository there is a great [list of available middleware](https://github.com/rack/rack/wiki/List-of-Middleware) for you to use. They cover everything from rate limiting to injecting data into your HTML response (ie. a Google Analytics tag or information on how long the request took). 
+ 
+## Summary 
+ 
+Whether you're in the market for creating your own Ruby framework or whether you just want to gain a deeper understanding of how Rails works, it's a good thing to know Rack. It is foundational to how Rails works! I've personally used it to stop certain bots from hitting my Rails application as they were sending strange data and causing problems.

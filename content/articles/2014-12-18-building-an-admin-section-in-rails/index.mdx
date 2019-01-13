@@ -1,0 +1,116 @@
+---
+title: Building an admin section in Rails
+slug: building-an-admin-section-in-rails
+tags: ruby-on-rails
+date: 2014-12-18
+updated: 2014-12-18
+banner: ../canadaleaf.jpg
+---
+
+### Today's Goal: Creating an Admin Section 
+ 
+This website, along with most of the other ones I create end up having an admin section; a place where data can be created and managed. It's only accessible to registered users (or possibly a subset of those users), and has a different look and feel to it than the rest of the website. 
+ 
+While the front of the website is meant to look great, the back is meant to get work done. You can think of the front of the website like an iPhone, and the back like a Blackberry, with physical keyboard and all haha :) That being said, the admin section should still look good, so maybe it's more of an Android? 
+ 
+### Routing and Namespacing 
+ 
+This admin section lives off of the /admin path. It's a completely separate part of the website. For something like this, you can use what is called a namespace in Rails. This allows you to scope everything within this namespace separately. In our routes file, we'll define the admin namespace like so: 
+ 
+```ruby 
+namespace :admin do 
+  root 'posts#index' 
+  resources :posts, except: [:show] 
+  resources :categories, except: [:show] 
+  resources :users, except: [:show] 
+  resources :uploads, only: [:index, :show, :update, :create] 
+  resources :settings, only: [:index, :edit, :update] 
+  mount Idioma::Engine => "/idioma" 
+end 
+``` 
+ 
+When using namespaces, we can use our url helper methods, all prefixed with __admin__. `admin_root_path`, `admin_categories_path`, etc... 
+ 
+Now, for our controllers, we can put everything into a folder called "admin" (our views are also in an admin folder), and what I like to do is to create a base controller that all of the others will extend from. 
+ 
+```ruby 
+# app/controllers/admin/base_controller.rb 
+class Admin::BaseController < ApplicationController 
+ 
+end 
+``` 
+ 
+And all of our other admin controllers will extend from this base one. This leads us to our next section, that of permissions. 
+ 
+### Controlling Admin Access (Permissions) 
+ 
+Because we don't want everyone to have access to editing and managing our content, we'll want to control access to the entire admin namespace. This is easily done in our new `Admin::BaseController` controller class that we just finished setting up. 
+ 
+```ruby 
+class Admin::BaseController < ApplicationController 
+  layout 'admin' 
+  before_filter :require_login 
+ 
+  private 
+    def not_authenticated 
+      redirect_to login_path, alert: "Please login first" 
+    end 
+end 
+``` 
+ 
+We're using a before filter called `:require_login`, which comes from the [Sorcery](https://github.com/NoamB/sorcery) gem that I am using for user authentication. When this is in place, it will enforce having an authenticated user, and in the case they are not authenticated, it will call the `not_authenticated` method, which we have simply just redirecting the person to the login page. 
+ 
+This website doesn't require multiple user levels with different roles and the like... if it did, we'd need to not just check if a user is logged in, but if they also have permission to enter this section. If that were the case we could use something along the lines of [CanCanCan](https://github.com/CanCanCommunity/cancancan) (the Rails4 version of CanCan). 
+ 
+### Layouts, Javascript, CSS 
+ 
+<img src="https://s3.amazonaws.com/leighhalliday/manual/admin-post.png" style="max-width: 100%;" /> 
+ 
+In the Admin::BaseController there is a line of code that says `layout 'admin'`. This tells Rails to use the 'admin' layout for all of the admin section, not the normal one. By doing this we can use custom Javascript and CSS code for our admin section, done by the following lines of code within the admin layout. 
+ 
+```ruby 
+= stylesheet_link_tag 'admin', media: 'all', 'data-turbolinks-track' => true 
+= javascript_include_tag 'admin', 'data-turbolinks-track' => true 
+``` 
+ 
+This is useful because in the admin you'll definitely want a different design than the front of the website, and most likely different Javascript files. 
+ 
+### Searching and Pagination 
+ 
+Admins tend to more closely resemble a CRUD interface, where you list out the models and can go in and edit them. Being able to search and paginate the different models is crucial. 
+ 
+[Ransack](https://github.com/activerecord-hackery/ransack) is a pretty cool gem which allows you to easily create forms that can search your models in different ways. It creates dynamic fields such as "title_cont" which will perform a `where title ilike '%value%'` query on the database, or "title_eq" which will query where there is an exact match. Below I am using the "title_cont" field to easily search for Categories that have a match. 
+ 
+```ruby 
+.page-header__search-body 
+  = search_form_for [:admin, @search], :builder => SimpleForm::FormBuilder do |f| 
+    .form-group 
+      .input-group 
+        = f.input :title_cont, label: t('admin.search'), required: false 
+    .form-group 
+      .input-group 
+        %span.input-group-btn 
+          = f.submit t('admin.go'), class: "btn btn-default" 
+```  
+ 
+Another great gem is [Will Paginate](https://github.com/mislav/will_paginate) which allows us to easily paginate the results on our index pages. By calling the __paginate__ method, we're able to get paginated results. By default I think it shows around 30 results per page. 
+ 
+```ruby 
+# GET /admin/categories 
+def index 
+  params[:q] ||= {s: "name asc"} 
+ 
+  @search = Category.search(params[:q]) 
+  @categories = @search.result.paginate(page: params[:page]) 
+end 
+``` 
+ 
+And in our view we can use the will_paginate helper method to print out links to the different pages that are available. 
+ 
+```ruby 
+= will_paginate @categories 
+``` 
+ 
+### Next Steps 
+ 
+Up next we'll talk about user authentication. It maybe should have come before this article, because this article assumes we have a way to authenticate users, but that's OK. At least this way we know why we want to have users and authenticate them in the first place.

@@ -1,0 +1,125 @@
+---
+title: User Authentication in Rails
+slug: user-authentication-in-rails
+tags: ruby-on-rails
+date: 2015-01-03
+updated: 2015-01-03
+banner: ../canadaleaf.jpg
+---
+
+### Our Goal 
+ 
+In this article I'd like to discuss how to implement user authentication into this blog. [In this article](http://www.leighhalliday.com/posts/making-this-site-modelling-data) about modelling the data for our blog we talked about wanting to keep track of Authors, and that they would be stored in the User model. This is the user that will need to authenticate into the system. 
+ 
+By having the user authenticate, we can give them access to the admin section of the website, which has security and permissions attached to it. 
+ 
+### User Authentication in Rails 
+ 
+There are a number of ways you can include authentication on a website. You can opt for [basic http auth](http://api.rubyonrails.org/classes/ActionController/HttpAuthentication/Basic.html) which is quite easy to implement in Ruby on Rails, but for this I wanted to have the authentication tied to a User account in the system, with a proper login form. 
+ 
+The two most common gems for handling user authentication are [Devise](https://github.com/plataformatec/devise) and [Sorcery](https://github.com/NoamB/sorcery). Both are more than capable, supported by the community, and offer an easy way to login using external services (Facebook, Twitter), but they are fairly different when it comes to ideology. 
+ 
+Devise acts as a Rails Engine, which already has controllers, actions, and views, which you can override if you want to, or you can use them with the default functionality that they come with. 
+ 
+Sorcery is much more light-weight, and provides you with a number of helper methods that you can use, but you're on your own in terms of setting up controllers, actions, and views for handling logging in and logging out of the website. 
+ 
+I decided to choose Sorcery for this project, mostly because I have worked with Devise before on others and wanted to try it out. In the end I much preferred having the freedom that Sorcery provided, able to create my own controllers rather than having to figure out what the correct way was to override the one that came in Devise. 
+ 
+### Setting Up Rails for Sorcery 
+ 
+You will first want to add Sorcery to your Gemfile. 
+ 
+```ruby 
+gem 'sorcery' 
+``` 
+ 
+After installing Sorcery you can run this command, which will create a User model for you along with some DB migrations. 
+ 
+```bash 
+rails generate sorcery:install remember_me reset_password 
+``` 
+ 
+Because I already had a users table, I had to modify the migrations that Sorcery created, which ended up looking something like this: 
+ 
+```ruby 
+class SorceryRememberMe < ActiveRecord::Migration 
+  def change 
+    add_column :users, :crypted_password, :string, :null => false 
+    add_column :users, :salt, :string, :null => false 
+    add_column :users, :remember_me_token, :string, :default => nil 
+    add_column :users, :remember_me_token_expires_at, :datetime, :default => nil 
+    add_column :users, :reset_password_token, :string, :default => nil 
+    add_column :users, :reset_password_token_expires_at, :datetime, :default => nil 
+    add_column :users, :reset_password_email_sent_at, :datetime, :default => nil 
+ 
+    add_index :users, :remember_me_token 
+    add_index :users, :reset_password_token 
+  end 
+end 
+``` 
+ 
+Ensure that you have this line of code in your User model: `authenticates_with_sorcery!` 
+ 
+### Logging In and Out 
+ 
+I then created some routes for logging in and out of the system. 
+ 
+```ruby 
+get 'login',  to: 'user_sessions#new',     as: :login 
+post 'login', to: 'user_sessions#create' 
+get 'logout', to: 'user_sessions#destroy', as: :logout 
+``` 
+ 
+These routes point to the controller that is below. This controller uses a couple helper methods that Sorcery provides, such as `login` and `logout`. Other than that it is just normal Rails code. 
+ 
+```ruby 
+class UserSessionsController < ApplicationController 
+ 
+  def new 
+    @user = User.new 
+  end 
+ 
+  def create 
+    if @user = login(user_params[:email], user_params[:password]) 
+      redirect_back_or_to(admin_root_path, notice: 'Login successful') 
+    else 
+      @user = User.new 
+      flash.now[:alert] = 'Login failed' 
+      render action: 'new' 
+    end 
+  end 
+ 
+  def destroy 
+    logout 
+    redirect_to root_path, notice: "You've been logged out" 
+  end 
+ 
+  private 
+ 
+  def user_params 
+    params.require(:user).permit(:email, :password) 
+  end 
+end 
+``` 
+ 
+### Requiring Auth and Checking If Authenticated 
+ 
+Lastly, Sorcery provides a before action filter which you can put in your controllers that require authentication to access. This can take the form of the following code below: 
+ 
+```ruby 
+class Admin::BaseController < ApplicationController 
+  before_filter :require_login 
+ 
+  private 
+   
+  def not_authenticated 
+    redirect_to login_path, alert: "Please login first" 
+  end 
+end 
+``` 
+ 
+The not_authenticated method will be called if the user is not yet authenticated. To check whether there is currently an authenticated user, you can call `logged_in?` (available in the view) which will return a Boolean, or `current_user` (available in view) which will return the current User or nil if they aren't authenticated. 
+ 
+### Not Yet Implemented 
+ 
+I haven't yet implemented the forgotten password functionality nor the remember me functionality, purely because this is for my own blog and I haven't required it yet :) I already have the required DB migrations in place, so it won't be much work to do when I get around to it (I hope!).

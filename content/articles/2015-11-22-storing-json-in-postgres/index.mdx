@@ -1,0 +1,12 @@
+---
+title: Storing JSON in Postgres
+slug: storing-json-in-postgres
+tags: databases
+date: 2015-11-22
+updated: 2015-11-22
+banner: ../canadaleaf.jpg
+---
+
+Postgres has had JSON support for a while, but to be honest it wasn’t that great due to a lack of indexing and key extractor methods. With the release of version 9.2, Postgres added native JSON support. You could finally use Postgres as a “NoSQL” database. In version 9.3, Postgres improved on that by adding additional constructor and extractor methods. 9.4 added the ability to store JSON as “Binary JSON” (or JSONB), which strips out insignificant whitespace (not a big deal), adds a tiny bit of overhead when inserting data, but provides a huge benefit when querying it: __indexes__. 
+ 
+With the release of version 9.4, JSON support tried to make the question “Do I use a document or relational database?” unnecessary. Why not have both?

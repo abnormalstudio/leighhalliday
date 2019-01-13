@@ -1,0 +1,123 @@
+---
+title: Tree Structures in your Rails models
+slug: tree-structures-in-your-rails-models
+tags: ruby-on-rails
+date: 2015-02-04
+updated: 2015-02-04
+banner: ../canadaleaf.jpg
+---
+
+## What are tree structures used for? 
+ 
+Tree structures are needed any time you want to insert a hierarchy into your data. It's when you want to store relationships between data of the same type, vertically. Think of categories, org charts, and family trees; all have a tree structure to them. Some examples of this are. 
+ 
+Categories: 
+- Electronics 
+  - Cameras 
+    - Bodies 
+    - Lenses 
+ 
+Or when working with organizational structures: 
+- Product Team 
+  - IT Department 
+    - Team A 
+    - Team B 
+- Finance Department 
+  - Auditing 
+ 
+## 3 Types of Trees 
+ 
+In a great article written about [storing tree structures in the database](http://railsware.com/blog/2013/07/15/storing-tree-structures-in-the-rdbms/), Alexey outlines 3 common patterns. They are __parent-child__, __materialized path__, and __nested set__. 
+ 
+Each of these patterns have different strengths and weaknesses, especially related to whether your application is read-heavy or write-heavy. 
+ 
+## Parent-child 
+ 
+Pros: Simple, fast writes. Cons: Slow reads. 
+ 
+Parent-child tree structures are the easiest to understand, are very write-efficient, but can be extremely slow for reads, especially if your hierarchy spans more than 2 levels deep. The reason it is slow on reads is that it can't be done in a single query like the other patterns allow. If you're 5 levels deep and you want to get the top-level parent, you will need to perform 4 queries. 
+ 
+For this type of data, I don't use any sort of Gem to help me accomplish this because it is done very easily in plain Rails. Let's look into how we'd implement this for a Category class. 
+ 
+First, we need to add a `parent_id` column to the database. This is used to determine both the parent and the children of a specific category. 
+ 
+```ruby 
+class AddParentIdToCategories < ActiveRecord::Migration 
+  def change 
+    add_column :category, :parent_id, :integer 
+  end 
+end 
+``` 
+ 
+Next, we'll add a `parent` relation to our model along with a `children` relation. Because we aren't following the normal Rails standards by naming the field like `category_id`, we have to tell it which class the relation refers to. I chose to use parent and children instead of category and categories, because I find it much clearer. 
+ 
+```ruby 
+class Category < ActiveRecord::Base 
+  belongs_to :parent, class_name: "Category" 
+  has_many :children, class_name: "Category", foreign_key: "parent_id" 
+end 
+``` 
+ 
+Now we can access our data like so: 
+ 
+```ruby 
+category = Category.find 10 # Result: <Category id: 10, name: ....> 
+category.children.count # Result: 2 
+# SQL - SELECT COUNT(*) FROM "categories" WHERE "categories"."parent_id" = 10 
+``` 
+ 
+If we wanted to add a method to category to get it's parent's name, or to check if it has a parent and/or children, we could do this: 
+ 
+```ruby 
+def parent_name 
+  # it may not have a parent 
+  parent.try(:name) 
+end 
+ 
+def has_parent? 
+  parent.present? 
+end 
+ 
+def has_children? 
+  children.exists? 
+end 
+``` 
+ 
+## Materialized Path 
+ 
+Pros: Fast reads. Cons: Slow writes, more complicated. 
+ 
+This is a pattern that you're most likely familiar with, even if you haven't heard of the name before. Think of it like how the Bible is organized: John, Chapter 3, Verse 16. Each record essentially stores the "path" through it's ancestry. So `John, Chapter 3, Verse 16` has all of the information necessary to go straight from the verse to John, the book. 
+ 
+The [ancestry gem uses the materialized path pattern](https://github.com/stefankroes/ancestry) to handle relationship data in your model. Inserts are fairly complicated, so thankfully the gem handles the complexity for us. 
+ 
+## Nested Set 
+ 
+Pros: Fast reads. Cons: Slow writes, more complicated. 
+ 
+Nested sets are possibly the most complicated to explain, and have very complicated logic when modifying the hierarchy, but provide very fast read-access to the data. The way it works is by adding `left` and `right` bounds to your data. [Awesome nested set is a great Gem implementing the nested set pattern.](https://github.com/collectiveidea/awesome_nested_set). 
+ 
+Here's an example of Colombia with a couple of its provinces and cities: 
+- `1` Colombia `10`, __L1__ 
+  - `2` Antioquia `7`, __L2__ 
+    - `3` Medellín `4`, __L3__ 
+    - `5` Rio Negro `6`, __L3__ 
+  - `8` Chocó `9`, __L2__ 
+ 
+Colombia has 4 children. 2 of them (Antioquia and Chocó) are direct descendants (1 level below), and the other 2 are second level descendants (Medellín and Rio Negro), children of children. 
+ 
+If you wanted to find direct descendants of Colombia, you could do so with a query like so: 
+ 
+```sql 
+SELECT * FROM locations WHERE left > 1 AND right < 10 AND level = 2; 
+``` 
+ 
+Or if you wanted to find out how many cities are in Antioquia, you could do so with the following query: 
+ 
+```sql 
+SELECT count(*) FROM locations WHERE left > 2 AND right < 7 AND level = 3; 
+``` 
+ 
+## Summary 
+ 
+In summary, if you are working with simple data, not nested too deeply and which isn't too read-heavy, I recommend using the basic parent-child pattern. If your data is multiple levels deep and is read-heavy, I recommend using either the materialized path or the nested set patterns.

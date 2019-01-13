@@ -1,0 +1,125 @@
+---
+title: Mocking Axios in Jest + Testing Async Functions
+slug: mocking-axios-in-jest-testing-async-functions
+tags: frontend
+date: 2018-04-09
+updated: 2018-04-09
+banner: ../canadaleaf.jpg
+---
+
+import { YouTube } from "$components";
+
+In our tests we don't want to perform an actual HTTP request. To start with it is slow, but there are certain calls you really can't make with every test run, for example charging someone's credit card.
+
+In this article we'll look at a function that makes an HTTP request using the axios library to the Unsplash API and figure out how we can test it using a fake/mock version of axios to avoid performing real HTTP requests. We will be using Jest and some mocking functionality that it provides.
+
+If you'd like to follow along you can find [starter files here](https://github.com/leighhalliday/easy-mobx-redux-comparison/tree/mocking-axios-start) and a [finished version here](https://github.com/leighhalliday/easy-mobx-redux-comparison/tree/mocking-axios-finished).
+
+<YouTube id="9Yrd4aZkse8" />
+
+## Code to test
+
+The code we will be testing is a small function below:
+
+```js
+import axios from "axios";
+
+export default async term => {
+  const response = await axios.get("https://api.unsplash.com/search/photos", {
+    params: {
+      client_id: process.env.REACT_APP_UNSPLASH_TOKEN,
+      query: term
+    }
+  });
+
+  return response.data.results;
+};
+```
+
+The final folder structure for the code discussed in this article looks like:
+
+```yaml
+- src
+  - __mocks__
+  - axios.js
+  - services
+  - __tests__
+  - unsplash.js
+  - unsplash.js
+```
+
+## Mocking axios
+
+To get around making an actual HTTP request we [can mock the axios library](https://facebook.github.io/jest/docs/en/manual-mocks.html#mocking-node-modules) by using Jest's mock functionality. In a create-react-app, you'll want to mock node modules within the `src/__mocks__` folder.
+
+At the moment we are only utilizing the `axios.get` function, so that's all we are going to mock. Our version of "mock axios" will be an object with 1 property called `get` whose value is a function.
+
+```js
+export default {
+  get: jest.fn(() => Promise.resolve({ data: {} }))
+};
+```
+
+Notice it isn't a regular arrow function though, it is a mock function. [Jest mock functions](https://facebook.github.io/jest/docs/en/mock-functions.html), sometimes also known as "spy" functions, give us extra abilities, like being able to ask it questions after the fact, such as how many times were you called? Which arguments were you passed when called?
+
+For our jest mock function here, we're providing a default value to return which is a promise that resolves to an object. This can be overriden later in our tests.
+
+## Testing function
+
+In this test I'm importing from `'axios'`, but because I have mocked this node module, I'm getting the mocked version of it rather than the real one. Just to be clear that I'm dealing with a mock of axios, I named the import `mockAxios`.
+
+Because the code we are testing is asynchronous, we have 2 options to make Jest aware of when the test has finished running. The way I prefer is just by declaring the test function as `async`, and then using `await` for the asynchronous code within the test.
+
+Alternatively you can pass a `done` function that you explicitly call when your code is done.
+
+Below this code example I'll break down the 3 areas: **setup**, **work**, and **expect**.
+
+```js
+import mockAxios from "axios";
+import unsplash from "../unsplash";
+
+it("fetches data from unsplash", async () => {
+  // setup
+  mockAxios.get.mockImplementationOnce(() =>
+    Promise.resolve({
+      data: { results: ["cat.jpg"] }
+    })
+  );
+
+  // work
+  const images = await unsplash("cats");
+
+  // expect
+  expect(images).toEqual(["cat.jpg"]);
+  expect(mockAxios.get).toHaveBeenCalledTimes(1);
+  expect(mockAxios.get).toHaveBeenCalledWith(
+    "https://api.unsplash.com/search/photos",
+    {
+      params: {
+        client_id: process.env.REACT_APP_UNSPLASH_TOKEN,
+        query: "cats"
+      }
+    }
+  );
+});
+```
+
+### Setup
+
+In the setup portion of our test, we are accessing the `mockAxios.get` function, which is the `jest.fn` function we defined within the mock file. Here we're overriding its default return value to return something specific for this test, according to the data format the `unsplash` function expects to receive back from Unsplash.
+
+### Work
+
+In this section we perform the actual work, or in other words we execute the code we want to test, by calling the unsplash function and awaiting its result (since it returns a promise).
+
+### Expect
+
+Here we are making expectation or assertions about the code which has run. The first one is pretty straight forward, making sure the function returned the correct data.
+
+The next 2 assertions are asking the `jest.fn` function mock how many times it was called and what arguments were passed to it. This allows us to be sure that we called axios correctly.
+
+## Conclusion
+
+In this article we learned a number of new concepts. We learned how to mock node modules by utilizing the mocking ability provided by Jest. We also learned how to use mock/spy functions with `jest.fn`, which allow us to not only define the return value of the function but ask it questions about which arguments it was called with and how many times it was called.
+
+Lastly we looked at how to test asynchronous functions by using async/await.

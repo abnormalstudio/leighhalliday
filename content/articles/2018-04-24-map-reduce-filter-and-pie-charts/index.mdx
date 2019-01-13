@@ -1,0 +1,312 @@
+---
+title: Map, Reduce, Filter, and Pie Charts
+slug: map-reduce-filter-and-pie-charts
+tags: frontend
+date: 2018-04-24
+updated: 2018-04-24
+banner: ../canadaleaf.jpg
+---
+
+import { YouTube } from "$components";
+
+Data comes in all sorts and sizes, and one of the key skills a developer can have is how to convert it into the required format and shape. In this article we'll convert data coming from the GitHub GraphQL API into the format required to generate a pie chart with the [Nivo](http://nivo.rocks/#/pie) charting library.
+
+If you'd like to follow along with the video below, here is a [starting branch](https://github.com/leighhalliday/graphql-git/tree/pie-chart-start) of the code and one with [a finished version](https://github.com/leighhalliday/graphql-git/tree/pie-chart-done). The finished doesn't match up perfectly with the video, but it is fairly close.
+
+<YouTube id="28StAxSjyIU" />
+
+## Data Data Data
+
+Here is what a sample of our starting data looks like. Take a look at it and think about how you might want to count each of the languages for each of the repositories.
+
+```json
+{
+  "data": {
+    "viewer": {
+      "repositories": {
+        "nodes": [
+          {
+            "name": "bloggy-blog",
+            "description": "Code which powers my personal blog.",
+            "url": "https://github.com/leighhalliday/bloggy-blog",
+            "languages": {
+              "nodes": [
+                {
+                  "color": "#701516",
+                  "name": "Ruby"
+                },
+                {
+                  "color": "#f1e05a",
+                  "name": "JavaScript"
+                },
+                {
+                  "color": "#244776",
+                  "name": "CoffeeScript"
+                },
+                {
+                  "color": "#563d7c",
+                  "name": "CSS"
+                },
+                {
+                  "color": "#e34c26",
+                  "name": "HTML"
+                }
+              ]
+            }
+          },
+          {
+            "name": "enumerables-presentation",
+            "description": "A presentation about the Ruby Enumerable module",
+            "url": "https://github.com/leighhalliday/enumerables-presentation",
+            "languages": {
+              "nodes": [
+                {
+                  "color": "#f1e05a",
+                  "name": "JavaScript"
+                },
+                {
+                  "color": "#563d7c",
+                  "name": "CSS"
+                },
+                {
+                  "color": "#e34c26",
+                  "name": "HTML"
+                },
+                {
+                  "color": "#701516",
+                  "name": "Ruby"
+                }
+              ]
+            }
+          }
+        ]
+      }
+    }
+  }
+}
+```
+
+The final format/shape of the data should look like this (the numbers aren't correct, just the format):
+
+```json
+[
+  {
+    "id": "JavaScript",
+    "label": "JavaScript",
+    "value": 371,
+    "color": "#f1e05a"
+  },
+  {
+    "id": "css",
+    "label": "css",
+    "value": 401,
+    "color": "#563d7c"
+  },
+  {
+    "id": "Ruby",
+    "label": "Ruby",
+    "value": 191,
+    "color": "#701516"
+  }
+]
+```
+
+## Our path
+
+I don't believe there is a single step (or at least an efficient one) to go from the starting data to the final shape we require. Instead we'll go through the steps below to reach it.
+
+1.  Use `reduce` (twice!) to count the number of times a language was used across all repos.
+2.  Use `map` to convert object from #1 into array of objects in format required by pie chart library.
+3.  Use `filter` to only include languages used more than once and which have a color defined.
+4.  Use `sort` to put them in the order of most to least used languages.
+5.  Use `slice` to select the top 5 languages used.
+
+Before we look at the actual code, let's review the key array functions being used.
+
+## Reduce
+
+- **Purpose**: Take an input array, and as you are iterating over each element in it build a new output, which can be any data type you would like.
+- **Input**: (callback function, initial value)
+- **Output**: Any data type you would like: string, integer, array, object, boolean, etc...
+- **Callback function**: Receives the "current state" plus an array element, must return the "new state" after applying the current array element to it.
+
+Counts:
+
+```js
+[1, 2, 3, 4].reduce((sum, number) => sum + 1, 0);
+// 4
+```
+
+Sums:
+
+```js
+[1, 2, 3, 4].reduce((sum, number) => sum + number, 0);
+// 10
+```
+
+Like a map:
+
+```js
+[1, 2, 3, 4].reduce((arr, number) => [...arr, number * number], []);
+// [1,4,9,16]
+```
+
+Produce an object:
+
+```js
+["Pepito", "Pepita", "Guadalupe"].reduce((obj, name) => {
+  obj[name] = name.length;
+  return obj;
+}, {});
+// {Pepito: 6, Pepita: 6, Guadalupe: 9}
+```
+
+## Map
+
+- **Purpose**: Take an array and modify each element in it to produce a new array of the same length.
+- **Input**: (callback function)
+- **Output**: A new array with same length as original, but with modified elements.
+- **Callback function**: Receives an array element, returns the modified element.
+
+Example 1: Square each number in an array.
+
+```js
+[1, 2, 3, 4].map(number => number * number);
+// [1,4,9,16]
+```
+
+Example 2: Produce a JSX element for each name in an array.
+
+```jsx
+const names = ["Pepito", "Pepita", "Conchita"];
+names.map(name => <span key={name}>{name}</span>);
+```
+
+## Filter
+
+- **Purpose**: Take an array and choose only certain elements of the old array to be in your new one based on your criteria.
+- **Input**: (callback function)
+- **Output**: An array with the same or less elements as the original depending on your selection criteria.
+- **Callback function**: Receives an element and must return true (to keep the element) or false (to discard it).
+
+Let's pick only the words longer than 3 characters:
+
+```js
+"I am very hungry right now".split(" ").filter(word => word.length > 3);
+// ["very", "hungry", "right"]
+```
+
+## Slice
+
+- **Purpose**: Take an array and produce a new array made consisting of a subset of the old one... like substring but for arrays. You choose your subset with start and end indexes.
+- **Input**: (inclusive starting index, exclusive ending index)
+- **Output**: An array which is a subset of original one.
+
+Let's grab the first 3 numbers:
+
+```js
+[5, 7, 2, 8, 5, 3].slice(0, 3);
+// [5, 7, 2]
+```
+
+## Sort
+
+- **Purpose**: Take an array of elements which are out of order and put them into a defined order.
+- **Input**: (callback function)
+- **Output**: An array with the elements in the order defined by your callback function's responses.
+- **Callback function**: Receives 2 elements of the array at a time. It's your job to compare them and return 1 or greater if "a" is bigger than "b", -1 if "b" is bigger than "a", or 0 if they are the same.
+
+```js
+[[1, 2, 3], [5, 2], [7, 3, 5, 9]].sort((a, b) => {
+  if (a.length > b.length) {
+    return 1;
+  }
+  if (a.length < b.length) {
+    return -1;
+  }
+  return 0;
+});
+```
+
+This will put them in ascending order (lowest number first) based on the length of the arrays. One trick you can use is that it doesn't need to be 1 or -1 exactly... can be any number larger than or smaller than 0. Because of that you can actually just subtract the 2 numbers when you are comparing 2 numbers. For example:
+
+```js
+[[1, 2, 3], [5, 2], [7, 3, 5, 9]].sort((a, b) => a.length - b.length);
+// or in descending order, swap a and b
+[[1, 2, 3], [5, 2], [7, 3, 5, 9]].sort((a, b) => b.length - a.length);
+```
+
+## Our data transformation
+
+Finally let's look at how to transform our data! I'll add comments into the code below so you can see what we're doing at each step.
+
+Between steps 1 and 2 the data will have the shape of this:
+
+```js
+{
+  "Ruby": { count: 3, color: "#FFF" },
+  "JavaScript": { count: 4, color: "#000" },
+  "HTML": { count: 2, color: "#CCC123" }
+}
+```
+
+And heeeere we go!
+
+```js
+export const topLanguages = repositories => {
+  // 1 Let's use reduce (twice!) to build an object containing the counts
+  // and colors of each language across all repos
+  const langObject = repositories.nodes.reduce((langs, { languages }) => {
+    return languages.nodes.reduce((repLangs, { name, color }) => {
+      if (!repLangs[name]) {
+        repLangs[name] = { count: 0, color };
+      }
+      repLangs[name].count += 1;
+      return repLangs;
+    }, langs);
+  }, {});
+
+  // 2 Let's take our object from step 1, convert it into an array
+  // and then use map to transform it into the required shape
+  const langArray = Object.entries(langObject).map(
+    ([key, { count, color }]) => ({
+      id: key,
+      label: key,
+      value: count,
+      color
+    })
+  );
+
+  // 3 Use filter to only include languages with a color and used more than once
+  // 4 Put them in descending order based on the value (number of times used)
+  // 5 Use slice to pick the first 5 languages
+  return langArray
+    .filter(data => data.color && data.value > 1)
+    .sort((a, b) => b.value - a.value)
+    .slice(0, 5);
+};
+```
+
+## Testing
+
+Now we can test our function in Jest with the code below (which uses a sample subset of the larget full data set).
+
+```js
+import { topLanguages } from "../dataMassagers";
+import data from "../../sampleData";
+
+it("produces array of top languages", () => {
+  const langs = topLanguages(data.data.viewer.repositories);
+
+  expect(langs).toEqual([
+    { color: "#f1e05a", id: "JavaScript", label: "JavaScript", value: 3 },
+    { color: "#563d7c", id: "CSS", label: "CSS", value: 3 },
+    { color: "#e34c26", id: "HTML", label: "HTML", value: 3 },
+    { color: "#701516", id: "Ruby", label: "Ruby", value: 2 }
+  ]);
+});
+```
+
+## Conclusion
+
+Being comfortable manipulating arrays and objects is a key skill to have not just in JavaScript but in programming in general. For further practice you may want to try [Wes Bos' JavaScript 30](https://javascript30.com/) which has a couple lessons on "array cardio".

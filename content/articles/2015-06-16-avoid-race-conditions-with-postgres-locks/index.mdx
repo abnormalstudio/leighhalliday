@@ -1,0 +1,82 @@
+---
+title: Avoid race conditions in Rails with Postgres locks
+slug: avoid-race-conditions-with-postgres-locks
+tags: ruby-on-rails
+date: 2015-06-16
+updated: 2015-06-16
+banner: ../canadaleaf.jpg
+---
+
+## Race conditions 
+ 
+> A race condition or race hazard is the behavior of an electronic, software or other system where the output is dependent on the sequence or timing of other uncontrollable events. It becomes a bug when events do not happen in the order the programmer intended. The term originates with the idea of two signals racing each other to influence the output first. https://en.wikipedia.org/wiki/Race_condition 
+ 
+## So what's the big deal?  
+ 
+Earlier this year a programmer reported that he discovered a [race condition bug](http://sakurity.com/blog/2015/05/21/starbucks.html) in the Starbucks system which allowed him to essentially have an unlimited giftcard balance. It's obviously a problem that can have some serious financial implications. 
+ 
+Most of the time it isn't even some devious (or mischievous) developer looking to find exploits in a system. It can come about naturally as users use your website, or as background processing queues process data. 
+ 
+## What is actually happening? 
+ 
+<table class="table"> 
+  <tr><th>User 1</th><th>User 2</th><th>&nbsp;</th><th>Result</th></tr> 
+  <tr><td>Read balance</td><td></td><td>&lt;-</td><td>$50</td></tr> 
+  <tr><td></td><td>Read balance</td><td>&lt;-</td><td>$50</td></tr> 
+  <tr><td>Remove $25</td><td></td><td>-&gt;</td><td>$25</td></tr> 
+  <tr><td></td><td>Remove $25</td><td>-&gt;</td><td>$25</td></tr> 
+</table> 
+ 
+Here we have 2 users trying to remove $25 from their account that has a balance of $50. Ideally the account would have $0, but because each thinks they are removing $25 from $50, the final balance is $25... in other words they are $25 richer and you are $25 poorer. 
+ 
+This same thing could happen with coupon codes or giftcards. You want to find an unused coupon code and assign it to a single user. The problem crops up when User 1 and User 2 both attempt to get a coupon at the same time and you end up assigning the same coupon to 2 different users.   
+ 
+Here is what we want to happen: 
+ 
+<table class="table"> 
+  <tr><th>User 1</th><th>User 2</th><th>&nbsp;</th><th>Result</th></tr> 
+  <tr><td>Read balance</td><td></td><td>&lt;-</td><td>$50</td></tr> 
+  <tr><td>Remove $25</td><td></td><td>-&gt;</td><td>$25</td></tr> 
+  <tr><td></td><td>Read balance</td><td>&lt;-</td><td>$25</td></tr> 
+  <tr><td></td><td>Remove $25</td><td>-&gt;</td><td>$0</td></tr> 
+</table> 
+ 
+## Solving this yourself is difficult 
+ 
+But thankfully databases are [quite good at solving this issue](http://www.postgresql.org/docs/current/interactive/sql-select.html#SQL-FOR-UPDATE-SHARE). They have something called `locking`, where a single database transaction can lock an entire row in the database while it is working on it, stopping anyone else from trying to claim that record at the same time. 
+ 
+The pseudocode might look like this: 
+ 
+``` 
+lock specific record in the DB 
+make changes to that record 
+unlock record for others to use 
+```   
+ 
+## Locking in Rails 
+ 
+Rails provides a [great API in ActiveRecord](http://api.rubyonrails.org/classes/ActiveRecord/Locking/Pessimistic.html) for dealing with DB level locks. This works for both MySQL and Postgres. 
+ 
+Our balance problem solved in Rails: 
+ 
+```ruby 
+Account.transaction do 
+  acc = Account.lock.find(id) 
+  acc.balance -= 25 
+  acc.save! 
+end 
+``` 
+ 
+Our coupon problem solved in Rails: 
+ 
+```ruby 
+Coupon.transaction do 
+  coupon = Coupon.unused.lock(true).first 
+  coupon.user = user 
+  coupon.save! 
+end 
+``` 
+ 
+## Try it out yourself! 
+ 
+Open up 2 Rails consoles in your terminal. In the first one, put in a `sleep(60)` statement and hit enter. Now hit enter on the 2nd one. It will sit there waiting until the first one has finished and has released the record.

@@ -1,0 +1,88 @@
+---
+title: When your Rails app slows to a crawl
+slug: when-your-rails-app-slows-to-a-crawl
+tags: ruby-on-rails
+date: 2015-01-31
+updated: 2015-01-31
+banner: ../canadaleaf.jpg
+---
+
+## Help! Site no longer responding! 
+ 
+Hi, Leigh, are you busy? The website is no longer responding... can you investigate? A phone call nobody really likes to receive on a Saturday. We launched a new website on Friday and it appeared to be working great! Little did we know that our client would be sending out an e-mail blast to about a million people... Uh oh. 
+ 
+It was time to investigate the issue and figure out how to get the site functioning again in as little time as possible. 
+ 
+<img style="width: 100%;" src="https://s3.amazonaws.com/leighhalliday/manual/heroku-books-dashboard.png" /> 
+ 
+## How to find the largest pain points 
+ 
+There are a number of ways to determine what is slowing a page load down. One of the first things I usually do is to peek at the logs as I click through my app locally and see if I notice anything that looks out of place. To do that, when you're in your terminal you can run the command `tail -f log/development.log`. Things to look out for are an unusually large amount of queries, or queries that are taking a long time to complete. Because your local data may not represent what you have on production it won't be perfect, but it can often point you in the right direction. 
+ 
+When you're trying to debug code that is already deployed, [skylight](https://www.skylight.io/) and [New Relic](http://newrelic.com/) can give you great insights into your application. At [FlipGive](https://www.flipgive.com) we are using skylight and are very happy with it so far! 
+ 
+## More hardware may not be the answer 
+ 
+One thing to point out is that your first instinct shouldn't be to throw more hardware at the problem. First of all, that's expensive, and second of all, it might not even solve the problem. Yea the sight might run more quickly if you have a powerful database server, but the real issue might lie in the code. 
+ 
+## The usual suspects 
+ 
+### N+1 queries 
+ 
+N+1 queries are when you have 1 query to find the main data you are looking for, and another query for each of the records that you loop over. Below is an example showing books along with their author. The first way will produce an N+1 situation, the second way will be done in a single query. This is called eager loading, and when you look at the SQL that is being done, you'll notice that most likely it is just performing a join. 
+ 
+```ruby 
+# Slow 
+Book.all.each do |book| 
+  puts book.author.name 
+end 
+ 
+# Fast 
+Book.includes(:author).all.each do |book| 
+  puts book.author.name 
+end 
+``` 
+### Expensive calculations or external services 
+ 
+If you need to do some serious data processing, or need to talk with an external service (processing a credit card, sending an email, etc...), you might experience a sluggish website. This is because your page is reliant upon the external service responding quickly... and even if it responds in an acceptable 100ms, that is still 100ms that you are adding to your response time on top of what your app itself is doing. 
+ 
+One way to solve this is to process expensive calculations or external service calls in the background. If it's something that needs to happen on a consistent basis, you can try creating a rake task and having that run in a cron job. If it is triggered by an event in the system, you'll want to try using a queue to handle that. I've had lots of success using [resque](https://github.com/resque/resque). 
+ 
+### Slow queries 
+ 
+``` 
+Book Load (951.8ms)  SELECT  "books".*, COALESCE(ts_rank(to_tsvector('english', "books"."description"::text), etc... 
+``` 
+ 
+951ms is way too slow of a query to have happen every time somebody refreshes the page. Thankfully, there was an easy solution: An index. After adding an index you'll see an astounding drop in the time it takes to perform the exact same query. 
+ 
+```ruby 
+class AddIndexToBooks < ActiveRecord::Migration 
+  def up 
+    execute "create index on books using gin(to_tsvector('english', description));" 
+  end 
+ 
+  def down 
+    # no going back in this demo 
+  end 
+end 
+``` 
+ 
+And if you look below the same query is now taking only 18ms to run. Much better! 
+ 
+``` 
+Book Load (18.4ms)  SELECT  "books".*, COALESCE(ts_rank(to_tsvector('english', "books"."description"::text), etc... 
+``` 
+ 
+## How I solved this particular problem 
+ 
+I ended up doing 3 different things to solve this problem. 
+1. I took an expensive ranking calculation that was being done real-time and I created a `cached_rank` field which is updated every 10 minutes via a cron-job. It was essentially doing an N+1 query to calculate a book's rank, and by doing this I was able to remove that. 
+2. I added the index that I mentioned above, which took a particular query from 951ms to 18ms. 
+3. Yes, I also upgraded the hardware. I didn't want to be caught off guard if another 1 million recipient e-mail blast was sent out. 
+ 
+After the changes were made, the site was back up to serving about 300 concurrent users with about 80ms median response time. 
+ 
+## Isn't caching an option? 
+ 
+Yes, but to be honest it wasn't necessary in this case. The next step would probably be to cache some of the views, or at least certain partials on those views. Rails has [excellent support for caching](http://guides.rubyonrails.org/caching_with_rails.html), but in this case by going to the root of the problem, I was able to avoid dealing with caches.

@@ -19,10 +19,10 @@ const Acerca = () => (
     `}
     render={data => (
       <Layout>
-        <SEO title="Acerca de Paisa en Canadá" />
+        <SEO title="About Leigh Halliday" />
 
         <Single>
-          <H1Line>Acerca de Paisa en Canadá</H1Line>
+          <H1Line>About Me</H1Line>
           <div
             css={css`
               margin: 0 auto;

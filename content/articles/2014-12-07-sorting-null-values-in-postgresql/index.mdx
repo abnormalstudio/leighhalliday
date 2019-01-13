@@ -1,0 +1,54 @@
+---
+title: Sorting null values in PostgresSQL
+slug: sorting-null-values-in-postgresql
+tags: databases
+date: 2014-12-07
+updated: 2014-12-07
+banner: ../canadaleaf.jpg
+---
+
+### The Problem
+
+Say you have a table of people and you want to sort them alphabetically by their nickname in descending order (Z - A). That works great as long as everyone has a nickname, but what happens when one doesn't?
+
+```sql
+SELECT firstname, lastname, nickname
+FROM people
+ORDER BY nickname DESC;
+```
+
+What you'll get is a result with people with null nicknames at the top, when really you want them to show up at the bottom.
+
+```
+ Steve     | Roberts  |
+ Steve     | Halliday |
+ Bob       | Clemens  | Sneakers
+ Patty     | Roberts  | Sneakers
+ George    | Clemens  | Smelly
+ Bob       | Clemens  | Smelly
+```
+
+### The Solution
+
+Normally when you choose a column to order by, you do something like `ORDER BY nickname DESC`. Formatted like: `ORDER BY sort_expression1 [ASC | DESC]`. In Postgres there is an extra modifier you can put after the ASC or DESC which tells the database how to handle null values.
+
+For example, if you want nulls to show up last, you would write `ORDER BY nickname DESC NULLS LAST`. The options are either FIRST or LAST. This is formatted like: `ORDER BY sort_expression1 [ASC | DESC] [NULLS { FIRST | LAST }]`.
+
+Now, if we take our example from above, it will correctly put the null values last.
+
+```sql
+SELECT firstname, lastname, nickname
+FROM people
+ORDER BY nickname DESC NULLS LAST;
+```
+
+The results now correctly have the null values at the bottom.
+
+```
+ Bob       | Clemens  | Sneakers
+ Patty     | Roberts  | Sneakers
+ George    | Clemens  | Smelly
+ Bob       | Clemens  | Smelly
+ Steve     | Roberts  |
+ Steve     | Halliday |
+```

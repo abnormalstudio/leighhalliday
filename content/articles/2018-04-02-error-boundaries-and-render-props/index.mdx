@@ -1,0 +1,197 @@
+---
+title: Error Boundaries and Render Props
+slug: error-boundaries-and-render-props
+tags: frontend
+date: 2018-04-02
+updated: 2018-04-02
+banner: ../canadaleaf.jpg
+---
+
+import { YouTube } from "$components";
+
+[Error boundaries](https://reactjs.org/blog/2017/07/26/error-handling-in-react-16.html) were introduced in React 16.2 and provide a sort of declarative try/catch pattern for you to handle errors which occur during the `render` of a component.
+
+In this article we'll look at how to implement error boundaries, but we'll use render props so that our error boundary doesn't need to know about the UI.
+
+<YouTube id="gWlEUcUZ3kI" />
+
+## When to use an Error Boundary
+
+Error boundaries are typically used as close to the top of your component tree as possible. It provides a last ditch effort to render something to the screen when it would otherwise be impossible due to an error that occurred further down in some child component.
+
+It _is_ possible to use multiple error boundaries in your application, but it isn't something that should be abused... they should typically wrap larger sections/components of your app.
+
+## How to use
+
+In this example we'll use an error boundary right at the top, in the `index.js` file which renders the top level `App` component into the DOM.
+
+```jsx
+import ErrorBoundary from "./ErrorBoundary";
+
+ReactDOM.render(
+  <ErrorBoundary render={() => <div className="error">I've got issues.</div>}>
+    <App />
+  </ErrorBoundary>,
+  document.getElementById("root")
+);
+```
+
+It's just another component which wraps our `App`, but 2 things to note here are that `ErrorBoundary` by wrapping `App`, will receive it in its `children` prop. The 2nd thing to note about this example above is that I have provided a `render` prop. A render prop is simply a function which returns a component. It is a pattern that you would use when the component receiving the render prop provides functionality but isn't in charge of what the UI should look like.
+
+## How to create
+
+An error boundary is nothing but a regular component which implements the [componentDidCatch](https://reactjs.org/docs/react-component.html#componentdidcatch) lifecycle function. This function is called when one of its children, or components further down the tree, encounter an error during their rendering or lifecycle functions. Error boundaries **do not** catch errors which happen during user generated events (such as onClick, onSubmit). Those will need to be handled with a regular `try/catch` construct.
+
+```jsx
+import React from "react";
+import PropTypes from "prop-types";
+
+export default class ErrorBoundary extends React.Component {
+  static propTypes = {
+    children: PropTypes.oneOfType([
+      PropTypes.node,
+      PropTypes.arrayOf(PropTypes.node)
+    ]).isRequired,
+    render: PropTypes.func.isRequired
+  };
+
+  state = {
+    hasError: false,
+    error: null,
+    errorInfo: null
+  };
+
+  componentDidCatch(error, errorInfo) {
+    this.setState({ hasError: true, error, errorInfo });
+
+    // if we have Bugsnag in this environment, we can notify our error tracker
+    if (window.Bugsnag) {
+      window.Bugsnag.notify(error);
+    }
+  }
+
+  render() {
+    if (this.state.hasError) {
+      return this.props.render(this.state.error, this.state.errorInfo);
+    }
+    return this.props.children;
+  }
+}
+```
+
+Let's start at the top and work down through this component.
+
+### Prop Types
+
+Prop types are optional (but recommended), and in this case help to validate that our error boundary will receive a component (`PropTypes.node`) or an array of them. We also want to require our error boundary to receive a render prop (function).
+
+```js
+static propTypes = {
+  children: PropTypes.oneOfType([
+    PropTypes.node,
+    PropTypes.arrayOf(PropTypes.node)
+  ]).isRequired,
+  render: PropTypes.func.isRequired
+};
+```
+
+### State
+
+The error boundary will keep track of whether an error has occurred or not in the `hasError` attribute, and also record the actual error and some additional error information about the context in which the error took place. We're keeping track of these so that we can send them to the render prop function, just in case the UI wishes to display them in some way.
+
+```js
+state = {
+  hasError: false,
+  error: null,
+  errorInfo: null
+};
+```
+
+### Component Did Catch
+
+Here is where the actual "error boundary" takes place. You must implement this lifecycle function, otherwise you haven't actually created an error boundary.
+
+```js
+componentDidCatch(error, errorInfo) {
+  this.setState({ hasError: true, error, errorInfo });
+
+  // if we have Bugsnag in this environment, we can notify our error tracker
+  if (window.Bugsnag) {
+    window.Bugsnag.notify(error);
+  }
+}
+```
+
+It's also a great place for you to notify your error logger or error tracking library that this error has occurred. In this case I'm including Bugsnag which is the error tracking tool we use at FlipGive (and is the exact code we use in our own error boundary).
+
+### Render
+
+Our error boundary must render (like all non-higher order component), but in this case we want to handle 2 different scenarios.
+
+1.  If there is an error, call the render prop function, passing over the error and additional error info.
+2.  When there are no errors, we can simply return the children, which for our example is the `App` component.
+
+```js
+render() {
+  if (this.state.hasError) {
+    return this.props.render(this.state.error, this.state.errorInfo);
+  }
+  return this.props.children;
+}
+```
+
+## Testing an error boundary
+
+I had some difficulty trying to test the error boundary, mostly because when you're not in production mode, when React catches the error and ensures that `componentDidCatch` is called correctly with the error, they also call the `console.error` function, which was driving me nuts not having all those nice green dots in my tests.
+
+I'll explain what is happening in comments within the code below.
+
+```jsx
+import ErrorBoundary from "./ErrorBoundary";
+
+// Let's create a Child functional component which does
+// nothing but throw an error. This way we can ensure we'll trigger
+// an error and have our Error Boundary called.
+const Child = () => {
+  throw "error";
+};
+
+// The error being logged was driving me crazy, so this is very hacky
+// but will stop the error from being displayed during the running
+// of this test.
+const pauseErrorLogging = codeToRun => {
+  // capture error function
+  const logger = console.error;
+  // replace with stub function
+  console.error = () => {};
+
+  // execute code
+  codeToRun();
+
+  // add back the console error function
+  console.error = logger;
+};
+
+it("catches error and renders message", () => {
+  // stop error within from logging error to console
+  pauseErrorLogging(() => {
+    // use mount from enzyme to mount/render error boundary and child
+    const wrapper = mount(
+      <ErrorBoundary render={() => <div>Error has occurred</div>}>
+        <Child />
+      </ErrorBoundary>
+    );
+
+    // because an error has occured in the Child
+    // let's make sure our error boundary has displayed the error
+    // which was provided in the render prop
+    expect(wrapper.text()).toEqual("Error has occurred");
+  });
+});
+```
+
+## Conclusion
+
+Error boundaries are a great way to ensure that your user is never left with an empty screen due to an error happening which can't be recovered from. It also gives you a place to send this error to your error tracking service. I recommend always adding it to at least the top of your component tree, and actually wonder why `create-react-app` doesn't come with a simple error boundary by default.
+
+The code used in this example can be found at: [https://github.com/leighhalliday/demo-error-boundary](https://github.com/leighhalliday/demo-error-boundary)

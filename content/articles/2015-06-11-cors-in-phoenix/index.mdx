@@ -1,0 +1,73 @@
+---
+title: CORS in Phoenix
+slug: cors-in-phoenix
+tags: elixir
+date: 2015-06-11
+updated: 2015-06-11
+banner: ../canadaleaf.jpg
+---
+
+## Single page applications
+
+Single page applications (SPA) are becoming more and more popular, often replacing the more traditional server rendered websites that are common in Rails or PHP. You have options such as Angular, Ember, React, and there are new ones popping up every day it seems. The issue with SPAs is that they can't live on their own... they need some sort of backend to get data from and to post data to. This API also handles authentication and permissions among other things. SPAs are basically useless without a backend.
+
+## Phoenix as an API
+
+We've established that APIs are crucial to building an SPA. [Phoenix](http://www.phoenixframework.org/) makes a great JSON API, and works very well alongside a JavaScript front-end. Phoenix is quick, powerful, and is built in Elixir which is a fantastic language to work in.
+
+There are some special considerations you have to think of when creating an API that will be consumed by Angular (or any other front-end framework). One of these is security related, specifically around the issue of CORS.
+
+## What is CORS?
+
+> Cross-origin resource sharing (CORS) is a mechanism that allows restricted resources (e.g. fonts, JavaScript, etc.) on a web page to be requested from another domain outside the domain from which the resource originated. - http://en.wikipedia.org/wiki/Cross-origin_resource_sharing
+
+In other words, there needs to be an agreement in place that the browser making the request to the server is allowed to do so. This is done through a series of Request and Response Headers.
+
+Modern browsers go a step further and make an additional request before the main request which is sometimes called a "pre-flight" request, which asks the server if the request it really wants to make will be permitted or not. Here is an example of the pre-flight request:
+
+```
+OPTIONS /
+Host: bar.com
+Origin: http://foo.com
+```
+
+And the response:
+
+```
+Access-Control-Allow-Origin: http://foo.com
+Access-Control-Allow-Methods: PUT, DELETE
+```
+
+## Handling CORS in Phoenix
+
+If you're used to Express in Node, or Rails in Ruby, you're most likely familiar with middleware... or maybe familiar with `before_action` filters in Rails. Elixir has something similar which is called [plug](https://github.com/elixir-lang/plug).
+
+There are a couple of plugs you can use in Phoenix to intercept OPTIONS requests (and respond with the appropriate headers), and to append the CORS headers to all other requests. [CORSPlug](https://github.com/mschae/cors_plug) is one of these options along with [Corsica](https://github.com/whatyouhide/corsica/). Both essentially do the same thing.
+
+To use them, you add a plug to the `:api` pipeline in your routes:
+
+```elixir
+  pipeline :api do
+    plug CORSPlug, [origin: "http://localhost:9001"]
+    plug :accepts, ["json"]
+  end
+```
+
+## One gotcha for pre-flight requests
+
+In Phoenix, a plug is only ever called if there is a matching route. Because of this I ran into a problem where the OPTIONS (or pre-flight) requests were failing with a 404 response because the route didn't exist, and therefore the plug which is supposed to intercept the request wasn't run.
+
+To solve this I had to define `options` routes for my different endpoints so that the plug gets called correctly.
+
+```elixir
+  scope "/api", ElixirApp do
+    pipe_through :api
+
+    options "/auth/github", AuthController, :options
+    post    "/auth/github", AuthController, :github
+
+    resources "/articles", ArticleController
+    options   "/articles", ArticleController, :options
+    options   "/articles/:id", ArticleController, :options
+  end
+```

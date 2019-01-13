@@ -1,0 +1,205 @@
+---
+title: Skinny controllers through refactoring
+slug: skinny-controllers-through-refactoring
+tags: ruby-on-rails
+date: 2015-11-25
+updated: 2015-11-25
+banner: ../canadaleaf.jpg
+---
+
+Controllers can get out of control. Their job should generally be quite simple. In an MVC framework such as Rails, they should have the job of knowing how to work with the Model in order to get what is needed for the View. In other words, they receive the user input (through `params`) and determine what the output should be (such as rendering JSON). 
+ 
+Most of the time this sort of "traffic cop" role stays small, but sometimes you might find the controller getting more and more private methods to help parse complicated user input to generate complicated output or queries. If you find your controllers getting uncomfortably large, or hard to test all of the different scenarios they have to deal with, it might be time to refactor your code. 
+ 
+Let's take the example of the `index` action of the `RentalUnitsController`. This example comes from a series of articles I wrote about [creating JSON APIs with Rails 5](http://blog.codeship.com/building-a-json-api-with-rails-5/) and [part 2](http://blog.codeship.com/the-json-api-spec/) which goes into more depth in terms of having the API conform to the json:api spec. It turns out that the spec defines a number of ways that index actions might be filtered, sorted, paginated, etc... which can add a lot of logic to your controllers. 
+ 
+## Extracting complicated query logic 
+ 
+We've seen that our controller is going to require a fair amount of logic to handle sorting, pagination, and potentially filtering the data as part of the `index` action. I have extracted this logic into a class called `RentalUnitsIndex`. Classes should have a single responsibility, and the responsibility of this class is to take the `params` coming from the user, parse them and build a query based on them. As part of the job it will also build the pagination links that go along with the query to move from page to page. 
+ 
+This is what our `index` method in the controller now looks like... quite small, no? 
+ 
+```ruby 
+def index 
+  rental_units_index = RentalUnitsIndex.new(self) 
+  render json: rental_units_index.rental_units, links: rental_units_index.links 
+end 
+``` 
+ 
+For the `RentalUnitsIndex` class to do its job we will pass it `self`, which is actually the controller itself. By having access to the controller, we can access not only the `params` but also the helper URLs that Rails creates as part of the routing system. 
+ 
+Here is the class in its entirety. We'll break down specific methods as we write tests to ensure that it works as expected. 
+ 
+```ruby 
+class RentalUnitsIndex 
+ 
+  DEFAULT_SORTING = {created_at: :desc} 
+  SORTABLE_FIELDS = [:rooms, :price_cents, :created_at] 
+  PER_PAGE = 10 
+ 
+  delegate :params, to: :controller 
+  delegate :rental_units_url, to: :controller 
+ 
+  attr_reader :controller 
+ 
+  def initialize(controller) 
+    @controller = controller 
+  end 
+ 
+  def rental_units 
+    @rental_units ||= RentalUnit.includes(:user). 
+      order(sort_params). 
+      paginate(page: current_page, per_page: PER_PAGE) 
+  end 
+ 
+  def links 
+    { 
+      self:  rental_units_url(rebuild_params), 
+      first: rental_units_url(rebuild_params.merge(first_page)), 
+      prev:  rental_units_url(rebuild_params.merge(prev_page)), 
+      next:  rental_units_url(rebuild_params.merge(next_page)), 
+      last:  rental_units_url(rebuild_params.merge(last_page)) 
+    } 
+  end 
+ 
+  private 
+ 
+    def current_page 
+      (params.to_unsafe_h.dig(:page, :number) || 1).to_i 
+    end 
+ 
+    def first_page 
+      {page: {number: 1}} 
+    end 
+ 
+    def next_page 
+      {page: {number: next_page_number}} 
+    end 
+ 
+    def prev_page 
+      {page: {number: prev_page_number}} 
+    end 
+ 
+    def last_page 
+      {page: {number: total_pages}} 
+    end 
+ 
+    def total_pages 
+      @total_pages ||= rental_units.total_pages 
+    end 
+ 
+    def next_page_number 
+      [total_pages, current_page + 1].min 
+    end 
+ 
+    def prev_page_number 
+      [1, current_page - 1].max 
+    end 
+ 
+    def sort_params 
+      SortParams.sorted_fields(params[:sort], SORTABLE_FIELDS, DEFAULT_SORTING) 
+    end 
+ 
+    def rebuild_params 
+      @rebuild_params ||= begin 
+        rejected = ['action', 'controller'] 
+        params.to_unsafe_h.reject { |key, value| rejected.include?(key.to_s) } 
+      end 
+    end 
+ 
+end 
+``` 
+ 
+I'm a big fan of using the `delegate` method in this case to give us easier access to the two methods that we access most often from the `controller` object that is passed to this class. It allows us to simply call `params` instead of `controller.params`. 
+ 
+## Testing our extracted class 
+ 
+By having what is essentially a query builder class extracted out of the controller, it allows us to test it more easily. We no longer have to make full requests to the controller each time. We can test individual methods and what their output is. 
+ 
+In these tests I am going to create an extra class to help with testing. It is small and will help me basically create fake/stubbed out instances of the controller and the params. The reason I've done this is so that I don't have to involve the real one, because the truth is that it doesn't matter as long as it responds to the same methods. In this case it must respond to `params` and `rental_units_url`. 
+ 
+We are using the real `ActionController::Parameters` (or "Strong Params") class that Rails uses internally. With Rails 4 came Strong Params, allowing us to require and permit specific keys, on top of the functionality that Rails 3 had with `HashWithIndifferentAccess` (allowing us to use the `:key` symbol form or `"key"` string form to access the same value). 
+ 
+```ruby 
+RSpec.describe RentalUnitsIndex, :type => :model do 
+ 
+  class FakeController 
+    attr_accessor :params 
+ 
+    def initialize(params) 
+      @params = params 
+    end 
+ 
+    def rental_units_url(*args) 
+      "http://www.fake.com" 
+    end 
+  end 
+ 
+  let(:controller) { FakeController.new(params) } 
+  let(:params) do 
+    ActionController::Parameters.new({ 
+      sort: sort, 
+      page: page 
+    }) 
+  end 
+  let(:sort) { "-rooms" } 
+  let(:page) { {number: "1"} } 
+  let(:rui) { RentalUnitsIndex.new(controller) } 
+``` 
+ 
+By putting each param into its own `let` statement, we can control those individually as we test the different methods of our class. 
+ 
+First we'll test the `rental_units` method to ensure that it can query results properly. 
+ 
+```ruby 
+describe ".rental_units" do 
+  it "queries rental units" do 
+    rental_unit = create(:rental_unit) 
+    expect(rui.rental_units).to include(rental_unit) 
+  end 
+ 
+  it "sorts by sort param" do 
+    rental_units = (1..5).to_a.map { create(:rental_unit, rooms: Random.rand(1..10)) } 
+    expect(rui.rental_units.map(&:rooms)).to eq(rental_units.map(&:rooms).sort.reverse) 
+  end 
+ 
+  it "paginates results" do 
+    (described_class::PER_PAGE + 1).times { create(:rental_unit) } 
+    expect(rui.rental_units.size).to eq(described_class::PER_PAGE) 
+  end 
+end 
+``` 
+ 
+Next we can move into testing the links. For this I could probably verify that each of the links was constructed correctly, but for now I'll just make sure that it has the correct keys. I actually have other tests that further test the JSON responses from this controller that look at the actual urls. 
+ 
+```ruby 
+describe ".links" do 
+  it "builds link hash" do 
+    expect(rui.links.keys).to eq([:self, :first, :prev, :next, :last]) 
+  end 
+end 
+``` 
+ 
+Last we'll test the private method `current_page` because it is used frequently when building the links. Some people like to test their private methods while others don't. I generally don't unless I'm using TDD to help me write the method in the first place, or if I want some extra assurances that the code works as expected. Many prefer to test a class purely through its public interface. 
+ 
+```ruby 
+describe ".current_page" do 
+  context "present" do 
+    let(:page) { {number: "2"} } 
+    it "finds current page as integer" do 
+      expect(rui.send(:current_page)).to eq(2) 
+    end 
+  end 
+ 
+  context "missing" do 
+    let(:page) { {} } 
+    it "sets default page to 1" do 
+      expect(rui.send(:current_page)).to eq(1) 
+    end 
+  end 
+end 
+``` 
+ 
+## Concluding thoughts 
+ 
+Don't be limited to sticking with `ActiveRecord::Base` models in your Rails app. It's easy to forget that you are in fact just writing Ruby code so you are free to use classes however it might help you write a better application. By extracting some functionality out of the controller and into its own class, we accomplished both a cleaner controller, but also better code because it allowed us to more easily test the functionality of building the `index` action's response.

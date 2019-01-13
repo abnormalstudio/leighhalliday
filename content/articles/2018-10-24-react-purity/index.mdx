@@ -1,0 +1,79 @@
+---
+title: React and Purity
+slug: react-purity
+tags: frontend
+date: 2018-10-24
+updated: 2018-10-24
+banner: ../canadaleaf.jpg
+---
+
+import { YouTube } from "$components";
+
+React gets its name from being reactive to changes in your data. When data changes, the UI reacts to those changes to re-render the page to match the data. Data is known as two things in React: state and props. State is data owned by the component itself, whereas props are data which come from the parent.
+
+In this article we'll cover some of the differences between "pure" and "impure" components and the differences with how to handle them in both class based components and functional components. Knowing when your components are pure will help you write efficient and safe React code.
+
+<YouTube id="J9u_k1dxyJk" />
+
+## Pure Functions
+
+> In computer programming, a pure function is a function that has the following properties: Its return value is the same for the same arguments. Its evaluation has no side effects.
+
+Let's give an example of a pure function. In this case you can call it a million times with the parameters 5 and 10, and you'll always get back 15. There is nothing external to this function: It doesn't change anything in the outside world (database, api calls, file system, etc...) nor is it effected by anything outside of the inputs that it receives.
+
+```js
+function add(a, b) {
+  return a + b;
+}
+```
+
+Not all functions are or can be pure. Often you want or need to receive inputs from the outside world, or you want to cause an effect outside of your function. You may want to write something to the database or to send a push notification, etc... in the example below that returns yesterday's date, it is effected by something outside of itself: The system time. You can call this today and get one response, and calling it tomorrow will result in a different response.
+
+```js
+function yesterday() {
+  const date = new Date();
+  date.setDate(date.getDate() - 1);
+  return date;
+}
+```
+
+In React, components are `pure` if their output is only determined by their inputs (`props`), and are `impure` if their output is determined by something other than the inputs, namely their `state`.
+
+## Pure classes with PureComponent
+
+When a class based component renders only based on `props` and not its own `state`, it is considered pure, and doesn't need to re-render if the props have not changed. This makes it much more efficient because re-renders can be avoided just by investigating whether the props have changed. Using the [React.PureComponent](https://reactjs.org/docs/react-api.html#reactpurecomponent) parent class allows us to efficiently handle re-rendering in pure components.
+
+```jsx
+import React from "react";
+
+export default class PureClass extends React.PureComponent {
+  render() {
+    const { seconds } = this.props;
+    return <p>I am updating every {seconds} seconds.</p>;
+  }
+}
+```
+
+## Pure functions with React.memo
+
+Prior to React v16.6.0, functional components were not able to provide the same efficiency as the `PureComponent` approach because they weren't aware of previous props, so they re-rendered every time. We now have the [React.memo](https://reactjs.org/docs/react-api.html#reactmemo) wrapper (a higher-order component) which enables a functional component to avoid re-rendering if the props remain the same.
+
+```jsx
+import React from "react";
+
+function PureFunction({ seconds }) {
+  return <p>I am updating every {seconds} seconds.</p>;
+}
+
+function areEqual(prevProps, nextProps) {
+  return prevProps.seconds === nextProps.seconds;
+}
+
+export default React.memo(PureFunction, areEqual);
+```
+
+In the example above, the `areEqual` function (2nd parameter to `React.memo` function) is not required because a shallow comparison between `prevProps` and `nextProps` is done by default. It was included here to show how you can override the comparison function whichever way is needed. Simply don't pass a 2nd argument to the `React.memo` functon if it is not needed.
+
+## Conclusion
+
+In this article we covered 2 ways you can achieve more efficient components in your code by using `React.memo` for your functional components and `React.PureComponent` for your class based components. These can only be used when your components are pure, meaning that the only thing that determines their response (what they render) are the props that they receive... they have no internal state which may effect what is rendered.

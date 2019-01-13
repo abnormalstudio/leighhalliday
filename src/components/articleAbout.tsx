@@ -19,11 +19,11 @@ const ArticleAbout = () => (
     `}
     render={data => (
       <div>
-        <H3Line>Sobre Mí</H3Line>
-        <Image fluid={data.file.childImageSharp.fluid} alt="Marian Serna" />
+        <H3Line>About Me</H3Line>
+        <Image fluid={data.file.childImageSharp.fluid} alt="Leigh Halliday" />
         <p>Hola! Yo soy Marian Serna, la paisa de esta página.</p>
         <p>
-          <Link to="/acerca">Leer más</Link>
+          <Link to="/about">Read more</Link>
         </p>
       </div>
     )}

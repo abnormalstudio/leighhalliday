@@ -1,0 +1,219 @@
+---
+title: Create React App with MobX using Decorators
+slug: create-react-app-mobx-decorators
+tags: frontend
+date: 2017-10-24
+updated: 2017-10-24
+banner: ../canadaleaf.jpg
+---
+
+Create React App is a great way to get up and running with React. It comes configured with sane defaults which are great for most people, but unfortunately we'll need to make a few changes before we can use MobX. 
+ 
+I'm a huge fan of MobX and it's been my go-to state management tool for the different React projects I work on. Definitely give it a try if you have so far used Redux or have stuck with component state. 
+ 
+** UPDATE!! ** - There is a new article I published which shows how to use MobX in create-react-app without having to eject. [Check it out here.](https://www.leighhalliday.com/mobx-create-react-app-without-ejecting) 
+ 
+## Creating a new Create React App 
+ 
+First thing you'll need is to install `create-react-app` globally, which can be done with `npm install create-react-app -g`. At the time of this article I am using version 1.4.1. 
+ 
+Once you have that package installed, you can run the command `create-react-app birds` to create your app. 
+ 
+## Installing MobX 
+ 
+Add MobX to your package file by running `yarn add mobx mobx-react`... easy! On to the next step. 
+ 
+## Ejecting from Create React App 
+ 
+MobX is a state management tool and we need a way to inject the global state into our components as needed and have them observe changes to the state, forcing them to re-render with the updated data. Although not a requirement, through the use of decorators MobX provides an easy way to do both of these things. 
+ 
+For the time being, create-react-app doesn't come with Babel support for decorators, but it is easy to add. To do that we will have to eject from create-react-app with the command `yarn run eject`. This will give us full control of all of the packages and configuration of our app. 
+ 
+## Installing Decorator Support 
+ 
+Now that we have ejected we can add an additional babel plugin which provides decorator support. We want to install `yarn add babel-plugin-transform-decorators-legacy`. Don't be fooled by the name "legacy", this is the most recent package of a very new feature of JS. 
+ 
+Next, go find the "babel" config option in the `package.json` file. We want to add this new package as a plugin. Our config should look like: 
+ 
+```json 
+"babel": { 
+  "plugins": ["babel-plugin-transform-decorators-legacy"], 
+  "presets": ["react-app"] 
+}, 
+``` 
+ 
+## Creating MobX Store 
+ 
+I like to have a `stores` folder for my MobX store(s). We're going to create that in the `src` folder and we'll name our file `BirdStore.js`. 
+ 
+A store in MobX is typically comprised of three things: 
+- observable properties 
+- actions (functions) which modify the state (the observable properties) 
+- computed functions which derive their values from our existing properties 
+ 
+It's important to note that we are not going to export the class itself but an instance of it. We want a single instance of this store app-wide. 
+ 
+```js 
+import { observable, action, computed } from 'mobx'; 
+ 
+class BirdStore { 
+  // to be implemented later on 
+} 
+ 
+const singleton = new BirdStore(); 
+export default singleton; 
+``` 
+ 
+## Creating MobX Provider 
+ 
+In order to eventually "inject" MobX into our components, we need to wrap a `Provider` component around our App component. To this component we'll pass each of our stores as a prop. 
+ 
+Inside of our Provider we'll have a Birds component. 
+ 
+```js 
+import React, { Component } from 'react'; 
+import { Provider } from 'mobx-react'; 
+import BirdStore from './stores/BirdStore'; 
+import Birds from './Birds'; 
+ 
+class App extends Component { 
+  render() { 
+    return ( 
+      <Provider BirdStore={BirdStore}> 
+        <Birds /> 
+      </Provider> 
+    ); 
+  } 
+} 
+ 
+export default App; 
+``` 
+ 
+The Birds component so far looks like this: 
+ 
+```js 
+import React, { Component } from 'react'; 
+ 
+export default class Birds extends Component { 
+  render() { 
+    return <div>Birds</div>; 
+  } 
+} 
+``` 
+ 
+## Injecting & Observing 
+ 
+To be able to use our store from within a component, and to have it react (re-render) to changes in our store's state, we'll use 2 decorators provided by MobX. We can inject any store that was included in the `Provider` from the step above. 
+ 
+```js 
+import React, { Component } from 'react'; 
+import { inject, observer } from 'mobx-react'; 
+ 
+@inject('BirdStore') 
+@observer 
+export default class Birds extends Component { 
+  render() { 
+    // access our store via the props 
+    const { BirdStore } = this.props; 
+ 
+    return <div>Birds</div>; 
+  } 
+} 
+``` 
+ 
+## Adding functionality to store 
+ 
+Let's go back to our store and provide it with some functionality. We will have 1 observable property called `birds` which is an array, an action called `addBird` which pushes a bird onto the birds array, and a computed function which tells us how many birds we have in our array. 
+ 
+```js 
+class BirdStore { 
+  @observable birds = []; 
+ 
+  @action 
+  addBird = bird => { 
+    this.birds.push(bird); 
+  }; 
+ 
+  @computed 
+  get birdCount() { 
+    return this.birds.length; 
+  } 
+} 
+``` 
+ 
+## Using store within component 
+ 
+We can start off by showing the number of birds we have by using the `birdCount` computed function from the store. Because it is a getter function, you don't have to call it with `()`... you can treat it as if you were reading a property. 
+ 
+```js 
+<h2>You have {BirdStore.birdCount} birds</h2> 
+``` 
+ 
+Next we can have a form that adds a new bird to the store: 
+ 
+```js 
+<form onSubmit={e => this.handleSubmit(e)}> 
+  <input 
+    type="text" 
+    ref={input => (this.birdInput = input)} 
+    placeholder="Add a bird" 
+  /> 
+</form> 
+``` 
+ 
+And the `handleSubmit` function looks like: 
+ 
+```js 
+handleSubmit = e => { 
+  e.preventDefault(); 
+  this.props.BirdStore.addBird(this.birdInput.value); 
+  e.target.reset(); 
+}; 
+``` 
+ 
+Finally we can list all of the birds in our store: 
+ 
+```js 
+<ul>{BirdStore.birds.map(bird => <li key={bird}>{bird}</li>)}</ul> 
+``` 
+ 
+The finished component looks like: 
+ 
+```js 
+import React, { Component } from 'react'; 
+import { inject, observer } from 'mobx-react'; 
+ 
+@inject('BirdStore') 
+@observer 
+export default class Birds extends Component { 
+  handleSubmit = e => { 
+    e.preventDefault(); 
+    this.props.BirdStore.addBird(this.birdInput.value); 
+    e.target.reset(); 
+  }; 
+ 
+  render() { 
+    const { BirdStore } = this.props; 
+ 
+    return ( 
+      <div> 
+        <h2>You have {BirdStore.birdCount} birds</h2> 
+ 
+        <form onSubmit={e => this.handleSubmit(e)}> 
+          <input 
+            type="text" 
+            ref={input => (this.birdInput = input)} 
+            placeholder="Add a bird" 
+          /> 
+        </form> 
+ 
+        <ul>{BirdStore.birds.map(bird => <li key={bird}>{bird}</li>)}</ul> 
+      </div> 
+    ); 
+  } 
+} 
+``` 
+ 
+## Conclusion 
+ 
+In this tutorial we built a small create-react-app and added MobX to it with support for decorators. We also built a small component which utilized all of our stores functionality... displaying a computed value, calling an action function, and looping through all of the birds in our observable property.

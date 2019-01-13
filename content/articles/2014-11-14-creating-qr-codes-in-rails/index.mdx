@@ -1,0 +1,43 @@
+---
+title: Creating QR Codes In Rails
+slug: creating-qr-codes-in-rails
+tags: ruby-on-rails
+date: 2014-11-14
+updated: 2014-11-14
+banner: ../canadaleaf.jpg
+---
+
+[Barby](https://rubygems.org/gems/barby) is a great gem for when you have to generate a barcode or QR code. You can choose to output it as any number of barcode types or as a QR code. This example will use a QR code but I have successfully used the Code128 barcode which is fairly common in the retail space. 
+ 
+The first step is to add Barby to your gem file. 
+ 
+```ruby 
+gem 'barby',  '~> 0.6.2' 
+gem 'rqrcode','~> 0.4.2' 
+``` 
+ 
+Here is an example helper for generating the QR code as base64 encoded png data. 
+ 
+```ruby 
+def generate_qr(text) 
+  require 'barby' 
+  require 'barby/barcode' 
+  require 'barby/barcode/qr_code' 
+  require 'barby/outputter/png_outputter' 
+ 
+  barcode = Barby::QrCode.new(text, level: :q, size: 5) 
+  base64_output = Base64.encode64(barcode.to_png({ xdim: 5 })) 
+  "data:image/png;base64,#{base64_output}" 
+end 
+``` 
+ 
+And an example call from your view. 
+ 
+```ruby 
+# In your view (haml) 
+%img{src: generate_qr("http://www.leighhalliday.com"), class: "qr-code"} 
+``` 
+ 
+And voila, a beautiful QR code. 
+ 
+<img class='qr-code' src='data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAM0AAADNAQAAAAAzx8nEAAACp0lEQVR4nN1Y&#x000A;TY6rMAy2CxLswg3CRUo6x6rUDnRA6rFa6EWSG5Adkcr42bzZzuzGfXosqtAs&#x000A;kn729+Pu6Ltn2cG3z/+7NSJiOWIeeHXGkjAH/gZr5WsgFwAac3apnQEWgLUu&#x000A;iJ7qQEWsYYJTKD4AbAmGPOPSvaReOGce3yHzf2/1q2f9sNXAYOnDIC44//ZZ&#x000A;32xtVaiOWDaxJzyYDsBRp30NYloAhs5ygxzr4iM+ISHTRfkaTqQKIBuXBiAs&#x000A;ZHsv6uW10aiGgK5aHdej8IxLzq94VteN0MEiTNmKAmQ74GbttdEYbXJmrQag&#x000A;T8gI3Hx0TN1VGw03X308wBFZMqQe1dXTHa76vbGi6efByqtlKT1BOcWkjcaD&#x000A;uRrfWTwSS0ZYMGDNK3XCUtWO5lJdav44Cl3I0xj0rQ0G9tVIrBuxC8VNLB9E&#x000A;SrXF/AmlI3TwmK8UW/Z4zh36Kjpf6niI5Mu97YK5sZBtfap8jSl2tqQKIGUz&#x000A;WG7R3qe3edC+xr46hWXiZmC1WDEd4FKLkGnrxoN6KgEumM6Subg7A+6MOlP2&#x000A;XA8pBRU9sduTZNPPqN6iEwzBrPYZygZab7gyNe5+6awftsTLWDdySK6CTTIC&#x000A;d8lRW8wnuI6YEZvIQ4zlEXKLB31ra/iX0w07KyoqX2WePvVVlHUDeDrJwdxY&#x000A;viLnMGGtunztbQ4SQyG9heSKuxj9Nqxoo9F7PrcDkDSMb8RcnfRDoKOnXSZZ&#x000A;Tyyggot9BVO2iV5stqCZB9k7zykl6MvXNtFzUULaickJLjy2tNpF2dqxkWYQ&#x000A;ukRnJRdbdTS2R9y+uFXZCDJKs6e8IASCzM7nOracN+TFpozUp7av/1XyYO7x&#x000A;jEJdXunnjW2id8S9wRmdxNoEkos2Gl8T/YnzH3UyQbZ+aV7AlH9h6w8maHqJ&#x000A;tOPNpwAAAABJRU5ErkJggg=='>

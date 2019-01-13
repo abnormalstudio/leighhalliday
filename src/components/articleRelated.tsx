@@ -22,7 +22,7 @@ interface Props {
 
 const ArticleRelated = ({ articles }: Props) => (
   <>
-    <H3Line>Artículos Relacionados</H3Line>
+    <H3Line>Related Articles</H3Line>
     <ul
       css={css`
         margin-bottom: 2rem;
@@ -33,6 +33,7 @@ const ArticleRelated = ({ articles }: Props) => (
           key={article.id}
           css={css`
             display: flex;
+            margin-bottom: 1.5rem;
 
             a {
               color: rgba(0, 0, 0, 0.75);
@@ -45,8 +46,8 @@ const ArticleRelated = ({ articles }: Props) => (
               display: block;
               margin-bottom: 0.5rem;
               margin-right: 0.5rem;
-              width: 100px;
-              height: 75px;
+              width: 80px;
+              height: 60px;
               background-size: cover;
               background-position: center;
             `}
@@ -56,7 +57,13 @@ const ArticleRelated = ({ articles }: Props) => (
               }')`
             }}
           />
-          <Link to={`/${article.frontmatter.slug}`}>
+          <Link
+            to={`/${article.frontmatter.slug}`}
+            css={css`
+              display: block;
+              width: calc(100% - 80px);
+            `}
+          >
             <h4
               css={css`
                 margin: 0px;

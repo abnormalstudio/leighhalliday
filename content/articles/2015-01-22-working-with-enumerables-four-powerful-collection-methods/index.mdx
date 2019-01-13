@@ -1,0 +1,66 @@
+---
+title: Working with Enumerables Four powerful collection methods
+slug: working-with-enumerables-four-powerful-collection-methods
+tags: ruby-on-rails
+date: 2015-01-22
+updated: 2015-01-22
+banner: ../canadaleaf.jpg
+---
+
+### What is an Enumerable? 
+ 
+Enumerable is a Ruby mixin/module which provides a large set of functionality to collection classes. You already know of some objects which are enumerable that come standard in Ruby such as Array and Hash. You can also make your own objects Enumerable by including the Enumerable mixin and by implementing an `each` method which yields the next item and the `<=>` (rocket ship) method, which Enumerable uses for making comparisons. 
+ 
+### Collect 
+ 
+`collect` (or `map`) is an extremely useful Ruby method when you have an Enumerable object and you want to transform it into something different. I'll give an example below; something you might use when building a select dropdown for a form. 
+ 
+```ruby 
+User.all.collect { |user| 
+  [user.name, user.id] 
+} 
+# [["John Olerud", 265], ["Roberto Alomar", 377], ["Joe Carter", 387], ["Pat Borders", 129], ["Dave Winfield", 420]] 
+``` 
+ 
+Or when you want to perform just a single operation or method call, you can use the shortcut &:method_name 
+ 
+```ruby 
+User.all.collect(&:id) 
+# [265, 377, 387, 129, 420] 
+ 
+# is equivalent to 
+User.all.collect{ |user| user.id } 
+# [265, 377, 387, 129, 420] 
+``` 
+ 
+### Select & Reject 
+ 
+`select` and `reject` are all about filtering a collection of objects. `select` selects only elements that match a condition whereas `reject` does the opposite and removes the elements that match a condition. 
+ 
+```ruby 
+# Let's find/select all elements greater than or equal to 10 
+[0,5,10,15,20].select{ |amount| amount >= 10 } 
+# [10, 15, 20] 
+ 
+# Let's remove/reject all elements less than 10 
+[0,5,10,15,20].reject{ |amount| amount < 10 } 
+# [10, 15, 20] 
+``` 
+ 
+### Partition 
+ 
+`partition` allows you to divide a collection of elements in two based on a certain condition. Let's take the array we were working with above, and divide it into amounts greater than or equal to 10, and amounts below 10. 
+ 
+```ruby 
+[0,5,10,15,20].partition{ |amount| amount >= 10 } 
+# [[10, 15, 20], [0, 5]] 
+``` 
+ 
+### Group By 
+ 
+`group_by` allows you to break up a collection of elements on a specific value. Let's imagine we have an array of names, and we want to group them by the first letter of the name. `group_by` is the perfect method to let us easily handle this. 
+ 
+```ruby 
+["leigh", "marian", "mauricio"].group_by{ |name| name[0] } 
+# {"l"=>["leigh"], "m"=>["marian", "mauricio"]} 
+```

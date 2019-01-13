@@ -1,0 +1,204 @@
+---
+title: Testing React with Jest, Enzyme, and Sinon
+slug: testing-react-jest-enzyme-sinon
+tags: frontend
+date: 2018-03-29
+updated: 2018-03-29
+banner: ../canadaleaf.jpg
+---
+
+import { YouTube } from "$components";
+
+In this article we'll look at how to get up and running with testing React in a [create-react-app](https://github.com/facebook/create-react-app). We'll look at how to configure your tests and tackle 3 common testing patterns.
+
+<YouTube id="U_Q7ss7wvoo" />
+
+## Config
+
+create-react-app comes with [Jest](https://facebook.github.io/jest/) pre-configured, but there are a few great libraries you'll want to add. The libraries you'll want are:
+
+- [enzyme](http://airbnb.io/enzyme/): Made by AirBnb, specifically made to help test React components
+- [enzyme-adapter-react-16](https://www.npmjs.com/package/enzyme-adapter-react-16): Needed to have enzyme work with your version of React
+- [enzyme-to-json](https://www.npmjs.com/package/enzyme-to-json): Let's you customize how Jest serializes snapshots
+- [sinon](http://sinonjs.org/): Spy functions, mocks, and stubs
+
+After adding these packages, in a file called `src/setupTests.js` you can configure your Jest tests:
+
+```js
+import React from "react";
+import Enzyme, { shallow, render, mount } from "enzyme";
+import Adapter from "enzyme-adapter-react-16";
+import { createSerializer } from "enzyme-to-json";
+import sinon from "sinon";
+
+// Set the default serializer for Jest to be the from enzyme-to-json
+// This produces an easier to read (for humans) serialized format.
+expect.addSnapshotSerializer(createSerializer({ mode: "deep" }));
+
+// React 16 Enzyme adapter
+Enzyme.configure({ adapter: new Adapter() });
+
+// Define globals to cut down on imports in test files
+global.React = React;
+global.shallow = shallow;
+global.render = render;
+global.mount = mount;
+global.sinon = sinon;
+```
+
+## What we're testing
+
+The component we'll be testing in this article is one named `Temperature`. It displays some data and handles a click event which calls a function prop.
+
+```jsx
+import React from "react";
+import PropTypes from "prop-types";
+import {
+  TemperatureBox, // wraps the content inside the Temperature component
+  LargeText, // The top larger text inside this box
+  SmallText // The bottom smaller text inside this box
+} from "../elements/box";
+
+export default class Temperature extends React.Component {
+  static propTypes = {
+    temp: PropTypes.number.isRequired,
+    city: PropTypes.string.isRequired,
+    toggleForecast: PropTypes.func.isRequired
+  };
+
+  render() {
+    return (
+      <TemperatureBox onClick={this.props.toggleForecast}>
+        <LargeText>{this.props.temp}&deg;c</LargeText>
+        <SmallText>{this.props.city}</SmallText>
+      </TemperatureBox>
+    );
+  }
+}
+```
+
+## Snapshot testing
+
+Inside of `Temperature.test.jsx` we'll write our first snapshot test. A snapshot test is like its name implies, a "snapshot" of your component for a specific state at a specific time. It allows you to know 2 things: Does my component render without errors? And does my component render what I expect it to?
+
+In the snapshot test below, we'll use the `shallow` function from enzyme. Enzyme comes with 3 different "levels" of these functions, each providing slightly different functionality:
+
+- `render`: Just give me the HTML rendered output of my component. Useful when you just care about the HTML.
+- `shallow`: Give me a light-weight representation of what my component renders
+- `mount`: Give me a full DOM representation of my component, allowing for full traversal, events, etc... useful for testing DOM events such as onClick, onSubmit, etc...
+
+The first time we call `expect(wrapper).toMatchSnapshot();`, if a snapshot does not exist, it will create one inside of the `__snapshots__` folder within the same directory you are testing in.
+
+```jsx
+import Temperature from "./Temperature";
+
+it("renders correctly", () => {
+  const wrapper = shallow(
+    <Temperature temp={10} city="Toronto" toggleForecast={() => {}} />
+  );
+
+  expect(wrapper).toMatchSnapshot();
+});
+```
+
+This test above produces the following snapshot:
+
+```js
+exports[`renders correctly 1`] = `
+<Styled(styled.div)
+  onClick={[Function]}
+>
+  <LargeText>
+    10
+    °c
+  </LargeText>
+  <SmallText>
+    Toronto
+  </SmallText>
+</Styled(styled.div)>
+`;
+```
+
+If we run a similar test but use the `render` function from enzyme, it only changes slightly:
+
+```jsx
+it("renders correctly again", () => {
+  const wrapper = render(
+    <Temperature temp={10} city="Toronto" toggleForecast={() => {}} />
+  );
+
+  expect(wrapper).toMatchSnapshot();
+});
+```
+
+But the snapshot that is produced likes vastly different, allowing us to see the difference between `shallow` and `render`:
+
+```js
+exports[`renders correctly again 1`] = `
+<div
+  class="sc-bwzfXH ilYHYa sc-bdVaJa dQdFv"
+>
+  <span
+    class="sc-ifAKCX XBTtJ"
+  >
+    10°c
+  </span>
+  <span
+    class="sc-EHOje exztiK"
+  >
+    Toronto
+  </span>
+</div>
+`;
+```
+
+## Value testing with Enzyme
+
+If we are more interested in grabbing a specific piece of a larger component, say to ensure text is being formatted correctly, we can `mount` our component and use enzyme to traverse the DOM and extract a specific value. The `find` function used in the example below works similar to CSS selectors.
+
+```jsx
+it("formats temp correctly", () => {
+  // mount our Temperature component
+  const wrapper = mount(
+    <Temperature temp={10} city="Toronto" toggleForecast={() => {}} />
+  );
+
+  // extract the text from the LargeText styled component
+  const text = wrapper.find("LargeText").text();
+
+  // ensure it matches what is expected
+  expect(text).toEqual("10°c");
+});
+```
+
+## Event testing with Sinon
+
+Lastly we can ensure that events are working as expected, by triggering a click event with enzyme, and have it call a spy function provided by sinon. Spy functions are fake functions that give us some extra functionality, namely to ask it questions like: were you called once? were you passed these arguments? how many times were you called? etc...
+
+Because enzyme selectors always return an array of elements, even when only 1 is matched, we'll just get the first one, allowing us to simulate a click event on it.
+
+```jsx
+it("calls toggleForecast on click", () => {
+  // create a spy function
+  const spy = sinon.spy();
+  // pass spy function as our toggleForecast prop
+  const wrapper = mount(
+    <Temperature temp={10} city="Toronto" toggleForecast={spy} />
+  );
+
+  // find the first div and simulate a click event on it
+  wrapper
+    .find("div")
+    .first()
+    .simulate("click");
+
+  // ensure that our spy (toggleForecast) was called when click was simulated
+  expect(spy.calledOnce).toBe(true);
+});
+```
+
+## Conclusion
+
+And there you have it! We have looked at how to do some basic testing of our React components using Jest, Enzyme, and Sinon. We looked at how to configure them and then how to perform 3 different types of tests: Snapshot, Value testing, and Spy testing.
+
+The final code used in this demo can [be found here](https://github.com/leighhalliday/the-clima-front/tree/step-done)

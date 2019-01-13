@@ -1,0 +1,167 @@
+---
+title: Testing Asynchronous Components with Mocks in Jest
+slug: testing-asynchronous-components-mocks-jest
+tags: frontend
+date: 2018-04-06
+updated: 2018-04-06
+banner: ../canadaleaf.jpg
+---
+
+import { YouTube } from "$components";
+
+In this article below we will test a component which runs asynchronous code inside of its `componentDidMount` lifecycle event. We'll look at how to avoid making real AJAX requests through the mocking functionality provided by Jest, as well as learn a few tricks with Enzyme to ensure our component did what we expected it to.
+
+<YouTube id="uo0psyTxgQM" />
+
+## Original version
+
+Without looking at the entire App component that we'd like to test, it has a function called `fetchImages` which gets called during the `componentDidMount` lifecycle event. This function makes an AJAX request to the Unsplash API, fetching an array of images which are to be displayed. In our current version of the code, it is all done inline, making it very difficult to test, and even more difficult to avoid actual AJAX requests in our tests.
+
+```js
+fetchImages = async term => {
+  this.setState({
+    status: "searching",
+    term: term,
+    images: []
+  });
+
+  try {
+    const response = await axios.get("https://api.unsplash.com/search/photos", {
+      params: {
+        client_id:
+          "4070052047e85343f77f7bbfb056ca4da387e25b3114baff0644247779a29964",
+        query: term
+      }
+    });
+    this.setState({
+      status: "done",
+      images: response.data.results
+    });
+  } catch (error) {
+    this.setState({
+      status: "error"
+    });
+  }
+};
+```
+
+## Refactor to allow mocking
+
+Let's extract the actual axios call into its own function. This not only cleans up our component's code, but allows us to mock it in Jest, giving us a way to avoid making real AJAX requests while testing.
+
+We will create a new file in `src/services/unsplash.js` which performs the AJAX request.
+
+```js
+import axios from "axios";
+
+export default async term => {
+  const response = await axios.get("https://api.unsplash.com/search/photos", {
+    params: {
+      client_id:
+        "4070052047e85343f77f7bbfb056ca4da387e25b3114baff0644247779a29964",
+      query: term
+    }
+  });
+
+  return response.data.results;
+};
+```
+
+Which will allow us to import it and use it in our App component:
+
+```js
+try {
+  const images = await unsplash(term);
+  this.setState({
+    status: "done",
+    images
+  });
+} catch (error) {
+  this.setState({
+    status: "error"
+  });
+}
+```
+
+## Create and use mocked version
+
+Now that we have the unsplash code in its own file and function, we can create a fake version of it inside of the folder `src/services/__mocks__/unsplash.js`. This is a special folder that Jest uses when mocking modules.
+
+```js
+const fakeData = [
+  {
+    id: 1,
+    categories: [{ title: "Nice image" }],
+    user: {
+      name: "Mr. Photographer"
+    },
+    links: {
+      html: "https://www.leighhalliday.com"
+    },
+    urls: {
+      small: "https://www.image.com/nice.jpg"
+    },
+    likes: 10
+  }
+];
+
+export default async term => {
+  return await new Promise(resolve => {
+    resolve(fakeData);
+  });
+};
+```
+
+Inside of the test we are writing for the App component, it will tell jest that we want to use our mocked version of this module.
+
+```jsx
+import App from "./App";
+
+// jest knows to look in the __mocks__ folder
+jest.mock("../services/unsplash");
+
+it("fetches images from unsplash and renders them on mount", () => {
+  // to be filled in
+});
+```
+
+## Testing asynchronous code
+
+Now that we've mocked our unsplash module in the test, we can write code to test this asynchronous component, safe knowing that it won't make the real AJAX request but will use our mocked version.
+
+```jsx
+import App from "./App";
+
+jest.mock("../services/unsplash");
+
+it("fetches images from unsplash and renders them on mount", done => {
+  const wrapper = shallow(<App />);
+
+  setTimeout(() => {
+    wrapper.update();
+
+    const state = wrapper.instance().state;
+    expect(state.term).toEqual("Mountains");
+    expect(state.status).toEqual("done");
+    expect(state.images.length).toEqual(1);
+
+    expect(wrapper.find("Image").length).toEqual(1);
+
+    done();
+  });
+});
+```
+
+There are a few things to point out about this test:
+
+- Notice that `done` is passed to the test function. Because our code is asynchronous, we have to call the done function, letting Jest know when the test has finished.
+- Even though we are running a mock version of the `unsplash()` function, the code still happens asynchronously, so by placing the code we want to test in a `setTimeout()` function without a time period, it will wait until the "next tick" to run our code, allowing the async code to have finished.
+- We can use `wrapper.update();` to explicitly re-render our component, which used the `shallow` render function provided by Enzyme.
+- If you want to access the component's state, you can get its instance using `wrapper.instance()`, allowing you to safely access its state.
+- Lastly we can find all `Image` components using Enzyme, ensuring that there is 1 of them, which is the amount of images we provided in our fake data: `expect(wrapper.find("Image").length).toEqual(1);`
+
+## Conclusion
+
+In this article (and video) we covered how to test components which contain asynchronous code. We refactored our code allowing us to mock the real AJAX request with a fake one which resolves instantly. For more information about testing async code in Jest, refer to the docks at [https://facebook.github.io/jest/docs/en/tutorial-async.html](https://facebook.github.io/jest/docs/en/tutorial-async.html)
+
+The full source code used in this article can be found at [https://github.com/leighhalliday/easy-mobx-redux-comparison/tree/async-test](https://github.com/leighhalliday/easy-mobx-redux-comparison/tree/async-test)
