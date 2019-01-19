@@ -54,7 +54,12 @@ const Layout = ({ children }: Props) => {
             }}
           />
           <Navigation />
-          <Search showSearch={showSearch} />
+          <Search
+            showSearch={showSearch}
+            onCloseClick={() => {
+              setShowSearch(false);
+            }}
+          />
           <div>
             <MDXProvider components={mdxComponents}>{children}</MDXProvider>
           </div>

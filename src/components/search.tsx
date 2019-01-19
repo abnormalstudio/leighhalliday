@@ -11,12 +11,17 @@ import {
 import { css } from "emotion";
 import { parseISO, format } from "date-fns";
 import { Tags } from "./index";
+import CloseIcon from "../images/icons/close.svg";
 
 interface Props {
   showSearch: boolean;
+  onCloseClick: () => void;
 }
 
-const Search: React.FunctionComponent<Props> = ({ showSearch }) => {
+const Search: React.FunctionComponent<Props> = ({
+  showSearch,
+  onCloseClick
+}) => {
   if (!showSearch) {
     return null;
   }
@@ -67,7 +72,36 @@ const Search: React.FunctionComponent<Props> = ({ showSearch }) => {
             }
           `}
         >
-          <SearchBox autoFocus={true} />
+          <div
+            css={css`
+              position: relative;
+            `}
+          >
+            <button
+              onClick={onCloseClick}
+              css={css`
+                position: absolute;
+                right: 0.7rem;
+                top: 0.7rem;
+                background: none;
+                color: inherit;
+                border: none;
+                padding: 0;
+                font: inherit;
+                cursor: pointer;
+                outline: inherit;
+              `}
+            >
+              <img
+                src={CloseIcon}
+                alt="close icon"
+                css={css`
+                  width: 1.5rem;
+                `}
+              />
+            </button>
+            <SearchBox autoFocus={true} />
+          </div>
           <div
             css={css`
               display: flex;
