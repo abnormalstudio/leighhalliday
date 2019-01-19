@@ -1,4 +1,5 @@
 import { graphql } from "gatsby";
+import Helmet from "react-helmet";
 import React from "react";
 import MDXRenderer from "gatsby-mdx/mdx-renderer";
 import { css } from "emotion";
@@ -42,6 +43,9 @@ const Article = ({ data }: Props) => {
   return (
     <Layout>
       <SEO keywords={splitTags(tags)} title={title} description={excerpt} />
+      <Helmet>
+        <meta property="og:image" content={banner.childImageSharp.fluid.src} />
+      </Helmet>
       <div
         css={css`
           display: flex;

@@ -2,6 +2,7 @@ import React from "react";
 import { css } from "emotion";
 import ArticleRelated from "./articleRelated";
 import ArticleAbout from "./articleAbout";
+import ArticleAd from "./articleAd";
 
 interface Article {
   id: string;
@@ -22,6 +23,7 @@ interface Props {
 
 const ArticleAside = ({ articles }: Props) => (
   <aside css={styles.aside}>
+    <ArticleAd />
     {articles.length > 0 && <ArticleRelated articles={articles} />}
     <ArticleAbout />
   </aside>
