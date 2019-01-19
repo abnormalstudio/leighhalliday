@@ -13,7 +13,7 @@ import {
 
 const Uses = () => (
   <Layout>
-    <SEO title="Leigh Halliday Uses" />
+    <SEO title="What do I use?" />
 
     <Single>
       <H1Line>What do I use?</H1Line>

@@ -26,7 +26,7 @@ const About = () => (
     `}
     render={data => (
       <Layout>
-        <SEO title="About Leigh Halliday" />
+        <SEO title="About me" />
 
         <Single>
           <H1Line>About Me</H1Line>
