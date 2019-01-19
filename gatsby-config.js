@@ -149,7 +149,6 @@ module.exports = {
         ]
       }
     },
-    "gatsby-plugin-offline",
     {
       resolve: `gatsby-plugin-algolia`,
       options: {
@@ -158,6 +157,6 @@ module.exports = {
         queries
       }
     },
-    `gatsby-plugin-netlify`
+    "gatsby-plugin-offline"
   ]
 };
