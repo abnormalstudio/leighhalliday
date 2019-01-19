@@ -1,3 +1,3 @@
-# Paisa en Canadá
+# Leigh Halliday
 
-Puedes encontrarme en [https://www.paisaencanada.com](https://www.paisaencanada.com)
+Code for [https://www.leighhalliday.com](https://www.leighhalliday.com)
