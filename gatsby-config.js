@@ -150,6 +150,62 @@ module.exports = {
       }
     },
     {
+      resolve: `gatsby-plugin-feed`,
+      options: {
+        query: `
+        {
+          site {
+            siteMetadata {
+              author
+              title
+              description
+              siteUrl
+              site_url: siteUrl
+            }
+          }
+        }
+      `,
+        feeds: [
+          {
+            serialize: ({ query: { site, allMdx } }) => {
+              return allMdx.edges.map(({ node }) => {
+                return {
+                  author: site.siteMetadata.author,
+                  title: node.frontmatter.title,
+                  description: node.excerpt,
+                  date: node.frontmatter.date,
+                  url: `${site.siteMetadata.siteUrl}/${node.frontmatter.slug}`,
+                  guid: `${site.siteMetadata.siteUrl}/${node.frontmatter.slug}`,
+                  categories: splitTags(node.frontmatter.tags)
+                };
+              });
+            },
+            query: `
+            {
+              allMdx {
+                edges {
+                  node {
+                    id
+                    timeToRead
+                    excerpt(pruneLength: 250)
+                    frontmatter {
+                      slug
+                      title
+                      date
+                      tags
+                    }
+                  }
+                }
+              }
+            }
+          `,
+            output: "/rss.xml",
+            title: "Leigh Halliday's RSS Feed"
+          }
+        ]
+      }
+    },
+    {
       resolve: `gatsby-plugin-algolia`,
       options: {
         appId: process.env.ALGOLIA_APP_ID,
