@@ -116,8 +116,8 @@ module.exports = {
     {
       resolve: `gatsby-plugin-manifest`,
       options: {
-        name: "paisa-en-canada",
-        short_name: "paisa-ca",
+        name: "leighhalliday",
+        short_name: "leigh",
         start_url: "/",
         background_color: "#663399",
         theme_color: "#663399",
@@ -128,10 +128,10 @@ module.exports = {
     {
       resolve: `gatsby-plugin-google-analytics`,
       options: {
-        trackingId: "UA-56612129-3",
+        trackingId: "UA-56612129-2",
         anonymize: true,
         respectDNT: true,
-        cookieDomain: "paisaencanada.com"
+        cookieDomain: "leighhalliday.com"
       }
     },
     "gatsby-plugin-typescript",
@@ -157,6 +157,7 @@ module.exports = {
         apiKey: process.env.ALGOLIA_API_KEY,
         queries
       }
-    }
+    },
+    `gatsby-plugin-netlify`
   ]
 };
