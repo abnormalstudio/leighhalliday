@@ -11,10 +11,10 @@ import {
   ListItem
 } from "$components";
 
-const Acerca = () => (
+const About = () => (
   <StaticQuery
     query={graphql`
-      query AcercaDeQuery {
+      query AboutQuery {
         file(relativePath: { eq: "leigh.jpg" }) {
           childImageSharp {
             fluid(maxWidth: 500) {
@@ -119,4 +119,4 @@ const Acerca = () => (
   />
 );
 
-export default Acerca;
+export default About;
