@@ -14,14 +14,7 @@ interface Props {
   };
 }
 
-const ArticleTile = ({
-  title,
-  slug,
-  tags,
-  date,
-  timeToRead,
-  banner
-}: Props) => {
+const ArticleTile = ({ title, slug, tags, banner }: Props) => {
   return (
     <div css={styles.outer}>
       <div
@@ -97,6 +90,12 @@ const styles = {
     @media (max-width: 768px) {
       width: calc(50vw - 2px);
       height: calc(50vw - 2px);
+      margin-bottom: 4px;
+    }
+
+    @media (max-width: 500px) {
+      width: calc(100vw);
+      height: calc(50vw);
       margin-bottom: 4px;
     }
 
