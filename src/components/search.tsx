@@ -31,6 +31,10 @@ const Search: React.FunctionComponent<Props> = ({
       css={css`
         position: relative;
         width: 100%;
+
+        h4 {
+          margin-top: 0px;
+        }
       `}
     >
       <InstantSearch
@@ -42,8 +46,7 @@ const Search: React.FunctionComponent<Props> = ({
           css={css`
             position: absolute;
             z-index: 5;
-            background-color: rgba(240, 240, 240, 0.95);
-            border-bottom: 2px solid rgba(0, 0, 0, 0.25);
+            background-color: rgba(245, 245, 245, 1);
             padding-bottom: 1rem;
             width: 100%;
 
@@ -81,9 +84,9 @@ const Search: React.FunctionComponent<Props> = ({
               onClick={onCloseClick}
               css={css`
                 position: absolute;
-                right: 0.7rem;
+                right: 0.5rem;
                 top: 0.7rem;
-                background: none;
+                background: #fff;
                 color: inherit;
                 border: none;
                 padding: 0;
@@ -141,14 +144,24 @@ const Search: React.FunctionComponent<Props> = ({
 
 const TagHits = ({ hits }: any) => (
   <>
-    <h4>Tags</h4>
+    <h3>Tags</h3>
     {hits.length > 0 ? (
-      <ul>
-        {hits.slice(0, 9).map((hit: any) => (
+      <ul
+        css={css`
+          display: flex;
+          flex-wrap: wrap;
+        `}
+      >
+        {hits.slice(0, 12).map((hit: any) => (
           <li
             key={hit.objectID}
             css={css`
-              margin-bottom: 0.5rem;
+              margin-bottom: 1rem;
+              width: 100%;
+
+              @media (max-width: 768px) {
+                width: 50%;
+              }
             `}
           >
             <TagHit hit={hit} />
@@ -157,7 +170,7 @@ const TagHits = ({ hits }: any) => (
       </ul>
     ) : (
       <small>
-        <em>No hay resultados</em>
+        <em>No matching results</em>
       </small>
     )}
   </>
@@ -179,30 +192,33 @@ const TagHit: React.FunctionComponent<TagHitProps> = ({ hit }) => (
 );
 
 const ArticleHits = ({ hits }: any) => (
-  <ul
-    css={css`
-      display: flex;
-      flex-wrap: wrap;
+  <>
+    <h3>Articles</h3>
+    <ul
+      css={css`
+        display: flex;
+        flex-wrap: wrap;
 
-      > li {
-        padding: 0px 1rem 0px 0px;
-        width: 33%;
+        > li {
+          padding: 0px 1rem 0px 0px;
+          width: 33%;
 
-        @media (max-width: 1024px) {
-          width: 50%;
+          @media (max-width: 1024px) {
+            width: 50%;
+          }
+          @media (max-width: 768px) {
+            width: 100%;
+          }
         }
-        @media (max-width: 768px) {
-          width: 100%;
-        }
-      }
-    `}
-  >
-    {hits.slice(0, 6).map((hit: any) => (
-      <li key={hit.objectID}>
-        <ArticleHit hit={hit} />
-      </li>
-    ))}
-  </ul>
+      `}
+    >
+      {hits.slice(0, 6).map((hit: any) => (
+        <li key={hit.objectID}>
+          <ArticleHit hit={hit} />
+        </li>
+      ))}
+    </ul>
+  </>
 );
 
 const ConnectedArticleHits = connectHits(ArticleHits);

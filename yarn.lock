@@ -5287,9 +5287,9 @@ fastparse@^1.1.1:
   resolved "https://registry.yarnpkg.com/fastparse/-/fastparse-1.1.2.tgz#91728c5a5942eced8531283c79441ee4122c35a9"
   integrity sha512-483XLLxTVIwWK3QTrMGRqUfUpoOs/0hbQrl2oz4J0pAcm3A3bu84wxTFqGqkJzewCLdME38xJLJAxBABfQT8sQ==
 
-"favicons-webpack-plugin@https://github.com/Creatiwity/favicons-webpack-plugin.git#f262255febeeca348bf7ae5cc140e0386c074e2c":
+"favicons-webpack-plugin@git+https://github.com/Creatiwity/favicons-webpack-plugin.git#f262255febeeca348bf7ae5cc140e0386c074e2c":
   version "0.0.9"
-  resolved "https://github.com/Creatiwity/favicons-webpack-plugin.git#f262255febeeca348bf7ae5cc140e0386c074e2c"
+  resolved "git+https://github.com/Creatiwity/favicons-webpack-plugin.git#f262255febeeca348bf7ae5cc140e0386c074e2c"
   dependencies:
     core-js "^2.5.7"
     favicons "^5.1.1"
@@ -5835,7 +5835,7 @@ gatsby-link@^2.0.7, gatsby-link@^2.0.8:
     "@types/reach__router" "^1.0.0"
     prop-types "^15.6.1"
 
-gatsby-mdx@^0.3.3:
+gatsby-mdx@^0.3.5:
   version "0.3.5"
   resolved "https://registry.yarnpkg.com/gatsby-mdx/-/gatsby-mdx-0.3.5.tgz#ed5fc2ad5f28b9b789c4202c77fd3ac6e6eb3adf"
   integrity sha512-dJWrcaEtwn37kLd/baL9N/QL9laxJYkU849LRyzJp5zudS4bPPP2XUhzpHp35e67d2M80u3hOSma3bDQvWswBg==
@@ -5926,7 +5926,7 @@ gatsby-plugin-netlify@^2.0.6:
     lodash "^4.17.10"
     webpack-assets-manifest "^3.0.2"
 
-gatsby-plugin-offline@^2.0.20:
+gatsby-plugin-offline@^2.0.21:
   version "2.0.21"
   resolved "https://registry.yarnpkg.com/gatsby-plugin-offline/-/gatsby-plugin-offline-2.0.21.tgz#d4637aef5dc6022eb9bd6031123788e73447d3d7"
   integrity sha512-14tEGldSf95v5pxrELtF1cgjKgAUm+SDoTWD9/PJYoRv1Qvu/YkcWPa3iJmNTHMfyUA5ZEsC0SzUPnqFfAuHOw==
@@ -6064,7 +6064,7 @@ gatsby-transformer-sharp@^2.1.9:
     probe-image-size "^4.0.0"
     sharp "^0.21.0"
 
-gatsby@^2.0.85:
+gatsby@^2.0.91:
   version "2.0.91"
   resolved "https://registry.yarnpkg.com/gatsby/-/gatsby-2.0.91.tgz#177869f475615dd4bd67e6b9d96779b214f3df52"
   integrity sha512-Z54P7oLqn2x1pvAPmk3CDRAxKMCXKBwsU3YzMAofAnA2OJXoCfZmbbkn9aLtXGin67sM9Jqg3GXnEcb6IiODcQ==
@@ -10588,15 +10588,15 @@ react-dom-core@0.0.3:
     fbjs "*"
     object-assign "*"
 
-react-dom@16.7.0-alpha.2:
-  version "16.7.0-alpha.2"
-  resolved "https://registry.yarnpkg.com/react-dom/-/react-dom-16.7.0-alpha.2.tgz#16632880ed43676315991d8b412cce6975a30282"
-  integrity sha512-o0mMw8jBlwHjGZEy/vvKd/6giAX0+skREMOTs3/QHmgi+yAhUClp4My4Z9lsKy3SXV+03uPdm1l/QM7NTcGuMw==
+react-dom@16.8.0-alpha.1:
+  version "16.8.0-alpha.1"
+  resolved "https://registry.yarnpkg.com/react-dom/-/react-dom-16.8.0-alpha.1.tgz#dab73b8354ba2e498e3127d18e29d4546cea889e"
+  integrity sha512-tZCUM8BpnwUHJmLnUWP9c3vVZxnCqYotj7s4tx7umojG6BKv745KIBtuPTzt0EI0q50GMLEpmT/CPQ8iA61TwQ==
   dependencies:
     loose-envify "^1.1.0"
     object-assign "^4.1.1"
     prop-types "^15.6.2"
-    scheduler "^0.12.0-alpha.2"
+    scheduler "^0.13.0-alpha.1"
 
 react-error-overlay@^3.0.0:
   version "3.0.0"
@@ -10673,15 +10673,15 @@ react@15:
     object-assign "^4.1.0"
     prop-types "^15.5.10"
 
-react@16.7.0-alpha.2:
-  version "16.7.0-alpha.2"
-  resolved "https://registry.yarnpkg.com/react/-/react-16.7.0-alpha.2.tgz#924f2ae843a46ea82d104a8def7a599fbf2c78ce"
-  integrity sha512-Xh1CC8KkqIojhC+LFXd21jxlVtzoVYdGnQAi/I2+dxbmos9ghbx5TQf9/nDxc4WxaFfUQJkya0w1k6rMeyIaxQ==
+react@16.8.0-alpha.1:
+  version "16.8.0-alpha.1"
+  resolved "https://registry.yarnpkg.com/react/-/react-16.8.0-alpha.1.tgz#c2b32689f3b466d3ce85a634dd9035f789d2cd97"
+  integrity sha512-vLwwnhM2dXrCsiQmcSxF2UdZVV5xsiXjK5Yetmy8dVqngJhQ3aw3YJhZN/YmyonxwdimH40wVqFQfsl4gSu2RA==
   dependencies:
     loose-envify "^1.1.0"
     object-assign "^4.1.1"
     prop-types "^15.6.2"
-    scheduler "^0.12.0-alpha.2"
+    scheduler "^0.13.0-alpha.1"
 
 read-chunk@^1.0.1:
   version "1.0.1"
@@ -11307,10 +11307,10 @@ sax@>=0.6.0, sax@^1.2.4, sax@~1.2.1, sax@~1.2.4:
   resolved "https://registry.yarnpkg.com/sax/-/sax-1.2.4.tgz#2816234e2378bddc4e5354fab5caa895df7100d9"
   integrity sha512-NqVDv9TpANUjFm0N8uM5GxL36UgKi9/atZw+x7YFnQ8ckwFGKrl4xX4yWtrey3UJm5nP1kUbnYgLopqWNSRhWw==
 
-scheduler@^0.12.0-alpha.2:
-  version "0.12.0"
-  resolved "https://registry.yarnpkg.com/scheduler/-/scheduler-0.12.0.tgz#8ab17699939c0aedc5a196a657743c496538647b"
-  integrity sha512-t7MBR28Akcp4Jm+QoR63XgAi9YgCUmgvDHqf5otgAj4QvdoBE4ImCX0ffehefePPG+aitiYHp0g/mW6s4Tp+dw==
+scheduler@^0.13.0-alpha.1:
+  version "0.13.0-alpha.1"
+  resolved "https://registry.yarnpkg.com/scheduler/-/scheduler-0.13.0-alpha.1.tgz#753977fb4fb35d8cdd559868a11e46b640955556"
+  integrity sha512-W0sH0848sVuPKg+I18vTYQyzVtA4X1lrVgSeXK6KnOPUltFdJcY5nkbTkjGUeS/E0x+eBsNYfSdhJtGjT95njw==
   dependencies:
     loose-envify "^1.1.0"
     object-assign "^4.1.1"
@@ -11505,9 +11505,9 @@ shallowequal@^1.0.1, shallowequal@^1.0.2:
   integrity sha512-y0m1JoUZSlPAjXVtPPW70aZWfIL/dSP7AFkRnniLCrK/8MDKog3TySTBmckD+RObVxH0v4Tox67+F14PdED2oQ==
 
 sharp@^0.21.0:
-  version "0.21.2"
-  resolved "https://registry.yarnpkg.com/sharp/-/sharp-0.21.2.tgz#5498b9ff5273c9c16ae4d27ac8e4eb4b0fb5ee32"
-  integrity sha512-Gpj8P1eXNHtdMT8XNobkaic5wnienCE46VUNns9umQ9nzATfnIexCofLPPetOdb7JcoRbQc5SjWvXzi7NUoVhA==
+  version "0.21.3"
+  resolved "https://registry.yarnpkg.com/sharp/-/sharp-0.21.3.tgz#381937de66c123687f2ac7186f85921c6bb19cdd"
+  integrity sha512-5qZk8r+YgfyztLEKkNez20Wynq/Uh1oNyP5T/3gTYwt2lBYGs9iDs5m0yVsZEPm8eVBbAJhS08J1wp/g+Ai1Qw==
   dependencies:
     bindings "^1.3.1"
     color "^3.1.0"

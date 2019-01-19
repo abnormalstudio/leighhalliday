@@ -8,7 +8,7 @@ const articlesQuery = `{
       node {
         id
         timeToRead
-        excerpt(pruneLength: 250)
+        excerpt(pruneLength: 200)
         frontmatter {
           slug
           title
