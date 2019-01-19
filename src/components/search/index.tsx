@@ -1,17 +1,14 @@
 import React from "react";
-import Link from "gatsby-link";
 import {
   InstantSearch,
   SearchBox,
-  Highlight,
   PoweredBy,
-  Index,
-  connectHits
+  Index
 } from "react-instantsearch-dom";
 import { css } from "emotion";
-import { parseISO, format } from "date-fns";
-import { Tags } from "./index";
-import CloseIcon from "../images/icons/close.svg";
+import ArticleHits from "./articleHits";
+import TagHits from "./tagHits";
+import CloseIcon from "../../images/icons/close.svg";
 
 interface Props {
   showSearch: boolean;
@@ -129,10 +126,10 @@ const Search: React.FunctionComponent<Props> = ({
             `}
           >
             <Index indexName="tags">
-              <ConnectedTagHits />
+              <TagHits />
             </Index>
             <Index indexName="articles">
-              <ConnectedArticleHits />
+              <ArticleHits />
             </Index>
           </div>
           <PoweredBy />
@@ -141,122 +138,5 @@ const Search: React.FunctionComponent<Props> = ({
     </div>
   );
 };
-
-const TagHits = ({ hits }: any) => (
-  <>
-    <h3>Tags</h3>
-    {hits.length > 0 ? (
-      <ul
-        css={css`
-          display: flex;
-          flex-wrap: wrap;
-        `}
-      >
-        {hits.slice(0, 12).map((hit: any) => (
-          <li
-            key={hit.objectID}
-            css={css`
-              margin-bottom: 1rem;
-              width: 100%;
-
-              @media (max-width: 768px) {
-                width: 50%;
-              }
-            `}
-          >
-            <TagHit hit={hit} />
-          </li>
-        ))}
-      </ul>
-    ) : (
-      <small>
-        <em>No matching results</em>
-      </small>
-    )}
-  </>
-);
-
-const ConnectedTagHits = connectHits(TagHits);
-
-interface TagHitProps {
-  hit: any;
-}
-
-const TagHit: React.FunctionComponent<TagHitProps> = ({ hit }) => (
-  <div>
-    <Link to={`/tags/${hit.tag}`}>
-      #<Highlight attribute="tag" hit={hit} />
-    </Link>{" "}
-    ({hit.numArticles})
-  </div>
-);
-
-const ArticleHits = ({ hits }: any) => (
-  <>
-    <h3>Articles</h3>
-    <ul
-      css={css`
-        display: flex;
-        flex-wrap: wrap;
-
-        > li {
-          padding: 0px 1rem 0px 0px;
-          width: 33%;
-
-          @media (max-width: 1024px) {
-            width: 50%;
-          }
-          @media (max-width: 768px) {
-            width: 100%;
-          }
-        }
-      `}
-    >
-      {hits.slice(0, 6).map((hit: any) => (
-        <li key={hit.objectID}>
-          <ArticleHit hit={hit} />
-        </li>
-      ))}
-    </ul>
-  </>
-);
-
-const ConnectedArticleHits = connectHits(ArticleHits);
-
-interface ArticleHitProps {
-  hit: any;
-}
-
-const ArticleHit: React.FunctionComponent<ArticleHitProps> = ({ hit }) => (
-  <div>
-    <Link to={`/${hit.slug}`}>
-      <h4
-        css={css`
-          margin-bottom: 0.5rem;
-        `}
-      >
-        <span className="hit-title">
-          <Highlight attribute="title" hit={hit} />
-        </span>
-      </h4>
-    </Link>
-    <div
-      css={css`
-        font-size: 0.75rem;
-        margin-bottom: 0.75rem;
-      `}
-    >
-      {format(parseISO(hit.date), "MMM d, YYYY", {
-        awareOfUnicodeTokens: true
-      })}
-    </div>
-    <Tags tags={hit.tags.join(", ")} />
-    <p>
-      <span className="hit-excerpt">
-        <Highlight attribute="excerpt" hit={hit} />
-      </span>
-    </p>
-  </div>
-);
 
 export default Search;
