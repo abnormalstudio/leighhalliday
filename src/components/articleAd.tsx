@@ -35,14 +35,15 @@ const ArticleAd: React.FunctionComponent = () => (
         margin-right: 15px;
       }
     `}
-  >
-    <script
+    dangerouslySetInnerHTML={{
+      __html: `<script
       async
       type="text/javascript"
-      src="//cdn.carbonads.com/carbon.js?zoneid=1673&serve=C6AILKT&placement=leighhallidaycom"
+      src="https://cdn.carbonads.com/carbon.js?zoneid=1673&serve=C6AILKT&placement=leighhallidaycom"
       id="_carbonads_js"
-    />
-  </div>
+    />`
+    }}
+  />
 );
 
 export default ArticleAd;
