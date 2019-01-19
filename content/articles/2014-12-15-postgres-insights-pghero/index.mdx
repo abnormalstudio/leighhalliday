@@ -1,45 +1,49 @@
 ---
 title: Postgres Insights with PgHero
 slug: postgres-insights-pghero
-tags: ruby-on-rails
+tags: postgres, database, ruby-on-rails
 date: 2014-12-15
 updated: 2014-12-15
-banner: ../canadaleaf.jpg
+banner: ./banner.jpg
 ---
 
-### What is PgHero? 
- 
-[PgHero](https://github.com/ankane/pghero) is a gem written by [Andrew Kane](https://twitter.com/andrewkane) for getting quick insights into how your Postgres database is performing and where there is room for improvement. It provides a quick overall status of your database, a look at the queries that are running, table indexes, table space, and can give you a way to get explanations of queries without having to jump down to the [psql console](http://www.leighhalliday.com/posts/postgresql-the-basics-of-psql). 
- 
-<img src="https://s3.amazonaws.com/leighhalliday/manual/pghero-home.png" style="max-width: 100%;" /> 
- 
-### What Does it Solve? 
- 
-The information it shows is all stored in the pg_ system tables, which can be a pain to navigate and doesn't provide an easily accessible view of the most important data. This tool does... it only does a few things, but it does them well. It is mainly useful for seeing where you can improve performance by installing an extra index, and can point out slow running queries. 
- 
-<img src="https://s3.amazonaws.com/leighhalliday/manual/pghero-index.png" style="max-width: 100%;"/> 
- 
-### Installation 
- 
-It is very easy to install to Rails. You simply add the gem to your Gemfile. 
- 
-```ruby 
-gem 'pghero' 
-``` 
- 
-After that, you'll need to mount this (it is a [Rails Engine](http://guides.rubyonrails.org/engines.html)) in your routes.rb file. 
- 
-```ruby 
-mount PgHero::Engine, at: "pghero" 
-``` 
- 
-If you're using this on production servers you will most definitely want to add some security which can be done either by Basic Authentication, or if you are using Devise you can mount your engine like so: 
- 
-```ruby 
-authenticate :user, lambda {|user| user.admin? } do 
-  mount PgHero::Engine, at: "pghero" 
-end 
-``` 
-### Ready For Use 
- 
+import PgHeroHome from "./pghero-home.png";
+import PgHeroIndex from "./pghero-index.png";
+
+### What is PgHero?
+
+[PgHero](https://github.com/ankane/pghero) is a gem written by [Andrew Kane](https://twitter.com/andrewkane) for getting quick insights into how your Postgres database is performing and where there is room for improvement. It provides a quick overall status of your database, a look at the queries that are running, table indexes, table space, and can give you a way to get explanations of queries without having to jump down to the [psql console](http://www.leighhalliday.com/posts/postgresql-the-basics-of-psql).
+
+<img src={PgHeroHome} alt="PG Hero home screen" />
+
+### What Does it Solve?
+
+The information it shows is all stored in the pg_system tables, which can be a pain to navigate and doesn't provide an easily accessible view of the most important data. This tool does... it only does a few things, but it does them well. It is mainly useful for seeing where you can improve performance by installing an extra index, and can point out slow running queries.
+
+### Installation
+
+It is very easy to install to Rails. You simply add the gem to your Gemfile.
+
+```ruby
+gem 'pghero'
+```
+
+After that, you'll need to mount this (it is a [Rails Engine](http://guides.rubyonrails.org/engines.html)) in your routes.rb file.
+
+```ruby
+mount PgHero::Engine, at: "pghero"
+```
+
+If you're using this on production servers you will most definitely want to add some security which can be done either by Basic Authentication, or if you are using Devise you can mount your engine like so:
+
+```ruby
+authenticate :user, lambda {|user| user.admin? } do
+  mount PgHero::Engine, at: "pghero"
+end
+```
+
+<img src={PgHeroIndex} alt="PG Hero index screen" />
+
+### Ready For Use
+
 Now you can simply access it by visiting the spot where you mounted it. One thing I ran into, and which clearly is discussed in the README is that you might run into some errors if `pg_stat_statements` isn't enabled. There are instructions in the GitHub repository on how to solve this quite common issue.

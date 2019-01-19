@@ -1,114 +1,114 @@
 ---
 title: Adding translations to your Rails website
 slug: adding-translations-to-your-rails-website
-tags: ruby-on-rails
+tags: i18n, ruby-on-rails
 date: 2015-01-14
 updated: 2015-01-14
-banner: ../canadaleaf.jpg
+banner: ./banner.jpg
 ---
 
-## Why does this site have I18n? 
- 
-It's a good question because my content is only available in English (perhaps I should write some articles in Spanish??). The answer is that the code for this site powers my wife's blog too, who does in fact write articles in both Spanish and English. So one of the requirements was to make a site that was I18n ready, but could be configured on or off, and also control which languages are available. 
- 
-## How it's configured 
- 
-There are only 3 settings to be configured to make this website available in other locales: 
- 
-- I18n activated: A boolean field. 
-- Default locale: Stored as "en". 
-- Available locales: A comma separated list like "en, es" 
- 
-I plan to write another article of how I created the settings for the website, but quite simply you can call the settings model and get the value for a particular setting: 
- 
-```ruby 
-if Setting.get(:has_translations) 
-  # si, señor 
-end 
-``` 
- 
-## Routing 
- 
-When setting up routing for sites with translations, I usually wrap all the routes on the website inside a `scope` block: 
- 
-```ruby 
-scope "(:locale)", locale: /#{Idioma.conf.locales.join("|")}/ do 
-  resources :posts, only: [:index, :show] 
-end 
-``` 
- 
-This makes it optional (in which case it will use the default locale), or it can include the locale inside of the path. 
- 
-``` 
-posts GET   (/:locale)/posts(.:format)          posts#index {:locale=>/en|es/} 
-post GET    (/:locale)/posts/:id(.:format)      posts#show {:locale=>/en|es/} 
-``` 
- 
-Inside of the ApplicationController I've created a before_action filter which sets the locale based on either the :locale param or the default_locale setting. I have also created a default_url_options method which Rails will use whenever it creates URLs. 
- 
-```ruby 
-class ApplicationController < ActionController::Base 
-  before_action :set_locale 
- 
-  def set_locale 
-    I18n.locale = params.fetch(:locale) { Idioma.configuration.default_locale } 
-  end 
- 
-  def default_url_options(options={}) 
-    default_options = if Setting.get(:i18n_activated) 
-      { locale: I18n.locale } 
-    else 
-      { locale: nil } 
-    end 
-    default_options.merge(options) 
-  end 
-end 
-``` 
- 
-One last thing I did was to build a helper method to help me build the links that allow switching from one locale to another. It builds an array of links which are displayed in the view. 
- 
-```ruby 
-# app/helpers/application_helper.rb 
-def locale_links 
-  Idioma.conf.locales.each_with_object([]) do |locale, ary| 
-    language = Language.native_name(locale).capitalize 
-    ary << if locale.to_s == I18n.locale.to_s 
-      language 
-    else 
-      link_to(language, params.merge(locale: locale)) 
-    end 
-  end 
-end 
-``` 
- 
-For displaying the links I do the following: 
- 
-```ruby 
-- if Setting.get(:i18n_activated) 
-  .select-locale 
-    %p 
-      = locale_links.join(" | ").html_safe 
-``` 
- 
-## Translating static content 
- 
-For static content I am using a gem I created called [Idioma](https://github.com/leighhalliday/idioma), which allows you to edit translations through an admin interface and persists them to both the database (through ActiveRecord) and furthermore to Redis, which is what Rails pulls the translations from when needed. 
- 
-Rails allows you to set different I18n backends (usually key/value stores), so in an initializer file I've set it to get the translations from Redis. Because I'm hosting this website on Heroku, I set up the Redis configuration differently depending on which environment I'm in. 
- 
-```ruby 
-# config/initializers/idioma.rb 
-$redis = if Rails.env.development? 
-  Redis.new(host: 'localhost', post: 6379) 
-else 
-  Redis.new(url: ENV["REDISCLOUD_URL"]) 
-end 
- 
-I18n.backend = I18n::Backend::KeyValue.new($redis) 
-``` 
- 
-On the RailsGuides website there is an excellent guide on [using I18n in Rails](http://guides.rubyonrails.org/i18n.html) which provides additional information on how to get this set up. 
- 
-## Translating dynamic content 
- 
+## Why does this site have I18n?
+
+It's a good question because my content is only available in English (perhaps I should write some articles in Spanish??). The answer is that the code for this site powers my wife's blog too, who does in fact write articles in both Spanish and English. So one of the requirements was to make a site that was I18n ready, but could be configured on or off, and also control which languages are available.
+
+## How it's configured
+
+There are only 3 settings to be configured to make this website available in other locales:
+
+- I18n activated: A boolean field.
+- Default locale: Stored as "en".
+- Available locales: A comma separated list like "en, es"
+
+I plan to write another article of how I created the settings for the website, but quite simply you can call the settings model and get the value for a particular setting:
+
+```ruby
+if Setting.get(:has_translations)
+  # si, señor
+end
+```
+
+## Routing
+
+When setting up routing for sites with translations, I usually wrap all the routes on the website inside a `scope` block:
+
+```ruby
+scope "(:locale)", locale: /#{Idioma.conf.locales.join("|")}/ do
+  resources :posts, only: [:index, :show]
+end
+```
+
+This makes it optional (in which case it will use the default locale), or it can include the locale inside of the path.
+
+```
+posts GET   (/:locale)/posts(.:format)          posts#index {:locale=>/en|es/}
+post GET    (/:locale)/posts/:id(.:format)      posts#show {:locale=>/en|es/}
+```
+
+Inside of the ApplicationController I've created a before_action filter which sets the locale based on either the :locale param or the default_locale setting. I have also created a default_url_options method which Rails will use whenever it creates URLs.
+
+```ruby
+class ApplicationController < ActionController::Base
+  before_action :set_locale
+
+  def set_locale
+    I18n.locale = params.fetch(:locale) { Idioma.configuration.default_locale }
+  end
+
+  def default_url_options(options={})
+    default_options = if Setting.get(:i18n_activated)
+      { locale: I18n.locale }
+    else
+      { locale: nil }
+    end
+    default_options.merge(options)
+  end
+end
+```
+
+One last thing I did was to build a helper method to help me build the links that allow switching from one locale to another. It builds an array of links which are displayed in the view.
+
+```ruby
+# app/helpers/application_helper.rb
+def locale_links
+  Idioma.conf.locales.each_with_object([]) do |locale, ary|
+    language = Language.native_name(locale).capitalize
+    ary << if locale.to_s == I18n.locale.to_s
+      language
+    else
+      link_to(language, params.merge(locale: locale))
+    end
+  end
+end
+```
+
+For displaying the links I do the following:
+
+```ruby
+- if Setting.get(:i18n_activated)
+  .select-locale
+    %p
+      = locale_links.join(" | ").html_safe
+```
+
+## Translating static content
+
+For static content I am using a gem I created called [Idioma](https://github.com/leighhalliday/idioma), which allows you to edit translations through an admin interface and persists them to both the database (through ActiveRecord) and furthermore to Redis, which is what Rails pulls the translations from when needed.
+
+Rails allows you to set different I18n backends (usually key/value stores), so in an initializer file I've set it to get the translations from Redis. Because I'm hosting this website on Heroku, I set up the Redis configuration differently depending on which environment I'm in.
+
+```ruby
+# config/initializers/idioma.rb
+$redis = if Rails.env.development?
+  Redis.new(host: 'localhost', post: 6379)
+else
+  Redis.new(url: ENV["REDISCLOUD_URL"])
+end
+
+I18n.backend = I18n::Backend::KeyValue.new($redis)
+```
+
+On the RailsGuides website there is an excellent guide on [using I18n in Rails](http://guides.rubyonrails.org/i18n.html) which provides additional information on how to get this set up.
+
+## Translating dynamic content
+
 The [Globalize gem](https://github.com/globalize/globalize) provides excellent support for translating dynamic content (content stored in the database) from within Rails. You essentially create an extra table for each of your data models which require translation, and it will automatically load in the correct data for the locale your website is currently running in (which comes from `I18n.locale`).

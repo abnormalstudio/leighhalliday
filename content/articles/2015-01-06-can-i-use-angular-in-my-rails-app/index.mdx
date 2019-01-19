@@ -1,102 +1,102 @@
 ---
 title: Can I Use Angular in my Rails App?
 slug: can-i-use-angular-in-my-rails-app
-tags: ruby-on-rails
+tags: angular, ruby-on-rails
 date: 2015-01-06
 updated: 2015-01-06
-banner: ../canadaleaf.jpg
+banner: ./banner.jpg
 ---
 
-### Using Angular in Rails App 
- 
-Single Page Applications (SPA) aren’t incredibly new any more, but there are a lot of people with Rails applications using a more traditional server-side Rails approach to the website’s architecture. 
- 
-So what happens when you’ve got a page or section of the website which is begging to be more interactive? Well, you could add jQuery to your page, which is a valid choice if the task at hand is rather small and isolated. But what if it is something bigger? Something like managing image uploads as well as an image gallery. 
- 
-In my opinion Angular is perfect for the task at hand. It’s quite easy to embed Angular into a single page of your application, and have Angular and Rails place nicely together. 
- 
-### Asset Pipeline - Bower 
- 
-There are a few ways to get Angular into your Rails asset pipeline. The first one is by going to RubyGems and finding the [angularjs-rails](https://rubygems.org/gems/angularjs-rails) gem. Or you could try out [Rails Assets](https://rails-assets.org/) which adds a second source to your Gemfile, and allows you to use [Bower](http://bower.io/) packages inside of your Gemfile just like you would with any other Ruby gem. 
- 
-The third way, and maybe slightly more unconventional (which is also the reason I tried it out), is to just use Bower itself, directly, and have it play nicely with your Rails Asset Pipeline all at the same time. Bower is a package manager for front-end (JS, CSS) code and is used heavily in the NodeJS community. 
- 
-I followed [this guide here](https://gist.github.com/afeld/5704079) to get Bower and Rails working alongside each other when hosting the application on Heroku. It essentially splits the Heroku deploy into two steps. The first step is to install NodeJS, and to download the Bower scripts and place them inside of the vender/assets/components directory. After this, Rails deploys normally, and pre-compiles the new JS files that Bower has downloaded. 
- 
-### Passing Data to Angular 
- 
-Because we don’t have a full-fledged SPA, we most likely have to send some data from the back-end to the front-end on page load. Especially in the case I am using it for, which involves bringing a better image uploading and gallery management experience to different forms. 
- 
-One way I found to do this is through using the `ng-init` directive. Using this I can pass data into the view from the back-end. My ng-init code calls a method initImage, which loads the image through an API I have set up. 
- 
-```ruby 
-%div.uploader{"ng-controller" => "UploadController", "ng-init" => "initImage(#{upload_id})"} 
-``` 
- 
-```javascript 
-// Called from view to init the image 
-$scope.initImage = function (upload_id) { 
-  loadImage(upload_id); 
-} 
- 
-loadImage = function(upload_id) { 
-  $http.get('/admin/uploads/' + upload_id + '.json').success(function(data) { 
-    $scope.image = data; 
-  }); 
-} 
-``` 
- 
-### Setting Data in Form 
- 
-You could certainly use an API to update data in the Rails back-end, but I wanted to end up with an `upload_id` which is set in a hidden form field, that eventually gets posted to the back-end, along with the rest of the form data. 
- 
-To do this I simply made the form inside of the Angular scope, allowing me to use a `value` directive, which Angular will update when it sees a change in the `$scope`. 
- 
-```ruby 
-= f.input :upload_id, as: :hidden, input_html: {value: ""} 
-``` 
- 
-### Making Code Reusable 
- 
-I wanted to be able to use this new uploader/gallery on a number of different views, with different forms, so I needed a way to make the code reusable. The idea I came up with was to create a `gallery` helper, which I could pass a block of HAML code to. This helper would include a partial that contains the HTML markup for Angular to work, and inside of the partial it would yield the block of code passed to it, making the form reside inside of the Angular scope. 
- 
-```ruby 
-# views/admin/posts/_form.html.haml 
-= gallery(@post.upload_id) do 
-  - capture_haml do 
-    .post 
-      = simple_form_for [:admin, @post] do |f| 
-``` 
- 
-```ruby 
-# helpers/application_helper.rb 
-def gallery(upload_id, &block)    
-  content = yield 
-  render partial: "admin/common/gallery", locals: {upload_id: upload_id, content: content} 
-end 
-``` 
- 
-All that is left is to print the content that has been passed to the helper. 
- 
-### Turbolinks and Angular - Making Them Play Nice 
- 
-One last thing to tackle is the issue of using Turbolinks and how Angular apps bootstrap themselves. To get around this I removed the `ng-app` directive, so that Angular will not bootstrap itself. 
- 
-Then, in my Angular Javascript, I manually bootstrap the file, which is triggered both on `$(document).ready(ready);` and on `$(document).on('page:load', ready);` 
- 
-```javascript 
-ready = function() { 
-  var uploadApp = angular.module('FileUploader', ['angularFileUpload']); 
- 
-  uploadApp.controller('UploadController', [ '$scope', '$upload', '$http', function($scope, $upload, $http) { 
-    // body of controller 
-  }); 
- 
-  angular.bootstrap("body", ['FileUploader']); 
-}; 
- 
-$(document).ready(ready); 
-$(document).on('page:load', ready); 
-``` 
- 
+### Using Angular in Rails App
+
+Single Page Applications (SPA) aren’t incredibly new any more, but there are a lot of people with Rails applications using a more traditional server-side Rails approach to the website’s architecture.
+
+So what happens when you’ve got a page or section of the website which is begging to be more interactive? Well, you could add jQuery to your page, which is a valid choice if the task at hand is rather small and isolated. But what if it is something bigger? Something like managing image uploads as well as an image gallery.
+
+In my opinion Angular is perfect for the task at hand. It’s quite easy to embed Angular into a single page of your application, and have Angular and Rails place nicely together.
+
+### Asset Pipeline - Bower
+
+There are a few ways to get Angular into your Rails asset pipeline. The first one is by going to RubyGems and finding the [angularjs-rails](https://rubygems.org/gems/angularjs-rails) gem. Or you could try out [Rails Assets](https://rails-assets.org/) which adds a second source to your Gemfile, and allows you to use [Bower](http://bower.io/) packages inside of your Gemfile just like you would with any other Ruby gem.
+
+The third way, and maybe slightly more unconventional (which is also the reason I tried it out), is to just use Bower itself, directly, and have it play nicely with your Rails Asset Pipeline all at the same time. Bower is a package manager for front-end (JS, CSS) code and is used heavily in the NodeJS community.
+
+I followed [this guide here](https://gist.github.com/afeld/5704079) to get Bower and Rails working alongside each other when hosting the application on Heroku. It essentially splits the Heroku deploy into two steps. The first step is to install NodeJS, and to download the Bower scripts and place them inside of the vender/assets/components directory. After this, Rails deploys normally, and pre-compiles the new JS files that Bower has downloaded.
+
+### Passing Data to Angular
+
+Because we don’t have a full-fledged SPA, we most likely have to send some data from the back-end to the front-end on page load. Especially in the case I am using it for, which involves bringing a better image uploading and gallery management experience to different forms.
+
+One way I found to do this is through using the `ng-init` directive. Using this I can pass data into the view from the back-end. My ng-init code calls a method initImage, which loads the image through an API I have set up.
+
+```ruby
+%div.uploader{"ng-controller" => "UploadController", "ng-init" => "initImage(#{upload_id})"}
+```
+
+```javascript
+// Called from view to init the image
+$scope.initImage = function(upload_id) {
+  loadImage(upload_id);
+};
+
+loadImage = function(upload_id) {
+  $http.get("/admin/uploads/" + upload_id + ".json").success(function(data) {
+    $scope.image = data;
+  });
+};
+```
+
+### Setting Data in Form
+
+You could certainly use an API to update data in the Rails back-end, but I wanted to end up with an `upload_id` which is set in a hidden form field, that eventually gets posted to the back-end, along with the rest of the form data.
+
+To do this I simply made the form inside of the Angular scope, allowing me to use a `value` directive, which Angular will update when it sees a change in the `$scope`.
+
+```ruby
+= f.input :upload_id, as: :hidden, input_html: {value: ""}
+```
+
+### Making Code Reusable
+
+I wanted to be able to use this new uploader/gallery on a number of different views, with different forms, so I needed a way to make the code reusable. The idea I came up with was to create a `gallery` helper, which I could pass a block of HAML code to. This helper would include a partial that contains the HTML markup for Angular to work, and inside of the partial it would yield the block of code passed to it, making the form reside inside of the Angular scope.
+
+```ruby
+# views/admin/posts/_form.html.haml
+= gallery(@post.upload_id) do
+  - capture_haml do
+    .post
+      = simple_form_for [:admin, @post] do |f|
+```
+
+```ruby
+# helpers/application_helper.rb
+def gallery(upload_id, &block)
+  content = yield
+  render partial: "admin/common/gallery", locals: {upload_id: upload_id, content: content}
+end
+```
+
+All that is left is to print the content that has been passed to the helper.
+
+### Turbolinks and Angular - Making Them Play Nice
+
+One last thing to tackle is the issue of using Turbolinks and how Angular apps bootstrap themselves. To get around this I removed the `ng-app` directive, so that Angular will not bootstrap itself.
+
+Then, in my Angular Javascript, I manually bootstrap the file, which is triggered both on `$(document).ready(ready);` and on `$(document).on('page:load', ready);`
+
+```javascript
+ready = function() {
+  var uploadApp = angular.module('FileUploader', ['angularFileUpload']);
+
+  uploadApp.controller('UploadController', [ '$scope', '$upload', '$http', function($scope, $upload, $http) {
+    // body of controller
+  });
+
+  angular.bootstrap("body", ['FileUploader']);
+};
+
+$(document).ready(ready);
+$(document).on('page:load', ready);
+```
+
 It is important to bootstrap Angular on the “body” of the HTML rather than on document, because in Turbolinks the document stays the same, but the body is refreshed each time there is a page load.

@@ -1,117 +1,117 @@
 ---
 title: Responding with JSON in Rails
 slug: responding-with-json-in-rails
-tags: ruby-on-rails
+tags: json, api, ruby-on-rails
 date: 2014-11-26
 updated: 2014-11-26
-banner: ../canadaleaf.jpg
+banner: ./banner.jpg
 ---
 
-When building a RESTful API in Rails, there are many different options and gems you can use to format your JSON responses. This isn't a post about how to build an API, but rather about some of the different popular options on how to define and structure JSON. 
- 
-### RABL 
- 
-[RABL](https://github.com/nesquena/rabl) is a DSL for generating both JSON and XML. In my mind it has a similar feel to Jbuilder, which I'll discuss below. It's works by creating a view with the extension .rabl, and defining which attributes, nodes, and relations you wish to include in the JSON response. Here's an example taken from their GitHub README. 
- 
-```ruby 
-# app/views/posts/index.rabl 
-collection @posts 
-attributes :id, :title, :subject 
-child(:user) { attributes :full_name } 
-node(:read) { |post| post.read_by?(@user) } 
-``` 
- 
-### Active Model Serializer 
- 
-[Active Model Serializer](https://github.com/rails-api/active_model_serializers) is a great way to build JSON responses using an object oriented approach. The objects have a very similar feel to how your ActiveModel object is set up in terms of attributes and relationships. It also allows you to choose your adapter-to decide what type of JSON structure is produced-or to build your own. Popular supported formats are JSON-API and JSON-HAL. 
- 
-```ruby 
-class PostSerializer < ActiveModel::Serializer 
-  attributes :title, :body 
-  has_many :comments 
-  url :post 
-end 
-``` 
- 
-### Jbuilder 
- 
-[Jbuilder](https://github.com/rails/jbuilder) provides a very similar DSL to RABL. Jbuilder is included with Rails, so it is used quite a bit. [Rails Casts](http://railscasts.com/episodes/320-jbuilder) has a free episode which goes into greater detail about Jbuilder. It's very easy to use and provides a lot of flexibility in defining exactly what attributes are included in and how the response is formatted and nested. 
- 
-```ruby 
-# app/views/message/show.json.jbuilder 
-json.content format_content(@message.content) 
-json.(@message, :created_at, :updated_at) 
- 
-json.author do 
-  json.name @message.creator.name.familiar 
-  json.email_address @message.creator.email_address_with_name 
-  json.url url_for(@message.creator, format: :json) 
-end 
-``` 
- 
-### Grape Entity 
- 
-[Grape Entity](https://github.com/intridea/grape-entity) was extracted from [Grape](https://github.com/intridea/grape), which is a popular gem used for building RESTful APIs. Similarly to RABL and Jbuilder, it provides a DSL for defining entities which are the structure of your JSON response. 
- 
-```ruby 
-module API 
-  module Entities 
-    class Status < Grape::Entity 
-      expose :user_name 
-      expose :text, documentation: { type: "String", desc: "Status update text." } 
-      expose :ip, if: { type: :full } 
-      expose :user_type, :user_id, if: lambda { |status, options| status.user.public? } 
-      expose :contact_info do 
-        expose :phone 
-        expose :address, using: API::Address 
-      end 
-    end 
-  end 
-end 
-``` 
- 
-### ROAR 
- 
-[ROAR](https://github.com/apotonick/roar) allows you to build presenter classes to represent your data. It comes with support for JSON, JSON-HAL, JSON-API, and XML. 
- 
-```ruby 
-require 'roar/json' 
- 
-module SongRepresenter 
-  include Roar::JSON 
-  property :title 
-end 
-``` 
- 
-### ActiveModel or Hash 
- 
-This may seem like a strange thing to point out, but for very simple cases, you can simply call the to_json method on either an ActiveModel object or a native Ruby Hash. 
- 
-```ruby 
-# Using an @organization model 
-respond_to do |format| 
-  format.json do 
-    render json: @organization.to_json 
-  end 
-end 
-``` 
- 
-```ruby 
-# Using a plain Ruby Hash 
-respond_to do |format| 
-  format.json do 
-    render json: { 
-      name: @user.name, 
-      email: @user.email 
-    }.to_json 
-  end 
-end 
-``` 
- 
-### JSON Specifications 
- 
-For more information on some of the different JSON structures, please refer to the links below. I will be writing an article at a later time specifically about how these options differ from one another. 
- 
-- [JSON-HAL](http://stateless.co/hal_specification.html) 
-- [JSON-API](http://jsonapi.org) 
+When building a RESTful API in Rails, there are many different options and gems you can use to format your JSON responses. This isn't a post about how to build an API, but rather about some of the different popular options on how to define and structure JSON.
+
+### RABL
+
+[RABL](https://github.com/nesquena/rabl) is a DSL for generating both JSON and XML. In my mind it has a similar feel to Jbuilder, which I'll discuss below. It's works by creating a view with the extension .rabl, and defining which attributes, nodes, and relations you wish to include in the JSON response. Here's an example taken from their GitHub README.
+
+```ruby
+# app/views/posts/index.rabl
+collection @posts
+attributes :id, :title, :subject
+child(:user) { attributes :full_name }
+node(:read) { |post| post.read_by?(@user) }
+```
+
+### Active Model Serializer
+
+[Active Model Serializer](https://github.com/rails-api/active_model_serializers) is a great way to build JSON responses using an object oriented approach. The objects have a very similar feel to how your ActiveModel object is set up in terms of attributes and relationships. It also allows you to choose your adapter-to decide what type of JSON structure is produced-or to build your own. Popular supported formats are JSON-API and JSON-HAL.
+
+```ruby
+class PostSerializer < ActiveModel::Serializer
+  attributes :title, :body
+  has_many :comments
+  url :post
+end
+```
+
+### Jbuilder
+
+[Jbuilder](https://github.com/rails/jbuilder) provides a very similar DSL to RABL. Jbuilder is included with Rails, so it is used quite a bit. [Rails Casts](http://railscasts.com/episodes/320-jbuilder) has a free episode which goes into greater detail about Jbuilder. It's very easy to use and provides a lot of flexibility in defining exactly what attributes are included in and how the response is formatted and nested.
+
+```ruby
+# app/views/message/show.json.jbuilder
+json.content format_content(@message.content)
+json.(@message, :created_at, :updated_at)
+
+json.author do
+  json.name @message.creator.name.familiar
+  json.email_address @message.creator.email_address_with_name
+  json.url url_for(@message.creator, format: :json)
+end
+```
+
+### Grape Entity
+
+[Grape Entity](https://github.com/intridea/grape-entity) was extracted from [Grape](https://github.com/intridea/grape), which is a popular gem used for building RESTful APIs. Similarly to RABL and Jbuilder, it provides a DSL for defining entities which are the structure of your JSON response.
+
+```ruby
+module API
+  module Entities
+    class Status < Grape::Entity
+      expose :user_name
+      expose :text, documentation: { type: "String", desc: "Status update text." }
+      expose :ip, if: { type: :full }
+      expose :user_type, :user_id, if: lambda { |status, options| status.user.public? }
+      expose :contact_info do
+        expose :phone
+        expose :address, using: API::Address
+      end
+    end
+  end
+end
+```
+
+### ROAR
+
+[ROAR](https://github.com/apotonick/roar) allows you to build presenter classes to represent your data. It comes with support for JSON, JSON-HAL, JSON-API, and XML.
+
+```ruby
+require 'roar/json'
+
+module SongRepresenter
+  include Roar::JSON
+  property :title
+end
+```
+
+### ActiveModel or Hash
+
+This may seem like a strange thing to point out, but for very simple cases, you can simply call the to_json method on either an ActiveModel object or a native Ruby Hash.
+
+```ruby
+# Using an @organization model
+respond_to do |format|
+  format.json do
+    render json: @organization.to_json
+  end
+end
+```
+
+```ruby
+# Using a plain Ruby Hash
+respond_to do |format|
+  format.json do
+    render json: {
+      name: @user.name,
+      email: @user.email
+    }.to_json
+  end
+end
+```
+
+### JSON Specifications
+
+For more information on some of the different JSON structures, please refer to the links below. I will be writing an article at a later time specifically about how these options differ from one another.
+
+- [JSON-HAL](http://stateless.co/hal_specification.html)
+- [JSON-API](http://jsonapi.org)
 - [JSON-Collection](http://amundsen.com/media-types/collection)

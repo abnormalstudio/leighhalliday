@@ -146,6 +146,11 @@ const styles = {
         font-weight: bold;
       }
     }
+
+    /* .gatsby-image-outer-wrapper,
+    .gatsby-image-wrapper {
+      height: 100%;
+    } */
   `
 };
 

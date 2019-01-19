@@ -1,126 +1,122 @@
 ---
 title: Intro to MongoDB for Postgres developers
 slug: intro-to-mongodb-for-postgres-developers
-tags: databases
+tags: mongodb, postgres, databases
 date: 2015-02-20
 updated: 2015-02-20
-banner: ../canadaleaf.jpg
+banner: ./banner.jpg
 ---
 
-## Intro to MongoDB 
- 
-MongoDB is an object or document based database... in other words, a NoSQL database. This puts it in contrast to databases such as MySQL, PostgreSQL, or SQLite, who store their data relationally in a tabular format. MongoDB stores its data in JSON-style documents. If you're familiar with JSON, you'll already be familiar with how MongoDB stores its data. 
- 
-## MongoDB is schema-less 
- 
-If you're used to relational databases, you're used to defining the collection's (table's) schema; which columns, their data-type, and any constraints on them, etc. With MongoDB this isn't so. You can have 1 record with a certain set of fields, and the next record can have completely different fields. You can even do things such as querying all the records which do or do not have a specific field. 
- 
-This puts more pressure on the application to control the data that is going in and out of the database. It's a good idea to document the desired schema somewhere for developers to understand how the data is structured in a table. 
- 
-## There are no joins 
- 
-In MongoDB there is no idea of joining data from 2 or more tables together like there is in relational databases. If you want data from 2 different tables, you can either store duplicate data, or you can grab it using multiple queries. 
- 
-It's not all bad though, because being a document style database gives you the power to store more complicated data in a single place. Consider something like Pivotal Tracker or Redmine, where you have information about a ticket, comments about it, maybe a history, uploaded files, etc... in MongoDB you can store all the information about a single ticket in the same place, grabbing all of it in a single query which in SQL might require 4-5 joins. 
- 
-An example structure could be like this: 
- 
-```json 
-{ 
-  id: 111, 
-  status: "open", 
-  title: "We have many issues.", 
-  description: "Longer description of issues.", 
-  requester: { 
-    id: 222, 
-    name: "Leigh Halliday" 
-  }, 
-  comments: [ 
-    { 
-      commented_at: "2015-02-23 10:10:10", 
-      commentor: { 
-        id: 333, 
-        name: "Disagreeing Programmer" 
-      }, 
-      body: "I don't think we have so many issues." 
-    }, 
-    { 
-      commented_at: "2015-02-23 12:10:10", 
-      commentor: { 
-        id: 222, 
-        name: "Leigh Halliday" 
-      }, 
-      body: "Are you sure about that?" 
-    } 
-  ] 
-} 
-``` 
- 
-## It's all JavaScript! 
- 
-If you're writing MEAN applications (MongoDB, Express, Angular, Node), you're either a fan of JavaScript, or you're willing to put up with it for the benefits it has. The great thing about MongoDB is that the way you communicate with it is via JS. In the MongoDB REPL, you can write normal JS, perform loops, store values in variables, etc... If you're writing a query, it is formatted (as you'll see below) using a familiar JSON format. If you're writing map-reduce operations, they are also in JavaScript. 
- 
-## Comparison of basic operations 
- 
-### Selecting All 
- 
-```javascript 
-db.sales.find(); 
-``` 
- 
-```sql 
-SELECT * FROM sales; 
-``` 
- 
-### Limiting Results 
- 
-```javascript 
-db.sales.find({item: "Book"}); 
- 
-db.sales.find({ 
-  item: {$in: ["Book", "Computer"]}, 
-  quantity: {$gt: 5} 
-}); 
-``` 
- 
-```sql 
-SELECT * FROM sales WHERE item = 'Book'; 
- 
-SELECT * FROM sales WHERE item IN ('Book', 'Computer') AND quantity > 5; 
-``` 
- 
-### Counting records 
- 
-```javascript 
-db.sales.count({item: "Book"}); 
-``` 
- 
-```sql 
-SELECT count(*) FROM sales WHERE item = 'Book'; 
-``` 
- 
-### More complicated 
- 
-```javascript 
-db.sales.aggregate( 
-  { $group : 
-    { _id : "$item", 
-      sumSubtotal : { $sum : "$subtotal" } 
-    } 
-  }, 
-  { $match : { sumSubtotal : { $gte : 1000 } } 
-}); 
-``` 
- 
-```sql 
-SELECT item, SUM(subtotal) AS sumSubtotal 
-FROM sales 
-GROUP BY item 
-HAVING sunSubtotal >= 1000; 
-``` 
- 
-If you'd like to see a further [comparison of MongoDB to SQL](http://docs.mongodb.org/manual/reference/sql-comparison/), MongoDB has provided one. 
- 
-## Conclusion 
- 
+## Intro to MongoDB
+
+MongoDB is an object or document based database... in other words, a NoSQL database. This puts it in contrast to databases such as MySQL, PostgreSQL, or SQLite, who store their data relationally in a tabular format. MongoDB stores its data in JSON-style documents. If you're familiar with JSON, you'll already be familiar with how MongoDB stores its data.
+
+## MongoDB is schema-less
+
+If you're used to relational databases, you're used to defining the collection's (table's) schema; which columns, their data-type, and any constraints on them, etc. With MongoDB this isn't so. You can have 1 record with a certain set of fields, and the next record can have completely different fields. You can even do things such as querying all the records which do or do not have a specific field.
+
+This puts more pressure on the application to control the data that is going in and out of the database. It's a good idea to document the desired schema somewhere for developers to understand how the data is structured in a table.
+
+## There are no joins
+
+In MongoDB there is no idea of joining data from 2 or more tables together like there is in relational databases. If you want data from 2 different tables, you can either store duplicate data, or you can grab it using multiple queries.
+
+It's not all bad though, because being a document style database gives you the power to store more complicated data in a single place. Consider something like Pivotal Tracker or Redmine, where you have information about a ticket, comments about it, maybe a history, uploaded files, etc... in MongoDB you can store all the information about a single ticket in the same place, grabbing all of it in a single query which in SQL might require 4-5 joins.
+
+An example structure could be like this:
+
+```json
+{
+  "id": 111,
+  "status": "open",
+  "title": "We have many issues.",
+  "description": "Longer description of issues.",
+  "requester": {
+    "id": 222,
+    "name": "Leigh Halliday"
+  },
+  "comments": [
+    {
+      "commented_at": "2015-02-23 10:10:10",
+      "commentor": {
+        "id": 333,
+        "name": "Disagreeing Programmer"
+      },
+      "body": "I don't think we have so many issues."
+    },
+    {
+      "commented_at": "2015-02-23 12:10:10",
+      "commentor": {
+        "id": 222,
+        "name": "Leigh Halliday"
+      },
+      "body": "Are you sure about that?"
+    }
+  ]
+}
+```
+
+## It's all JavaScript!
+
+If you're writing MEAN applications (MongoDB, Express, Angular, Node), you're either a fan of JavaScript, or you're willing to put up with it for the benefits it has. The great thing about MongoDB is that the way you communicate with it is via JS. In the MongoDB REPL, you can write normal JS, perform loops, store values in variables, etc... If you're writing a query, it is formatted (as you'll see below) using a familiar JSON format. If you're writing map-reduce operations, they are also in JavaScript.
+
+## Comparison of basic operations
+
+### Selecting All
+
+```javascript
+db.sales.find();
+```
+
+```sql
+SELECT * FROM sales;
+```
+
+### Limiting Results
+
+```javascript
+db.sales.find({ item: "Book" });
+
+db.sales.find({
+  item: { $in: ["Book", "Computer"] },
+  quantity: { $gt: 5 }
+});
+```
+
+```sql
+SELECT * FROM sales WHERE item = 'Book';
+
+SELECT * FROM sales WHERE item IN ('Book', 'Computer') AND quantity > 5;
+```
+
+### Counting records
+
+```javascript
+db.sales.count({ item: "Book" });
+```
+
+```sql
+SELECT count(*) FROM sales WHERE item = 'Book';
+```
+
+### More complicated
+
+```javascript
+db.sales.aggregate(
+  { $group: { _id: "$item", sumSubtotal: { $sum: "$subtotal" } } },
+  { $match: { sumSubtotal: { $gte: 1000 } } }
+);
+```
+
+```sql
+SELECT item, SUM(subtotal) AS sumSubtotal
+FROM sales
+GROUP BY item
+HAVING sunSubtotal >= 1000;
+```
+
+If you'd like to see a further [comparison of MongoDB to SQL](http://docs.mongodb.org/manual/reference/sql-comparison/), MongoDB has provided one.
+
+## Conclusion
+
 MongoDB might seem strange to those familiar with relational data, but it's a good idea to try it out to see which circumstances might be perfect to opt for it instead of a traditional database. It allows you to think about your data in a different way than you are used to.

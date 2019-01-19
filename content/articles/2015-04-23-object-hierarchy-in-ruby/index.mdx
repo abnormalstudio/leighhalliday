@@ -1,82 +1,85 @@
 ---
 title: Object hierarchy in Ruby
 slug: object-hierarchy-in-ruby
-tags: ruby-on-rails
+tags: ruby
 date: 2015-04-23
 updated: 2015-04-23
-banner: ../canadaleaf.jpg
+banner: ./banner.jpg
 ---
 
-As a way to better understand how Ruby works, I started to dive into how object hierarchies work in the language. We're going to be covering the default ancestry chain in Ruby, how to create your own ancestors, and what the base level objects in Ruby actually do. 
- 
-## Where did these objects come from? 
- 
-Let's create an empty class called `Animal` and take a look at it's ancestor chain. 
- 
-```ruby 
-class Animal 
-end 
- 
-p Animal.ancestors 
-# [Animal, Object, Kernel, BasicObject] 
-``` 
-What? That's weird. At the top of our chain we've got Animal, which makes sense... but Ruby is telling us that Animal extends from Object, Kernel, and BasicObject. In Ruby, even though you don't have to explicitly have to tell it so, it always extends from these 3 things: Object, Kernel, and BasicObject. 
- 
-### Object 
- 
-[Object](http://ruby-doc.org/core-2.2.2/Object.html) is the default parent of all classes in Ruby. If you've ever used the methods `is_a?`, `nil?`, or `inspect`, maybe you've wondered where they came from. Yes they're just part of Ruby itself, but where they live is actually inside of Object. So you get all of this great functionality for free whenever you create a class of your own. 
- 
-### Kernel 
- 
-Next on the ancestor chain we've got [Kernel](http://ruby-doc.org/core-2.2.2/Kernel.html). Kernel isn't actually a class, but a module which is included inside of the Object class. You've definitely used methods from it before! It contains `puts`, `raise`, and one of a series of strange converter methods which begin with capital letters, `Array` (Array is a handy method which takes anything you pass it, and converts it to an Array if it isn't one already). 
- 
-You may have thought that these methods just came from thin-air... language constructs or key-words, like the `if` statement, but now you know that they actually live inside of the Kernel module! 
- 
-### BasicObject 
- 
-Now we're at the bottom... we're talking bare bones here. [BasicObject](http://ruby-doc.org/core-2.2.0/BasicObject.html) is the parent of all parents inside of Ruby. It's basically an empty class from which all other classes extend from. It has only a handful of methods, the bare minimum you need to create an instance of an object, such as `new`. So next time you create an instance of your favourite Alpaca class (`Alpaca.new`), you're actually calling a method which is from the BasicObject class. 
- 
-<img src="https://s3.amazonaws.com/leighhalliday/manual/camelib-family.jpg" style="max-width: 100%;" /> 
- 
-## Creating our own hierarchies 
- 
-Object hierarchies are useful when you want to create "sub-classes". This is when you have some object, like an Animal class, and you want all the functionality of an Animal, but you want to make it more specific, maybe for different types of animals who make different noises or have different abilities, such as flying. 
- 
-To do this we use a construct which looks like so: 
- 
-```ruby 
-class Alpaca < Animal 
-end 
-p Alpaca.ancestors 
-# [Alpaca, Animal, Object, Kernel, BasicObject] 
-``` 
- 
-What we're saying is that we want an Alpaca class which `extends` from-or is a child of-the Animal class. You get all the functionality of an Animal, like having a name, a height, a weight, the ability to move, but we can modify and tweak those things to cater to a more specific Animal, like an Alpaca. We can add methods such as `spit`, which isn't common to all animals but is something an Alpaca does. 
- 
-## Single inheritance 
- 
-Ruby only allows you to have a single parent. There are ways to get around this though. We've got something available to us which is called a `Module`. You've already seen this above when looking at `Kernel`. 
- 
-A module is a way to group a set of related constants and methods together. These modules can't be instantiated, but they can be included inside of objects, giving whatever functionality they have to the object they were included into. 
- 
-Single inheritance is now no longer an issue, because we can bring in functionality from a series of different modules. 
- 
-```ruby 
-module Camelid 
-end 
- 
-class Alpaca < Animal 
-  include Camelid 
-end 
- 
-p Alpaca.ancestors 
-# [Alpaca, Camelid, Animal, Object, Kernel, BasicObject] 
-``` 
- 
-You'll notice that Camelid comes __after__ the class it was included into, but before the parent of our current class. 
- 
-## Which method will be called? 
- 
-When you call a method inside of your object, what Ruby does is to first check if this method exists inside our current context, or the `self` context in other words. If it doesn't find it there, it continues up the ancestor chain until it finds the method. 
- 
-If it doesn't find the method, Ruby will automatically invoke the `method_missing` method, giving you one last chance to deal with the fact that this method doesn't exist. Where does  `method_missing` exist? It lives in BasicObject, the parent of all parents!
+import FamilyImage from "./camelib-family.jpg";
+
+As a way to better understand how Ruby works, I started to dive into how object hierarchies work in the language. We're going to be covering the default ancestry chain in Ruby, how to create your own ancestors, and what the base level objects in Ruby actually do.
+
+<img src={FamilyImage} alt="camelib family" />
+
+## Where did these objects come from?
+
+Let's create an empty class called `Animal` and take a look at it's ancestor chain.
+
+```ruby
+class Animal
+end
+
+p Animal.ancestors
+# [Animal, Object, Kernel, BasicObject]
+```
+
+What? That's weird. At the top of our chain we've got Animal, which makes sense... but Ruby is telling us that Animal extends from Object, Kernel, and BasicObject. In Ruby, even though you don't have to explicitly have to tell it so, it always extends from these 3 things: Object, Kernel, and BasicObject.
+
+### Object
+
+[Object](http://ruby-doc.org/core-2.2.2/Object.html) is the default parent of all classes in Ruby. If you've ever used the methods `is_a?`, `nil?`, or `inspect`, maybe you've wondered where they came from. Yes they're just part of Ruby itself, but where they live is actually inside of Object. So you get all of this great functionality for free whenever you create a class of your own.
+
+### Kernel
+
+Next on the ancestor chain we've got [Kernel](http://ruby-doc.org/core-2.2.2/Kernel.html). Kernel isn't actually a class, but a module which is included inside of the Object class. You've definitely used methods from it before! It contains `puts`, `raise`, and one of a series of strange converter methods which begin with capital letters, `Array` (Array is a handy method which takes anything you pass it, and converts it to an Array if it isn't one already).
+
+You may have thought that these methods just came from thin-air... language constructs or key-words, like the `if` statement, but now you know that they actually live inside of the Kernel module!
+
+### BasicObject
+
+Now we're at the bottom... we're talking bare bones here. [BasicObject](http://ruby-doc.org/core-2.2.0/BasicObject.html) is the parent of all parents inside of Ruby. It's basically an empty class from which all other classes extend from. It has only a handful of methods, the bare minimum you need to create an instance of an object, such as `new`. So next time you create an instance of your favourite Alpaca class (`Alpaca.new`), you're actually calling a method which is from the BasicObject class.
+
+## Creating our own hierarchies
+
+Object hierarchies are useful when you want to create "sub-classes". This is when you have some object, like an Animal class, and you want all the functionality of an Animal, but you want to make it more specific, maybe for different types of animals who make different noises or have different abilities, such as flying.
+
+To do this we use a construct which looks like so:
+
+```ruby
+class Alpaca < Animal
+end
+p Alpaca.ancestors
+# [Alpaca, Animal, Object, Kernel, BasicObject]
+```
+
+What we're saying is that we want an Alpaca class which `extends` from-or is a child of-the Animal class. You get all the functionality of an Animal, like having a name, a height, a weight, the ability to move, but we can modify and tweak those things to cater to a more specific Animal, like an Alpaca. We can add methods such as `spit`, which isn't common to all animals but is something an Alpaca does.
+
+## Single inheritance
+
+Ruby only allows you to have a single parent. There are ways to get around this though. We've got something available to us which is called a `Module`. You've already seen this above when looking at `Kernel`.
+
+A module is a way to group a set of related constants and methods together. These modules can't be instantiated, but they can be included inside of objects, giving whatever functionality they have to the object they were included into.
+
+Single inheritance is now no longer an issue, because we can bring in functionality from a series of different modules.
+
+```ruby
+module Camelid
+end
+
+class Alpaca < Animal
+  include Camelid
+end
+
+p Alpaca.ancestors
+# [Alpaca, Camelid, Animal, Object, Kernel, BasicObject]
+```
+
+You'll notice that Camelid comes **after** the class it was included into, but before the parent of our current class.
+
+## Which method will be called?
+
+When you call a method inside of your object, what Ruby does is to first check if this method exists inside our current context, or the `self` context in other words. If it doesn't find it there, it continues up the ancestor chain until it finds the method.
+
+If it doesn't find the method, Ruby will automatically invoke the `method_missing` method, giving you one last chance to deal with the fact that this method doesn't exist. Where does `method_missing` exist? It lives in BasicObject, the parent of all parents!

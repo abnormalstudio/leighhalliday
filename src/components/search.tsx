@@ -10,7 +10,6 @@ import {
 } from "react-instantsearch-dom";
 import { css } from "emotion";
 import { parseISO, format } from "date-fns";
-import esLocale from "date-fns/locale/es";
 import { Tags } from "./index";
 
 interface Props {
@@ -30,8 +29,8 @@ const Search: React.FunctionComponent<Props> = ({ showSearch }) => {
       `}
     >
       <InstantSearch
-        appId="K0JL4F3M6O"
-        apiKey="44e6f1b460576a20e727565b9349268a"
+        appId="586KGQDU4K"
+        apiKey="b12bac4c5d83074ab66d634565d5ae29"
         indexName="articles"
       >
         <div
@@ -198,8 +197,7 @@ const ArticleHit: React.FunctionComponent<ArticleHitProps> = ({ hit }) => (
       `}
     >
       {format(parseISO(hit.date), "MMM d, YYYY", {
-        awareOfUnicodeTokens: true,
-        locale: esLocale
+        awareOfUnicodeTokens: true
       })}
     </div>
     <Tags tags={hit.tags.join(", ")} />

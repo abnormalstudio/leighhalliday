@@ -1,87 +1,87 @@
 ---
 title: Showing similar results in Postgres
 slug: showing-results-for-trigrams-in-postgres
-tags: databases
+tags: databases, postgres
 date: 2015-06-25
 updated: 2015-06-25
-banner: ../canadaleaf.jpg
+banner: ./banner.jpg
 ---
 
-## Correcting for spelling mistakes 
- 
-If you search "trgrams in pstgres" in Google, you'll get results for "trigrams in postgres". To say that is useful is an understatement! Recently at work I wanted to search a table of tags, but I wanted to account for spelling mistakes. Just because the user is 1 letter off doesn't mean I shouldn't give them a meaningful search result. This is especially true with mobile users, where spelling mistakes are all the more common (even with keyboard corrections). We are going to use the Trigram feature in Postgres to help us achieve this. 
- 
-## What are trigrams? 
- 
-Trigrams are the different groups of 3 characters that make up a word or sentence. If we look at the phrase "the quick red", we can find all of the trigrams that make it up (_ are displayed instead of spaces): 
- 
-``` 
-the, he_, e_q, _qu, qui, uic, ick, ck_, k_r, _re, red 
-``` 
- 
-Trigrams are often used for statistical analysis of texts. In this case they are going to help tell us how similar one word is to another. 
- 
-## How do you use trigrams in Postgres? 
- 
-Trigrams in Postgres are enabled by running a command (either in a Rails migration or in the psql console) telling Postgres to enable the [pg_trgm extension](http://www.postgresql.org/docs/9.4/static/pgtrgm.html). 
- 
-```sql 
-CREATE EXTENSION pg_trgm; 
-``` 
- 
-The next thing we want to be sure of is that our queries run quickly. Trigrams in Postgres support both GIST and GIN indexes. GIST have less cost at the beginning but aren't as performant as GIN ones. 
- 
-```sql 
-CREATE INDEX tags_trgm_idx ON tags USING gin (name gin_trgm_ops); 
-``` 
- 
-Now we can actually find words based on approximate matches. Let's first ask Postgres to tell us the similarity between words: 
- 
-```sql 
-select similarity('electronics', 'elektrnics'); 
-``` 
- 
-``` 
- similarity  
------------- 
-   0.352941 
-``` 
- 
-```sql 
-select similarity('electronics', 'electronics'); 
-``` 
- 
-``` 
- similarity  
------------- 
-          1 
-``` 
- 
-Another question we can ask is "is this word similar?" 
- 
-```sql 
-# select 'electronics' % 'elektronics'; 
- ?column?  
----------- 
- t 
-``` 
- 
-## Putting everything together 
- 
-Now that we understand the basics of using the `pg_trgm` extension, let's perform some actual queries. 
- 
-```sql 
-select name, similarity(name, 'elektron') 
-from tags 
-where name % 'elektron' 
-order by similarity(name, 'elektron') desc; 
-``` 
- 
-``` 
-    name     | similarity  
--------------+------------ 
- electronic  |   0.333333 
- electronics |     0.3125 
- electro     |   0.307692 
-(3 rows) 
+## Correcting for spelling mistakes
+
+If you search "trgrams in pstgres" in Google, you'll get results for "trigrams in postgres". To say that is useful is an understatement! Recently at work I wanted to search a table of tags, but I wanted to account for spelling mistakes. Just because the user is 1 letter off doesn't mean I shouldn't give them a meaningful search result. This is especially true with mobile users, where spelling mistakes are all the more common (even with keyboard corrections). We are going to use the Trigram feature in Postgres to help us achieve this.
+
+## What are trigrams?
+
+Trigrams are the different groups of 3 characters that make up a word or sentence. If we look at the phrase "the quick red", we can find all of the trigrams that make it up (\_ are displayed instead of spaces):
+
+```
+the, he_, e_q, _qu, qui, uic, ick, ck_, k_r, _re, red
+```
+
+Trigrams are often used for statistical analysis of texts. In this case they are going to help tell us how similar one word is to another.
+
+## How do you use trigrams in Postgres?
+
+Trigrams in Postgres are enabled by running a command (either in a Rails migration or in the psql console) telling Postgres to enable the [pg_trgm extension](http://www.postgresql.org/docs/9.4/static/pgtrgm.html).
+
+```sql
+CREATE EXTENSION pg_trgm;
+```
+
+The next thing we want to be sure of is that our queries run quickly. Trigrams in Postgres support both GIST and GIN indexes. GIST have less cost at the beginning but aren't as performant as GIN ones.
+
+```sql
+CREATE INDEX tags_trgm_idx ON tags USING gin (name gin_trgm_ops);
+```
+
+Now we can actually find words based on approximate matches. Let's first ask Postgres to tell us the similarity between words:
+
+```sql
+select similarity('electronics', 'elektrnics');
+```
+
+```
+ similarity
+------------
+   0.352941
+```
+
+```sql
+select similarity('electronics', 'electronics');
+```
+
+```
+ similarity
+------------
+          1
+```
+
+Another question we can ask is "is this word similar?"
+
+```sql
+# select 'electronics' % 'elektronics';
+ ?column?
+----------
+ t
+```
+
+## Putting everything together
+
+Now that we understand the basics of using the `pg_trgm` extension, let's perform some actual queries.
+
+```sql
+select name, similarity(name, 'elektron')
+from tags
+where name % 'elektron'
+order by similarity(name, 'elektron') desc;
+```
+
+```
+    name     | similarity
+-------------+------------
+ electronic  |   0.333333
+ electronics |     0.3125
+ electro     |   0.307692
+(3 rows)
 ```

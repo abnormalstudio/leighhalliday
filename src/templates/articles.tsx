@@ -37,10 +37,10 @@ interface Props {
 const Articles = ({ data, pageContext: { page, prevUrl, nextUrl } }: Props) => {
   return (
     <Layout>
-      <SEO title={`Articles - Page ${page}`} />
+      <SEO title={`Articles page ${page}`} />
 
       <Single>
-        <H1Line>Articles {page > 1 && <span>- page {page}</span>}</H1Line>
+        <H1Line>Articles {page > 1 && <span>page {page}</span>}</H1Line>
 
         <ArticleGrid articles={data.allMdx.edges.map(edge => edge.node)} />
 
@@ -76,8 +76,8 @@ export const pageQuery = graphql`
             slug
             title
             tags
-            date(formatString: "MMMM D, YYYY", locale: "es")
-            updated(formatString: "MMMM D, YYYY", locale: "es")
+            date(formatString: "MMMM D, YYYY", locale: "en")
+            updated(formatString: "MMMM D, YYYY", locale: "en")
             banner {
               childImageSharp {
                 fluid(maxWidth: 400) {

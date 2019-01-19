@@ -4,93 +4,93 @@ slug: getting-started-with-ruby-on-rails
 tags: ruby-on-rails
 date: 2014-12-08
 updated: 2014-12-08
-banner: ../canadaleaf.jpg
+banner: ./banner.jpg
 ---
 
-## Git Init 
- 
-The first thing I do when starting a new project is to create a new git repository. GitHub is great if you don't mind the code being public, or you don't mind paying to have a private repository. There is another option available called BitBucket, which provides free private git repositories. 
- 
-Once you've created your git repo, you can clone that empty repo on your local machine. This is done by running the following command, which will create you a folder called monastery within the directory you are running the command from. 
- 
-```bash 
-git clone https://github.com/leighhalliday/monastery.git 
-``` 
- 
-You can alternatively run the `git init` command first, and later publish it to GitHub or BitBucket. GitHub will give you instructions on what to do if you have already initiated the repository locally. 
- 
-## Things to Install 
- 
-Here's a primer on some of the basic technologies you'll need to install to run a Rails website. On a mac, I highly recommend using [Homebrew](http://brew.sh/), which is a package manager and makes installing most of the technologies below pretty effortless. 
- 
-- [Node.js](http://nodejs.org/) - Yes, even for a Rails app you'll need Node.js. It is used for compiling assets and a simple web server we'll use called Pow. 
-- [Pow](http://pow.cx/) - A super easy web server which removes the need to edit your /etc/hosts file. All you do is symlink a directory and voila, you're good to go! 
-- [PostgreSQL](http://www.postgresql.org/) - My database of choice, which works very well with Rails and is relatively easy to get installed. Also, this is supported well on Heroku which I use to host this website. 
-- [rbenv](https://github.com/sstephenson/rbenv) or [chruby](https://github.com/postmodern/chruby) - Used for installing and managing your Ruby versions. 
-- [Ruby](https://www.ruby-lang.org/en/) - Following the instructions on rbenv or chruby, you can install the Ruby version of your choice. Or just go with the one your mac already comes with. On Windows, the [RubyInstaller](http://rubyinstaller.org/) will help you get up and running. 
-- [Ruby on Rails](http://rubyonrails.org/) - By typing `gem install rails` in the command line, the program __gem__ (which comes with ruby) will pull it down and install it for you. 
-- [Bundler](http://bundler.io/) - A package manager for Ruby packages (called Gems)... easily installed by running `gem install bundler`. It handles all Gem dependencies and manages their versions for you. 
- 
-[Here is a guide](https://gorails.com/setup/osx/10.10-yosemite) on how to get things up and running on your mac. I know this seems like a lot, but the reward is worth it! Also, by following the instructions in the guide, it shouldn't be as bad as it might seem. 
- 
-## Rails New 
- 
-Now that we've got the necessary technologies installed, it is time to start our Rails project! Woohoo! To do that, we `cd` into the directory we created when setting up our git repository, and run the following command: `rails new .` 
- 
-This will bootstrap a new Rails project. We're almost ready to visit the site for the first time! 
- 
-### Switching App to Postgres 
- 
-Because Rails comes installed with SQLite3 and we are going to use Postgres, you'll have to make the following changes to 2 files. 
- 
-In config/database.yml, let's set up our database credentials. 
- 
-```yaml 
-default: &default 
-  adapter: postgresql 
-  pool: 5 
-  encoding: unicode 
- 
-development: 
-  <<: *default 
-  database: monastery 
-  username: lhalliday 
-  password: 
- 
-test: 
-  <<: *default 
-  database: monastery_test 
-  username: lhalliday 
-  password: 
-``` 
- 
-In your Gemfile, replace the line that says `gem 'sqlite3'` with `gem 'pg'`. Then in the command line run `bundle install` which will install the pg (Postgres) gem. 
- 
-Lastly, let's initialize our database by running the following command: `rake db:create` and following that `rake db:migrate`. This will create the monastery database and create a schema_migrations table for managing database migrations. 
- 
-### Visiting App in the Browser 
- 
-To visit our app in the browser, we'll first symlink the app directory to let pow handle things for us. 
- 
-```bash 
-cd ~/.pow 
-ln -s /path/to/monastery 
-``` 
- 
-Now, if we visit http://monastery.dev (all pow sites are basically your folder name followed by .dev) we should see the "Welcome to Rails!" page.  
- 
-## Foundational Gems 
- 
-Gems in Ruby are packages of code. There are thousands and thousands of Gems available for free to all Ruby developers for handling such things as testing, file uploads, authentication, among many other things. In fact, Ruby on Rails is itself a Gem and can be [found here](https://rubygems.org/gems/rails). 
- 
-Here are some Gems that I always tend to install at the beginning of my projects, because I enjoy working with some of these rather than the Rails defaults. All of these can be found on [RubyGems](https://rubygems.org/) which is the main place to find Ruby packages/gems. It is similar to [NPM](npmjs.org) for Node.js. 
- 
-- Testing: rspec (using rspec-rails gem) 
-- Views: haml (using haml-rails gem) 
-- Forms: simple_form 
-- Authentication: sorcery or devise 
-- File Uploads: paperclip 
- 
-## Next Steps 
- 
+## Git Init
+
+The first thing I do when starting a new project is to create a new git repository. GitHub is great if you don't mind the code being public, or you don't mind paying to have a private repository. There is another option available called BitBucket, which provides free private git repositories.
+
+Once you've created your git repo, you can clone that empty repo on your local machine. This is done by running the following command, which will create you a folder called monastery within the directory you are running the command from.
+
+```bash
+git clone https://github.com/leighhalliday/monastery.git
+```
+
+You can alternatively run the `git init` command first, and later publish it to GitHub or BitBucket. GitHub will give you instructions on what to do if you have already initiated the repository locally.
+
+## Things to Install
+
+Here's a primer on some of the basic technologies you'll need to install to run a Rails website. On a mac, I highly recommend using [Homebrew](http://brew.sh/), which is a package manager and makes installing most of the technologies below pretty effortless.
+
+- [Node.js](http://nodejs.org/) - Yes, even for a Rails app you'll need Node.js. It is used for compiling assets and a simple web server we'll use called Pow.
+- [Pow](http://pow.cx/) - A super easy web server which removes the need to edit your /etc/hosts file. All you do is symlink a directory and voila, you're good to go!
+- [PostgreSQL](http://www.postgresql.org/) - My database of choice, which works very well with Rails and is relatively easy to get installed. Also, this is supported well on Heroku which I use to host this website.
+- [rbenv](https://github.com/sstephenson/rbenv) or [chruby](https://github.com/postmodern/chruby) - Used for installing and managing your Ruby versions.
+- [Ruby](https://www.ruby-lang.org/en/) - Following the instructions on rbenv or chruby, you can install the Ruby version of your choice. Or just go with the one your mac already comes with. On Windows, the [RubyInstaller](http://rubyinstaller.org/) will help you get up and running.
+- [Ruby on Rails](http://rubyonrails.org/) - By typing `gem install rails` in the command line, the program **gem** (which comes with ruby) will pull it down and install it for you.
+- [Bundler](http://bundler.io/) - A package manager for Ruby packages (called Gems)... easily installed by running `gem install bundler`. It handles all Gem dependencies and manages their versions for you.
+
+[Here is a guide](https://gorails.com/setup/osx/10.10-yosemite) on how to get things up and running on your mac. I know this seems like a lot, but the reward is worth it! Also, by following the instructions in the guide, it shouldn't be as bad as it might seem.
+
+## Rails New
+
+Now that we've got the necessary technologies installed, it is time to start our Rails project! Woohoo! To do that, we `cd` into the directory we created when setting up our git repository, and run the following command: `rails new .`
+
+This will bootstrap a new Rails project. We're almost ready to visit the site for the first time!
+
+### Switching App to Postgres
+
+Because Rails comes installed with SQLite3 and we are going to use Postgres, you'll have to make the following changes to 2 files.
+
+In config/database.yml, let's set up our database credentials.
+
+```yaml
+default: &default
+  adapter: postgresql
+  pool: 5
+  encoding: unicode
+
+development:
+  <<: *default
+  database: monastery
+  username: lhalliday
+  password:
+
+test:
+  <<: *default
+  database: monastery_test
+  username: lhalliday
+  password:
+```
+
+In your Gemfile, replace the line that says `gem 'sqlite3'` with `gem 'pg'`. Then in the command line run `bundle install` which will install the pg (Postgres) gem.
+
+Lastly, let's initialize our database by running the following command: `rake db:create` and following that `rake db:migrate`. This will create the monastery database and create a schema_migrations table for managing database migrations.
+
+### Visiting App in the Browser
+
+To visit our app in the browser, we'll first symlink the app directory to let pow handle things for us.
+
+```bash
+cd ~/.pow
+ln -s /path/to/monastery
+```
+
+Now, if we visit http://monastery.dev (all pow sites are basically your folder name followed by .dev) we should see the "Welcome to Rails!" page.
+
+## Foundational Gems
+
+Gems in Ruby are packages of code. There are thousands and thousands of Gems available for free to all Ruby developers for handling such things as testing, file uploads, authentication, among many other things. In fact, Ruby on Rails is itself a Gem and can be [found here](https://rubygems.org/gems/rails).
+
+Here are some Gems that I always tend to install at the beginning of my projects, because I enjoy working with some of these rather than the Rails defaults. All of these can be found on [RubyGems](https://rubygems.org/) which is the main place to find Ruby packages/gems. It is similar to [NPM](npmjs.org) for Node.js.
+
+- Testing: rspec (using rspec-rails gem)
+- Views: haml (using haml-rails gem)
+- Forms: simple_form
+- Authentication: sorcery or devise
+- File Uploads: paperclip
+
+## Next Steps
+
 Coming up next we'll dive into creating some models (and their database tables), routes, and an admin section.

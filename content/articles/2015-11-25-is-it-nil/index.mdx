@@ -1,84 +1,84 @@
 ---
 title: Is it nil?
 slug: is-it-nil
-tags: ruby-on-rails
+tags: ruby
 date: 2015-11-25
 updated: 2015-11-25
-banner: ../canadaleaf.jpg
+banner: ./banner.jpg
 ---
 
-What is actually happening under the covers in Ruby when you ask if a variable is nil? It turns out that it's way simpler than you may think, and it all comes down to object oriented programming and inheritance. 
- 
-You've probably heard it said that everything in Ruby is an object... this includes the objects that you make but also the built in objects such as `Fixnum`, `Float`, `Time`, `String`, etc.  All objects in Ruby, whether they come with the language or whether it is one that you create, extend from a special built in class called `Object`. This class brings with it a set of functionality, one of those methods being the `nil?` method. 
- 
-```ruby 
-Object.methods.grep(/nil/) 
-#=> [:nil?] 
-``` 
- 
-So let's go take a look to see what this `nil?` method actually does. To do that we're going to look at the [Ruby source code](https://github.com/ruby/ruby/blob/trunk/object.c) which is written in C. 
- 
-```c 
-static VALUE 
-rb_false(VALUE obj) 
-{ 
-    return Qfalse; 
-} 
- 
-rb_define_method(rb_mKernel, "nil?", rb_false, 0); 
-``` 
- 
-What this code is saying is basically that when you call the method `nil?`, what you are basically doing is calling a method that is an alias of the value `false`... it simply returns the value `false` no matter what. 
- 
-```ruby 
-5.nil? 
-#=> false 
-false.nil? 
-#=> false 
-"nil".nil? 
-#=> false 
-``` 
- 
-So what _is_ `nil` then? The only thing that is `nil` is `nil` itself. When you use the `nil` keyword in Ruby, what you're actually getting is the singleton instance of the `NilClass` class. 
- 
-```ruby 
-nil.class 
-#=> NilClass 
-nil.class.ancestors 
-#=> [NilClass, Object, Kernel, BasicObject] 
-``` 
- 
-`NilClass` is a child of `Object` which happens to override its parent's version of the `nil?` method to have it return `true`. We can see this by looking again at Ruby's source code: 
- 
-```c 
-static VALUE 
-rb_true(VALUE obj) 
-{ 
-    return Qtrue; 
-} 
- 
-rb_define_method(rb_cNilClass, "nil?", rb_true, 0); 
-``` 
- 
-If we were to define our own version of `Object` and `NilClass`, the `nil?` methods would simply look like this: 
- 
-```ruby 
-class Object 
-  def nil? 
-    false 
-  end 
-end 
- 
-class NilClass < Object 
-  def nil? 
-    true 
-  end 
-end 
- 
-1.nil? #=> false 
-nil.nil? #=> true 
-``` 
- 
-## Concluding thoughts 
- 
+What is actually happening under the covers in Ruby when you ask if a variable is nil? It turns out that it's way simpler than you may think, and it all comes down to object oriented programming and inheritance.
+
+You've probably heard it said that everything in Ruby is an object... this includes the objects that you make but also the built in objects such as `Fixnum`, `Float`, `Time`, `String`, etc. All objects in Ruby, whether they come with the language or whether it is one that you create, extend from a special built in class called `Object`. This class brings with it a set of functionality, one of those methods being the `nil?` method.
+
+```ruby
+Object.methods.grep(/nil/)
+#=> [:nil?]
+```
+
+So let's go take a look to see what this `nil?` method actually does. To do that we're going to look at the [Ruby source code](https://github.com/ruby/ruby/blob/trunk/object.c) which is written in C.
+
+```c
+static VALUE
+rb_false(VALUE obj)
+{
+    return Qfalse;
+}
+
+rb_define_method(rb_mKernel, "nil?", rb_false, 0);
+```
+
+What this code is saying is basically that when you call the method `nil?`, what you are basically doing is calling a method that is an alias of the value `false`... it simply returns the value `false` no matter what.
+
+```ruby
+5.nil?
+#=> false
+false.nil?
+#=> false
+"nil".nil?
+#=> false
+```
+
+So what _is_ `nil` then? The only thing that is `nil` is `nil` itself. When you use the `nil` keyword in Ruby, what you're actually getting is the singleton instance of the `NilClass` class.
+
+```ruby
+nil.class
+#=> NilClass
+nil.class.ancestors
+#=> [NilClass, Object, Kernel, BasicObject]
+```
+
+`NilClass` is a child of `Object` which happens to override its parent's version of the `nil?` method to have it return `true`. We can see this by looking again at Ruby's source code:
+
+```c
+static VALUE
+rb_true(VALUE obj)
+{
+    return Qtrue;
+}
+
+rb_define_method(rb_cNilClass, "nil?", rb_true, 0);
+```
+
+If we were to define our own version of `Object` and `NilClass`, the `nil?` methods would simply look like this:
+
+```ruby
+class Object
+  def nil?
+    false
+  end
+end
+
+class NilClass < Object
+  def nil?
+    true
+  end
+end
+
+1.nil? #=> false
+nil.nil? #=> true
+```
+
+## Concluding thoughts
+
 There is only one thing that is `nil`, which happens to be `nil` itself.

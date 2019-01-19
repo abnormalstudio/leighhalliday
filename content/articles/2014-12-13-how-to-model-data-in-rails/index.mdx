@@ -4,136 +4,136 @@ slug: how-to-model-data-in-rails
 tags: ruby-on-rails
 date: 2014-12-13
 updated: 2014-12-13
-banner: ../canadaleaf.jpg
+banner: ./banner.jpg
 ---
 
-### Deciding What Models are Needed 
- 
-In my last article in this series, [getting started with ruby on rails](http://www.leighhalliday.com/posts/making-this-site-getting-started-with-ruby-on-rails), we worked through getting Rails installed and creating a new application, with some initial gems being chosen and installed. 
- 
-Now we're ready to start planning out what models we need in our application. The best way I think for deciding what models are needed is to think about our website and what features and pages it will have, and then to think about what models are needed to satisfy the desired features. 
- 
-Let's start by describing this website. It is essentially a blog, where the posts are written, published by someone, and can include an image to be displayed at the top. The posts on this website are organized into categories. There are also static pages on the website. So with that description, let's start to list some objects we'll need to build this: 
- 
-- Articles 
-- Static Pages 
-- Authors 
-- Images 
-- Categories 
- 
-That's a pretty good start, although upon thinking through what is involved in an Article vs a Static Page, we see that they are pretty similar. Maybe we can combine them into a single model, using a Type field to distinguish between them. 
- 
-Also, because this code can power more than one website, we'll need a place to store some settings... things like the website title, which languages are available, what image to show on the home-page, etc... 
- 
-So after all of that, we come up with the models needed to power this website: 
- 
-- User (someone who can author an article) 
-- Post (either an article or a static page) 
-- Upload (for now it is just images, but perhaps it will be other documents later on) 
-- Category 
-- Setting 
- 
-### Relationships 
- 
-With our main models defined, let's think about how they are related one to another. 
- 
-- __User__: A user can author many posts. 
-- __Post__: A post has a single author, a single main image, and is placed into a single category. 
-- __Upload__: An upload can be used by many posts and many categories. 
-- __Category__: A category contains many posts and has a single image. 
-- __Setting__: Not really related to any other model. 
- 
-With the English descriptions in place, we'll think about how to model these relationships in Rails. Because we don't have any "many to many" relationships (think if a Post could have many Categories), we aren't required to create any joining tables... tables whose only purpose is to link two tables/models together. I should point out now, any time I've mentioned a Rails model, there is an underlying table in the database for storing its data. 
- 
-Here are the relationships: 
- 
-- User 
-  - has_many Posts 
-- Post 
-  - belongs_to User 
-  - belongs_to Category 
-  - belongs_to Upload 
-- Upload 
-  - has_many Posts 
-  - has_many Categories 
-- Category 
-  - belongs_to Upload 
-  - has_many Posts  
-- Settings 
- 
-### Database Migrations 
- 
-With the knowledge of our Model starting to get clearer and clearer, it's time to create our database migrations. In Rails, a model named __Post__ would translate to a table named __posts__. We don't need to worry about creating an ID column, because this is done automatically as an auto incremented integer field. Another thing to point out is that any "belongs_to" relationships require a field with a link to that other table, named as the singular form of the table followed by _id: category_id, upload_id, etc... 
- 
-To create a migration, run this command: 
- 
-```bash 
-rails g migration CreateCategories name:string slug:string description:text upload_id:integer 
-``` 
- 
-Which will create us something like this: 
- 
-```ruby 
-class CreateCategories < ActiveRecord::Migration 
-  def change 
-    create_table :categories do |t| 
-      t.string :name 
-      t.string :slug 
-      t.string :description 
-      t.integer :upload_id 
-      t.timestamps 
-    end 
-  end 
-end 
-``` 
- 
-Now, if things look good, we can tell Rails to run any outstanding migrations with the command `rake db:migrate`. We'll need to repeat the procedure for the other models  that are needed. 
- 
-### Setting Up Models 
- 
-With our Models thought out, our database tables created, it's time to create the models inside of the app/models directory. I like to use a series of comments in the model to divide up the different types of things normally found within a Rails model. 
- 
-```ruby 
-class Category < ActiveRecord::Base 
- 
-  # == Constants ============================================================ 
- 
-  # == Attributes =========================================================== 
- 
-  # == Extensions =========================================================== 
- 
-  # == Relationships ======================================================== 
- 
-  has_many :posts 
-  belongs_to :upload 
- 
-  # == Validations ========================================================== 
- 
-  validates :name, :description, :slug, presence: true 
-  validates :slug, uniqueness: true 
- 
-  # == Scopes =============================================================== 
- 
-  # == Callbacks ============================================================ 
- 
-  # == Class Methods ======================================================== 
- 
-  # == Instance Methods ===================================================== 
- 
-end 
-``` 
- 
-### Seed Data 
- 
-If you'd like a way to create some new database records on a fresh install of this application, seed data is a great way to do this. Say for example, an initial user account to get access to the admin, or some initial settings that should be there at the beginning. 
- 
-These can be placed in the db/seeds.rb file, and run with the command `rake db:seed`. An example, taken from the Rails documentation looks like so: 
-```ruby 
-5.times do |i| 
-  Product.create(name: "Product ##{i}", description: "A product.") 
-end 
-``` 
- 
-### Next Steps 
- 
+### Deciding What Models are Needed
+
+In my last article in this series, [getting started with ruby on rails](http://www.leighhalliday.com/posts/making-this-site-getting-started-with-ruby-on-rails), we worked through getting Rails installed and creating a new application, with some initial gems being chosen and installed.
+
+Now we're ready to start planning out what models we need in our application. The best way I think for deciding what models are needed is to think about our website and what features and pages it will have, and then to think about what models are needed to satisfy the desired features.
+
+Let's start by describing this website. It is essentially a blog, where the posts are written, published by someone, and can include an image to be displayed at the top. The posts on this website are organized into categories. There are also static pages on the website. So with that description, let's start to list some objects we'll need to build this:
+
+- Articles
+- Static Pages
+- Authors
+- Images
+- Categories
+
+That's a pretty good start, although upon thinking through what is involved in an Article vs a Static Page, we see that they are pretty similar. Maybe we can combine them into a single model, using a Type field to distinguish between them.
+
+Also, because this code can power more than one website, we'll need a place to store some settings... things like the website title, which languages are available, what image to show on the home-page, etc...
+
+So after all of that, we come up with the models needed to power this website:
+
+- User (someone who can author an article)
+- Post (either an article or a static page)
+- Upload (for now it is just images, but perhaps it will be other documents later on)
+- Category
+- Setting
+
+### Relationships
+
+With our main models defined, let's think about how they are related one to another.
+
+- __User__: A user can author many posts.
+- __Post__: A post has a single author, a single main image, and is placed into a single category.
+- __Upload__: An upload can be used by many posts and many categories.
+- __Category__: A category contains many posts and has a single image.
+- __Setting__: Not really related to any other model.
+
+With the English descriptions in place, we'll think about how to model these relationships in Rails. Because we don't have any "many to many" relationships (think if a Post could have many Categories), we aren't required to create any joining tables... tables whose only purpose is to link two tables/models together. I should point out now, any time I've mentioned a Rails model, there is an underlying table in the database for storing its data.
+
+Here are the relationships:
+
+- User
+  - has_many Posts
+- Post
+  - belongs_to User
+  - belongs_to Category
+  - belongs_to Upload
+- Upload
+  - has_many Posts
+  - has_many Categories
+- Category
+  - belongs_to Upload
+  - has_many Posts
+- Settings
+
+### Database Migrations
+
+With the knowledge of our Model starting to get clearer and clearer, it's time to create our database migrations. In Rails, a model named __Post__ would translate to a table named __posts__. We don't need to worry about creating an ID column, because this is done automatically as an auto incremented integer field. Another thing to point out is that any "belongs_to" relationships require a field with a link to that other table, named as the singular form of the table followed by _id: category_id, upload_id, etc...
+
+To create a migration, run this command:
+
+```bash
+rails g migration CreateCategories name:string slug:string description:text upload_id:integer
+```
+
+Which will create us something like this:
+
+```ruby
+class CreateCategories < ActiveRecord::Migration
+  def change
+    create_table :categories do |t|
+      t.string :name
+      t.string :slug
+      t.string :description
+      t.integer :upload_id
+      t.timestamps
+    end
+  end
+end
+```
+
+Now, if things look good, we can tell Rails to run any outstanding migrations with the command `rake db:migrate`. We'll need to repeat the procedure for the other models  that are needed.
+
+### Setting Up Models
+
+With our Models thought out, our database tables created, it's time to create the models inside of the app/models directory. I like to use a series of comments in the model to divide up the different types of things normally found within a Rails model.
+
+```ruby
+class Category < ActiveRecord::Base
+
+  # == Constants ============================================================
+
+  # == Attributes ===========================================================
+
+  # == Extensions ===========================================================
+
+  # == Relationships ========================================================
+
+  has_many :posts
+  belongs_to :upload
+
+  # == Validations ==========================================================
+
+  validates :name, :description, :slug, presence: true
+  validates :slug, uniqueness: true
+
+  # == Scopes ===============================================================
+
+  # == Callbacks ============================================================
+
+  # == Class Methods ========================================================
+
+  # == Instance Methods =====================================================
+
+end
+```
+
+### Seed Data
+
+If you'd like a way to create some new database records on a fresh install of this application, seed data is a great way to do this. Say for example, an initial user account to get access to the admin, or some initial settings that should be there at the beginning.
+
+These can be placed in the db/seeds.rb file, and run with the command `rake db:seed`. An example, taken from the Rails documentation looks like so:
+```ruby
+5.times do |i|
+  Product.create(name: "Product ##{i}", description: "A product.")
+end
+```
+
+### Next Steps
+
 What we'll work on next is creating an admin section where we can generate and manage all of the content on the website.  There we will focus on routing, authentication, and security, among other things.

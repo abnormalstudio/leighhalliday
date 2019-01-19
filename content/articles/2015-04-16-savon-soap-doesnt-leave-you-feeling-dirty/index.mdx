@@ -1,125 +1,125 @@
 ---
 title: Savon - SOAP that doesn't leave you feeling dirty
 slug: savon-soap-doesnt-leave-you-feeling-dirty
-tags: ruby-on-rails
+tags: ruby-on-rails, soap, api, gross
 date: 2015-04-16
 updated: 2015-04-16
-banner: ../canadaleaf.jpg
+banner: ./banner.jpg
 ---
 
-## Can you do this integration? 
- 
-Is what I was asked. Oh no... it's in SOAP? Instantly all the time I spent working with SOAP APIs in PHP flashed before my eyes, bringing back memories I would have rather left in the past. 
- 
-## What is SOAP? 
- 
-> SOAP, originally an acronym for Simple Object Access protocol, is a protocol specification for exchanging structured information in the implementation of web services in computer networks. 
- 
-tl;dr - Making XML even more verbose. 
- 
-Depending on your field, and perhaps your age, you may not have ever worked with SOAP before. Most APIs these days communicate via RESTful JSON APIs. You're most likely familiar with these if you work with Angular or Ember, or if you've connected to the API of a modern website (Twitter, Shopify, even the New York Times). 
- 
-SOAP APIs work in XML, both the request and the response. Unlike most JSON APIs where you work with HTTP verbs (get, post, put, delete) with query or post variables, the entire SOAP request is in the body, in a big hunk of XML. 
- 
-If you work in the web long enough you'll run into a SOAP API. They are still fairly widely used, especially in the financial sector or when you work with big "enterprise" businesses. 
- 
-Here is what a typical (albeit small) request looks like: 
- 
-```xml 
-<?xml version="1.0"?> 
-<soap:Envelope xmlns:soap="http://www.w3.org/2003/05/soap-envelope"> 
-  <soap:Header> 
-  </soap:Header> 
-  <soap:Body> 
-    <m:GetStockPrice xmlns:m="http://www.example.org/stock"> 
-      <m:StockName>IBM</m:StockName> 
-    </m:GetStockPrice> 
-  </soap:Body> 
-</soap:Envelope> 
-``` 
- 
-Verbose, no? To make matters worse, the response looks about the same, and there is this extra thing called a WSDL file that you need before you can even begin. 
- 
-A WSDL is another XML file which basically describes the API interface and also provides validation for your request. That is one advantage it has over JSON. It can tell you that a certain value must be an Integer, and it won't even let your request travel to the endpoint unless it is in fact an Integer. 
- 
-This example WSDL file below basically tells you that there is a `getTerm` method you can call, which wants a field called `term` which is a `string`. 
- 
-```xml 
-<message name="getTermRequest"> 
-  <part name="term" type="xs:string"/> 
-</message> 
- 
-<message name="getTermResponse"> 
-  <part name="value" type="xs:string"/> 
-</message> 
- 
-<portType name="glossaryTerms"> 
-  <operation name="getTerm"> 
-    <input message="getTermRequest"/> 
-    <output message="getTermResponse"/> 
-  </operation> 
-</portType> 
-``` 
- 
-## Enter Savon 
- 
-I searched for "SOAP in Ruby", and [Savon](http://savonrb.com) is pretty much the only option... still wary I look at the examples, and you know what? It's not so bad! I don't see any XML in sight... I see blocks, hashes, and Ruby code that seems, well... normal! 
- 
-Let's be clear, I wouldn't wish having to use the Savon Gem on anyone... it still means you're entering the world of SOAP, and probably reading and debugging XML. But when you have to, Savon will be your friend and not leave you to enter these murky waters alone. 
- 
-## Using Savon 
- 
-The first thing you need to do to use Savon (after installing the Gem) is to create yourself a `client`. You can even ask the client which operations are available. It will parse through the WSDL file to generate an array of operations/methods you can call. 
- 
-```ruby 
-client = Savon.client(wsdl: "http://example.com?wsdl") 
-client.operations # => [:get_stock_price] 
-``` 
- 
-Next up you can make the request. It is sent using a plain Ruby Hash. 
- 
-```ruby 
-response = client.call(:get_stock_price, message: { stock_name: "IBM" }) 
-``` 
- 
-What you'll get back is a `response` object which has a `header` method and a `body` method. The `body` method contains a hash, which might look something like this: 
- 
-```ruby 
-response.body # => { response: { stock: { stock_name: "IBM", price: 160.22 } } } 
-``` 
- 
-That's not so bad! Savon provides a very nice interface, so you rarely need to deal with XML or WSDL files directly. It's a good idea to understand them, which will help you troubleshoot, but for the most part you're just working with Ruby Hashes. 
- 
-## Testing SOAP 
- 
-I won't go into a ton of details here but there are 2 things you can do to make working with and testing SOAP APIs easier. 
- 
-### Wrap all of your API calls inside of a class. 
- 
-By wrapping the calls inside of a class, you can easily mock your calls, so that you can provide a fake response to the `stock_price` method. If you're not explicitly testing that the SOAP call worked and you just need a value for testing, mock it. 
- 
-```ruby 
-class StockFinder 
-  def client 
-    Savon.client(wsdl: "http://example.com?wsdl") 
-  end 
- 
-  def stock_price(name) 
-    message = { stock_name: name } 
-    response = client.call(:get_stock_price, message: message) 
-    response.body[:response][:stock][:stock_price] 
-  rescue Savon::SOAPFault => error 
-    fault_code = error.to_hash[:fault][:faultcode] 
-    raise CustomError, fault_code 
-  end 
-end 
-StockFinder.new.stock_price("IBM") # => 160.22 
-``` 
- 
-### Use VCR 
- 
-[VCR is a gem for recording HTTP requests and responses.](https://github.com/vcr/vcr) You shouldn't be calling the SOAP API every time you run the tests. What this will do is run it once, record the request and response, and from then on use those instead of making an actual HTTP request. Not only will this make your tests quicker, it will help provide consistency. Your tests won't fail just because their endpoint is down. 
- 
-## Thanks to the creators! 
- 
+## Can you do this integration?
+
+Is what I was asked. Oh no... it's in SOAP? Instantly all the time I spent working with SOAP APIs in PHP flashed before my eyes, bringing back memories I would have rather left in the past.
+
+## What is SOAP?
+
+> SOAP, originally an acronym for Simple Object Access protocol, is a protocol specification for exchanging structured information in the implementation of web services in computer networks.
+
+tl;dr - Making XML even more verbose.
+
+Depending on your field, and perhaps your age, you may not have ever worked with SOAP before. Most APIs these days communicate via RESTful JSON APIs. You're most likely familiar with these if you work with Angular or Ember, or if you've connected to the API of a modern website (Twitter, Shopify, even the New York Times).
+
+SOAP APIs work in XML, both the request and the response. Unlike most JSON APIs where you work with HTTP verbs (get, post, put, delete) with query or post variables, the entire SOAP request is in the body, in a big hunk of XML.
+
+If you work in the web long enough you'll run into a SOAP API. They are still fairly widely used, especially in the financial sector or when you work with big "enterprise" businesses.
+
+Here is what a typical (albeit small) request looks like:
+
+```xml
+<?xml version="1.0"?>
+<soap:Envelope xmlns:soap="http://www.w3.org/2003/05/soap-envelope">
+  <soap:Header>
+  </soap:Header>
+  <soap:Body>
+    <m:GetStockPrice xmlns:m="http://www.example.org/stock">
+      <m:StockName>IBM</m:StockName>
+    </m:GetStockPrice>
+  </soap:Body>
+</soap:Envelope>
+```
+
+Verbose, no? To make matters worse, the response looks about the same, and there is this extra thing called a WSDL file that you need before you can even begin.
+
+A WSDL is another XML file which basically describes the API interface and also provides validation for your request. That is one advantage it has over JSON. It can tell you that a certain value must be an Integer, and it won't even let your request travel to the endpoint unless it is in fact an Integer.
+
+This example WSDL file below basically tells you that there is a `getTerm` method you can call, which wants a field called `term` which is a `string`.
+
+```xml
+<message name="getTermRequest">
+  <part name="term" type="xs:string"/>
+</message>
+
+<message name="getTermResponse">
+  <part name="value" type="xs:string"/>
+</message>
+
+<portType name="glossaryTerms">
+  <operation name="getTerm">
+    <input message="getTermRequest"/>
+    <output message="getTermResponse"/>
+  </operation>
+</portType>
+```
+
+## Enter Savon
+
+I searched for "SOAP in Ruby", and [Savon](http://savonrb.com) is pretty much the only option... still wary I look at the examples, and you know what? It's not so bad! I don't see any XML in sight... I see blocks, hashes, and Ruby code that seems, well... normal!
+
+Let's be clear, I wouldn't wish having to use the Savon Gem on anyone... it still means you're entering the world of SOAP, and probably reading and debugging XML. But when you have to, Savon will be your friend and not leave you to enter these murky waters alone.
+
+## Using Savon
+
+The first thing you need to do to use Savon (after installing the Gem) is to create yourself a `client`. You can even ask the client which operations are available. It will parse through the WSDL file to generate an array of operations/methods you can call.
+
+```ruby
+client = Savon.client(wsdl: "http://example.com?wsdl")
+client.operations # => [:get_stock_price]
+```
+
+Next up you can make the request. It is sent using a plain Ruby Hash.
+
+```ruby
+response = client.call(:get_stock_price, message: { stock_name: "IBM" })
+```
+
+What you'll get back is a `response` object which has a `header` method and a `body` method. The `body` method contains a hash, which might look something like this:
+
+```ruby
+response.body # => { response: { stock: { stock_name: "IBM", price: 160.22 } } }
+```
+
+That's not so bad! Savon provides a very nice interface, so you rarely need to deal with XML or WSDL files directly. It's a good idea to understand them, which will help you troubleshoot, but for the most part you're just working with Ruby Hashes.
+
+## Testing SOAP
+
+I won't go into a ton of details here but there are 2 things you can do to make working with and testing SOAP APIs easier.
+
+### Wrap all of your API calls inside of a class.
+
+By wrapping the calls inside of a class, you can easily mock your calls, so that you can provide a fake response to the `stock_price` method. If you're not explicitly testing that the SOAP call worked and you just need a value for testing, mock it.
+
+```ruby
+class StockFinder
+  def client
+    Savon.client(wsdl: "http://example.com?wsdl")
+  end
+
+  def stock_price(name)
+    message = { stock_name: name }
+    response = client.call(:get_stock_price, message: message)
+    response.body[:response][:stock][:stock_price]
+  rescue Savon::SOAPFault => error
+    fault_code = error.to_hash[:fault][:faultcode]
+    raise CustomError, fault_code
+  end
+end
+StockFinder.new.stock_price("IBM") # => 160.22
+```
+
+### Use VCR
+
+[VCR is a gem for recording HTTP requests and responses.](https://github.com/vcr/vcr) You shouldn't be calling the SOAP API every time you run the tests. What this will do is run it once, record the request and response, and from then on use those instead of making an actual HTTP request. Not only will this make your tests quicker, it will help provide consistency. Your tests won't fail just because their endpoint is down.
+
+## Thanks to the creators!
+
 Thanks to [Daniel Harrington](https://github.com/rubiii), [Tim Jarratt](https://github.com/tjarratt), and the other developers who have worked on Savon. Savon has definitely made the lives better of every Ruby programmer having to work with SOAP.

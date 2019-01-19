@@ -68,7 +68,7 @@ const ArticleTile = ({
             padding: 0.5rem;
           `}
         >
-          LEER MÁS
+          READ MORE
         </Link>
       </div>
     </div>

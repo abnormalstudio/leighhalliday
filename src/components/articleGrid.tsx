@@ -66,7 +66,12 @@ const ArticleGrid = ({ articles }: Props) => (
             padding-bottom: 0.5rem;
           `}
         >
-          <Image fluid={article.frontmatter.banner.childImageSharp.fluid} />
+          <Image
+            fluid={article.frontmatter.banner.childImageSharp.fluid}
+            css={css`
+              height: 250px;
+            `}
+          />
         </Link>
         <Tags tags={article.frontmatter.tags} />
         <Link to={`/${article.frontmatter.slug}`}>

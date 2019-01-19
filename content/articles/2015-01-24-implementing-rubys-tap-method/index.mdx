@@ -1,87 +1,87 @@
 ---
 title: Implementing Ruby's Tap Method
 slug: implementing-rubys-tap-method
-tags: ruby-on-rails
+tags: ruby
 date: 2015-01-24
 updated: 2015-01-24
-banner: ../canadaleaf.jpg
+banner: ./banner.jpg
 ---
 
-## What is the Tap method? 
- 
-Ruby's `tap` method allows you to "tap into" a method chain, modify an object and receive that same object as the result. An Engine Yard blog recently spoke about [five ruby methods you should be using](https://blog.engineyard.com/2015/five-ruby-methods-you-should-be-using) in which `tap` was one of them. 
- 
-## Let's create our own Tap method 
- 
-I got to thinking that unless I'm seriously missing something, it can't be too much work to create my own `tap` method. I wasn't wrong. I attempted to create it and named it `tapme` to give it a unique name, and it ended up being only 2 lines of code. 
- 
-```ruby 
-class Object 
-  def tapme 
-    yield(self) 
-    self 
-  end 
-end 
-``` 
- 
-I then wanted to see if I could check out [how Ruby actually implemented tap in its source](http://ruby-doc.org/core-2.1.1/Object.html#method-i-tap), and it turns out that it is basically the same. 
- 
-```c 
-rb_obj_tap(VALUE obj) 
-{ 
-  rb_yield(obj); 
-  return obj; 
-} 
-``` 
- 
-## Using our tapme method 
- 
-I wanted to come up with a quick little, somewhat contrived demo of our `tapme` method in action. I think Llamas and Alpacas are pretty hilarious, so I created an Alpaca object, with name, spouse, and marital status attributes, and created a method which would marry 2 alpacas, using the `tapme` method as part of a method chain which prints out a string representation of our alpaca's marital status. 
- 
-```ruby 
-class Alpaca 
- 
-  attr_accessor :name, :spouse, :marital_status 
- 
-  def initialize(name) 
-    self.name = name 
-    self.marital_status = :single 
-  end 
- 
-  def marry(partner, update_partner = true) 
-    tapme { |me| 
-      me.marital_status = :married 
-      me.spouse         = partner 
-      partner.marry(me, false) if update_partner 
-    } 
-  end 
- 
-  def marital_string 
-    case marital_status 
-    when :single 
-      "#{name} is single." 
-    when :married 
-      "#{name} is married to #{spouse.name}." 
-    when :divorced 
-      "#{name} is divorced." 
-    else 
-      "#{name}'s marital status is unknown." 
-    end 
-  end 
- 
-end 
- 
-spitty  = Alpaca.new("Spitty") 
-huacaya = Alpaca.new("Huacaya") 
- 
-puts spitty.marry(huacaya).marital_string 
-``` 
- 
-Calling our code produces this result: 
- 
-```bash 
-ruby tapme.rb  
-Spitty is married to Huacaya. 
-``` 
- 
+## What is the Tap method?
+
+Ruby's `tap` method allows you to "tap into" a method chain, modify an object and receive that same object as the result. An Engine Yard blog recently spoke about [five ruby methods you should be using](https://blog.engineyard.com/2015/five-ruby-methods-you-should-be-using) in which `tap` was one of them.
+
+## Let's create our own Tap method
+
+I got to thinking that unless I'm seriously missing something, it can't be too much work to create my own `tap` method. I wasn't wrong. I attempted to create it and named it `tapme` to give it a unique name, and it ended up being only 2 lines of code.
+
+```ruby
+class Object
+  def tapme
+    yield(self)
+    self
+  end
+end
+```
+
+I then wanted to see if I could check out [how Ruby actually implemented tap in its source](http://ruby-doc.org/core-2.1.1/Object.html#method-i-tap), and it turns out that it is basically the same.
+
+```c
+rb_obj_tap(VALUE obj)
+{
+  rb_yield(obj);
+  return obj;
+}
+```
+
+## Using our tapme method
+
+I wanted to come up with a quick little, somewhat contrived demo of our `tapme` method in action. I think Llamas and Alpacas are pretty hilarious, so I created an Alpaca object, with name, spouse, and marital status attributes, and created a method which would marry 2 alpacas, using the `tapme` method as part of a method chain which prints out a string representation of our alpaca's marital status.
+
+```ruby
+class Alpaca
+
+  attr_accessor :name, :spouse, :marital_status
+
+  def initialize(name)
+    self.name = name
+    self.marital_status = :single
+  end
+
+  def marry(partner, update_partner = true)
+    tapme { |me|
+      me.marital_status = :married
+      me.spouse         = partner
+      partner.marry(me, false) if update_partner
+    }
+  end
+
+  def marital_string
+    case marital_status
+    when :single
+      "#{name} is single."
+    when :married
+      "#{name} is married to #{spouse.name}."
+    when :divorced
+      "#{name} is divorced."
+    else
+      "#{name}'s marital status is unknown."
+    end
+  end
+
+end
+
+spitty  = Alpaca.new("Spitty")
+huacaya = Alpaca.new("Huacaya")
+
+puts spitty.marry(huacaya).marital_string
+```
+
+Calling our code produces this result:
+
+```bash
+ruby tapme.rb
+Spitty is married to Huacaya.
+```
+
 And there we go! We we're able to re-implement Ruby's `tap` method. I wonder what other Ruby methods are this easy to implement?

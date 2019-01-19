@@ -1,46 +1,46 @@
 ---
 title: Named Captures in Ruby Regular Expressions
 slug: named-captures-ruby-regular-expressions
-tags: ruby-on-rails
+tags: ruby, regex
 date: 2016-09-01
 updated: 2016-09-01
-banner: ../canadaleaf.jpg
+banner: ./banner.jpg
 ---
 
-In Ruby we can use the `match` method which belongs to the `String` class to both check a string for a regular expression match but also to extract data using captures. 
- 
-Captures allow you to extract part of the string... to isolate it. You do this by including `()` parentheses, with whatever that is inside the parentheses being captured. 
- 
-## Normal Captures 
- 
-We can see an example below of a normal capture which doesn't assign a name or key to the value being extracted. 
- 
-```ruby 
-BALANCE_REGEX = %r{\A\$(\d{1,}\.\d{2})\Z} 
-value = "$123.55" 
-if matches = value.match(BALANCE_REGEX) 
-  matches[1] 
-else 
-  '0.00' 
-end 
-``` 
- 
-This is fine, but it isn't as clear as it could be. What are we extracting? Is it index 0, 1, or something else? Here is where *named captures* arrive on the scene. 
- 
-## Named Captures 
- 
-What if we could assign a name/key to the value being captured/extracted from our string? Well in Ruby it is easy. Inside of our parentheses we can begin with this: `?<balance>`. It will store whatever is captured by the key between the `<>`. 
- 
-```ruby 
-BALANCE_REGEX = %r{\A\$(?<balance>\d{1,}\.\d{2})\Z} 
-value = "$123.55" 
-if matches = value.match(BALANCE_REGEX) 
-  matches[:balance] 
-else 
-  '0.00' 
-end 
-``` 
- 
-If we take a look at the `matches` variable we'll see that it doesn't just put our capture into `#<MatchData "$123.55" balance:"123.55">`. 
- 
+In Ruby we can use the `match` method which belongs to the `String` class to both check a string for a regular expression match but also to extract data using captures.
+
+Captures allow you to extract part of the string... to isolate it. You do this by including `()` parentheses, with whatever that is inside the parentheses being captured.
+
+## Normal Captures
+
+We can see an example below of a normal capture which doesn't assign a name or key to the value being extracted.
+
+```ruby
+BALANCE_REGEX = %r{\A\$(\d{1,}\.\d{2})\Z}
+value = "$123.55"
+if matches = value.match(BALANCE_REGEX)
+  matches[1]
+else
+  '0.00'
+end
+```
+
+This is fine, but it isn't as clear as it could be. What are we extracting? Is it index 0, 1, or something else? Here is where _named captures_ arrive on the scene.
+
+## Named Captures
+
+What if we could assign a name/key to the value being captured/extracted from our string? Well in Ruby it is easy. Inside of our parentheses we can begin with this: `?<balance>`. It will store whatever is captured by the key between the `<>`.
+
+```ruby
+BALANCE_REGEX = %r{\A\$(?<balance>\d{1,}\.\d{2})\Z}
+value = "$123.55"
+if matches = value.match(BALANCE_REGEX)
+  matches[:balance]
+else
+  '0.00'
+end
+```
+
+If we take a look at the `matches` variable we'll see that it doesn't just put our capture into `#<MatchData "$123.55" balance:"123.55">`.
+
 We can then easily access it by its key `matches[:balance]`. Much better!

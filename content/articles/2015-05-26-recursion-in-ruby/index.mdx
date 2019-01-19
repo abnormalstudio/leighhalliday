@@ -1,10 +1,10 @@
 ---
 title: Recursion in Ruby
 slug: recursion-in-ruby
-tags: ruby-on-rails
+tags: ruby, algorithms, recursion
 date: 2015-05-26
 updated: 2015-05-26
-banner: ../canadaleaf.jpg
+banner: ./banner.jpg
 ---
 
 This article is the counterpart to one I wrote on [Recursion in Elixir](http://www.leighhalliday.com/recursion-in-elixir).
@@ -28,7 +28,7 @@ The usual flow of a recursive function is as follows:
 - Call the same function (hence recursion) with the remaining elements (tail) of array.
 - Have a guard clause to stop recursion from happening when we've reached the end.
 
-```
+```ruby
 def sum_array
   if the array is empty
     return 0
@@ -40,7 +40,7 @@ end
 
 What happens is sort of like this:
 
-```
+```ruby
 array = [1,2,3,4,5]
 
 1 + 2 + 3 + 4 + 5
@@ -113,7 +113,7 @@ iter_fact(6) # 720
 
 I heard a funny definition of Fibonacci that goes like this: "Fibonacci - A problem used to teach recursion in computer science." The first 10 Fibonacci numbers go like this: 0, 1, 1, 2, 3, 5, 8, 13, 21, 34 - The next number is the sum of the previous 2 numbers.
 
-```
+```ruby
 def recur_fib(n)
   acc = [0, 1]
 

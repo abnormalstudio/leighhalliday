@@ -4,78 +4,78 @@ slug: mail-interceptors-and-observers
 tags: ruby-on-rails
 date: 2014-11-28
 updated: 2014-11-28
-banner: ../canadaleaf.jpg
+banner: ./banner.jpg
 ---
 
-### What is a Mail Interceptor? 
- 
-When using ActionMailer in Rails, there is a way to hook into the outbound message after you call the "deliver" method, but before it is actually sent to the delivery agents. You can think of these interceptors a little like before action filters in the controller, or like middleware in Rack. In this post I'll discuss some possible uses for using a mail interceptor, how to register and define them, and show some examples of possible implementations. 
- 
-### What is a Mail Observer? 
- 
-Similar to an Interceptor, an Observer allows you to plug in to email deliver, the difference being that it happens after the email has been delivered. You can think of Observers as after action filters. They allow you to record information about the email that was sent, but they don't allow you to modify it (it has already been sent after all). 
- 
-### Uses 
- 
-While I'm sure people have used these methods for some pretty creative solutions, three use cases immediately come to mind. The first is to modify either the message or the recipients. Think when doing local development, never having to worry about emailing the wrong person. You can ensure it is only delivered to yourself. A second possible use is to halt delivery entirely, maybe as a failsafe to ensure your system isn't spamming someone. Third could be to log in a database the outgoing mail for tracking purposes. 
- 
-### Registering Interceptor or Observer 
- 
-I like to register interceptors and observers in an initializer file. __Observer__ classes must implement the __delivered_email__ class method, while __Interceptor__ classes must implement the class level method called __delivering_email__. Both of these methods accept a single parameter which is an instance of Mail::Message. 
- 
-```ruby 
-# config/initializers/action_mailer.rb 
-ActionMailer::Base.register_interceptor(MailThrottleInterceptor) 
-ActionMailer::Base.register_observer(MailLoggerObserver) 
-``` 
- 
-### Modifying Message or Recipients 
- 
-If you need to do any sort of modification, you will need to use an Interceptor. This is an example of how you could ensure it will only send emails to yourself when developing locally. You could also inject the environment into your email subject too, to know where it is coming from. 
- 
-```ruby 
-class MailDevelopmentInterceptor 
-  def self.delivering_email(mail) 
-    if Rails.env.development? 
-      mail.to = "leighhalliday@gmail.com" 
-      mail.cc = nil 
-      mail.bcc = nil 
-    end 
-  end 
-end 
-``` 
- 
-### Halting Delivery 
- 
-To halt deliver, again since you are modifying data before it is delivered, will need to be an Interceptor. Here you can access the __perform_deliveries__ method and set that to false, if needed. Say because your system determined that you are sending too many emails to a specific user. 
- 
-You could also raise an Exception instead of changing the __perform_deliveries__ method like I've done below. 
- 
-```ruby 
-class MailThrottleInterceptor 
-  def self.delivering_email(mail) 
-    unless deliver?(mail) 
-      mail.perform_deliveries = false 
-    end 
-  end 
- 
-  private 
- 
-  def self.deliver? 
-    # Whatever the needed logic is to determine 
-    false 
-  end 
-end 
-``` 
- 
-### Logging Data 
- 
-Logging data can be done in an Observer, because you don't need to modify anything in the outgoing message, and you only want to run it after the email has been delivered. Keep in mind that observers must implement the __delivered_email__ method which differs from Interceptors. 
- 
-```ruby 
-class MailThrottleObserver 
-  def self.delivered_email(mail) 
-    EmailLogger.log(mail) 
-  end 
-end 
+### What is a Mail Interceptor?
+
+When using ActionMailer in Rails, there is a way to hook into the outbound message after you call the "deliver" method, but before it is actually sent to the delivery agents. You can think of these interceptors a little like before action filters in the controller, or like middleware in Rack. In this post I'll discuss some possible uses for using a mail interceptor, how to register and define them, and show some examples of possible implementations.
+
+### What is a Mail Observer?
+
+Similar to an Interceptor, an Observer allows you to plug in to email deliver, the difference being that it happens after the email has been delivered. You can think of Observers as after action filters. They allow you to record information about the email that was sent, but they don't allow you to modify it (it has already been sent after all).
+
+### Uses
+
+While I'm sure people have used these methods for some pretty creative solutions, three use cases immediately come to mind. The first is to modify either the message or the recipients. Think when doing local development, never having to worry about emailing the wrong person. You can ensure it is only delivered to yourself. A second possible use is to halt delivery entirely, maybe as a failsafe to ensure your system isn't spamming someone. Third could be to log in a database the outgoing mail for tracking purposes.
+
+### Registering Interceptor or Observer
+
+I like to register interceptors and observers in an initializer file. __Observer__ classes must implement the __delivered_email__ class method, while __Interceptor__ classes must implement the class level method called __delivering_email__. Both of these methods accept a single parameter which is an instance of Mail::Message.
+
+```ruby
+# config/initializers/action_mailer.rb
+ActionMailer::Base.register_interceptor(MailThrottleInterceptor)
+ActionMailer::Base.register_observer(MailLoggerObserver)
+```
+
+### Modifying Message or Recipients
+
+If you need to do any sort of modification, you will need to use an Interceptor. This is an example of how you could ensure it will only send emails to yourself when developing locally. You could also inject the environment into your email subject too, to know where it is coming from.
+
+```ruby
+class MailDevelopmentInterceptor
+  def self.delivering_email(mail)
+    if Rails.env.development?
+      mail.to = "leighhalliday@gmail.com"
+      mail.cc = nil
+      mail.bcc = nil
+    end
+  end
+end
+```
+
+### Halting Delivery
+
+To halt deliver, again since you are modifying data before it is delivered, will need to be an Interceptor. Here you can access the __perform_deliveries__ method and set that to false, if needed. Say because your system determined that you are sending too many emails to a specific user.
+
+You could also raise an Exception instead of changing the __perform_deliveries__ method like I've done below.
+
+```ruby
+class MailThrottleInterceptor
+  def self.delivering_email(mail)
+    unless deliver?(mail)
+      mail.perform_deliveries = false
+    end
+  end
+
+  private
+
+  def self.deliver?
+    # Whatever the needed logic is to determine
+    false
+  end
+end
+```
+
+### Logging Data
+
+Logging data can be done in an Observer, because you don't need to modify anything in the outgoing message, and you only want to run it after the email has been delivered. Keep in mind that observers must implement the __delivered_email__ method which differs from Interceptors.
+
+```ruby
+class MailThrottleObserver
+  def self.delivered_email(mail)
+    EmailLogger.log(mail)
+  end
+end
 ```

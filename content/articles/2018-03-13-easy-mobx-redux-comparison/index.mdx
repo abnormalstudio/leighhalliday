@@ -1,13 +1,15 @@
 ---
 title: Easy MobX and Redux Comparison
 slug: easy-mobx-redux-comparison
-tags: frontend
+tags: javascript, react, mobx, redux
 date: 2018-03-13
 updated: 2018-03-13
-banner: ../canadaleaf.jpg
+banner: ./banner.jpg
 ---
 
 import { YouTube } from "$components";
+import MobxImage from "./mobx-diagram.webp";
+import ReduxImage from "./redux-diagram.webp";
 
 In this article/video we'll start with a simple React app made with create-react-app that uses component state (setState) as its state management. We'll then take it from component state to MobX, and then again from component state to Redux. During the process we'll see what is similar and different between the two approaches.
 
@@ -22,6 +24,8 @@ The repository lives at [https://github.com/leighhalliday/easy-mobx-redux-compar
 <YouTube id="CA8w-zNmnpc" />
 
 ## Component State to MobX
+
+<img src={MobxImage} src="MobX data flow diagaram" />
 
 In MobX our data lives in a **Store**, which has at its easiest, `observable` properties and `action` functions which can modify the store's values.
 
@@ -96,12 +100,9 @@ export default class App extends React.Component {
 }
 ```
 
-<img
-  src="https://res.cloudinary.com/leighhalliday/image/upload/f_auto,q_auto:good/v1521922809/mobx-diagram.png"
-  alt="mobx data flow"
-/>
-
 ## Component State to Redux
+
+<img src={ReduxImage} src="Redux data flow diagaram" />
 
 In Redux everything begins by calling the `createStore` function, passing a `reducer`, the initial state, and then `applyMiddleware(thunk)`, which in this case allows us to use the `thunk` middleware to handle asynchronous code.
 
@@ -228,11 +229,6 @@ export default connect(
   mapDispatchToProps
 )(App);
 ```
-
-<img
-  src="https://res.cloudinary.com/leighhalliday/image/upload/f_auto,q_auto:good/v1521922809/redux-diagram.jpg"
-  alt="redux data flow"
-/>
 
 ## Conclusion
 

@@ -8,7 +8,7 @@ const ArticleAbout = () => (
   <StaticQuery
     query={graphql`
       query ArticleAboutQuery {
-        file(relativePath: { eq: "marian.jpg" }) {
+        file(relativePath: { eq: "leigh.jpg" }) {
           childImageSharp {
             fluid(maxWidth: 300) {
               ...GatsbyImageSharpFluid
@@ -21,7 +21,10 @@ const ArticleAbout = () => (
       <div>
         <H3Line>About Me</H3Line>
         <Image fluid={data.file.childImageSharp.fluid} alt="Leigh Halliday" />
-        <p>Hola! Yo soy Marian Serna, la paisa de esta página.</p>
+        <p>
+          Developer at FlipGive & ABNORMAL studio. Writing about Ruby, Rails,
+          React, and JavaScript.
+        </p>
         <p>
           <Link to="/about">Read more</Link>
         </p>

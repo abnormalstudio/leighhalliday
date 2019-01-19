@@ -1,137 +1,137 @@
 ---
 title: Block Based Configuration
 slug: block-based-configuration
-tags: ruby-on-rails
+tags: ruby, ruby-on-rails
 date: 2014-11-24
 updated: 2014-11-24
-banner: ../canadaleaf.jpg
+banner: ./banner.jpg
 ---
 
-Block based configuration is a pattern you see quite a bit when using ruby. When I look at this website itself, there are 3 different gems that I am configuring using this approach. I think it provides a clean and encapsulated interface for configuration, and it is actually quite easy for you to use yourself in your own gems or projects. 
- 
-### Usage Examples 
- 
-In the [simple form](https://github.com/plataformatec/simple_form) gem, used for building forms, here is an example of its configuration. 
- 
-```ruby 
-SimpleForm.setup do |config| 
-  # Default tag used for error notification helper. 
-  config.error_notification_tag = :div 
- 
-  # CSS class to add for error notification helper. 
-  config.error_notification_class = 'alert alert-error' 
-end 
-``` 
- 
-In the [sorcery](https://github.com/NoamB/sorcery) gem, used for authentication, here is what its configuration looks like. This one actually has a sub configuration inside of the main one. 
- 
-```ruby 
-Rails.application.config.sorcery.configure do |config| 
-  # --- user config --- 
-  config.user_config do |user| 
-    user.reset_password_email_method_name = :reset_password_email 
-  end 
- 
-  # This line must come after the 'user config' block. 
-  # Define which model authenticates with sorcery. 
-  config.user_class = "User" 
-end 
-``` 
- 
-### Example 
- 
-Here's a simple example for configuring the settings of the [Idioma](https://github.com/leighhalliday/idioma) gem. I'll include all of the code here at the beginning, but I'll break down some of the choices and how to use it below. 
- 
-```ruby 
-module Idioma 
- 
-  class Configuration 
-    attr_writer :locales, :default_locale 
-    attr_accessor :redis_backend 
- 
-    def initialize 
-      self.default_locale = :en 
-      self.locales = [self.default_locale] 
-    end 
- 
-    def locales 
-      proc_or_value(@locales) 
-    end 
- 
-    def default_locale 
-      proc_or_value(@default_locale) 
-    end 
- 
-    private 
- 
-    def proc_or_value(var) 
-      var.is_a?(Proc) ? var.call : var 
-    end 
- 
-  end 
- 
-  # Return a single instance of the Configuration class 
-  # @return [Idioma::Configuration] single instance 
-  def self.conf 
-    @configuration ||= Configuration.new 
-  end 
- 
-  # Configure the settings for this module. 
-  # @param [lambda] which will be passed instance of Configuration class 
-  def self.configure 
-    yield(conf) 
-  end 
- 
-end 
-``` 
- 
-### Usage 
- 
-We usually set this up in a file called idioma.rb inside of the config/initializers folder. One thing to keep in mind is that this code is only run once which happens when the project is initialized. Because I am pulling the setting values in this case from the database, I've chosen to send a lambda as the value instead of a straight value so that it will be evaluated every time the setting is needed. This is so when the DB value changes, it is reflected in the app immediately instead of needing to restart the application. 
- 
-```ruby 
-# config/initializers/idioma.rb 
-Idioma.configure do |configure| 
-  configure.redis_backend = I18n.backend 
- 
-  configure.default_locale = -> { 
-    Setting.get(:i18n_default_locale).to_sym 
-  } 
- 
-  configure.locales = -> { 
-    Setting.get(:i18n_available_locales).split(",").map { |locale| locale.strip.to_sym } 
-  } 
-end 
-``` 
- 
-### Explanation 
- 
-This method is what handles receiving a lambda or a simple value. It checks to see if it is a Proc, and if so will call it, otherwise it just returns the value. 
- 
-```ruby 
-def proc_or_value(var) 
-  var.is_a?(Proc) ? var.call : var 
-end 
-``` 
- 
-This method returns a memoized instance of the Configuration class... it treats it as a singleton because we don't need multiple instances of it. 
- 
-```ruby 
-def self.conf 
-  @configuration ||= Configuration.new 
-end 
-``` 
- 
-This is the method which is called when actually doing the configuration. It expects a block and an instance of the Configuration class is passed to it. 
- 
-```ruby 
-def self.configure 
-  yield(conf) 
-end 
-``` 
- 
-Lastly, if you want to just grab a setting from the Idioma module somewhere in your code, say, which locales are available to it, you would grab it like this. 
- 
-```ruby 
-available_locales = Idioma.conf.locales 
+Block based configuration is a pattern you see quite a bit when using ruby. When I look at this website itself, there are 3 different gems that I am configuring using this approach. I think it provides a clean and encapsulated interface for configuration, and it is actually quite easy for you to use yourself in your own gems or projects.
+
+### Usage Examples
+
+In the [simple form](https://github.com/plataformatec/simple_form) gem, used for building forms, here is an example of its configuration.
+
+```ruby
+SimpleForm.setup do |config|
+  # Default tag used for error notification helper.
+  config.error_notification_tag = :div
+
+  # CSS class to add for error notification helper.
+  config.error_notification_class = 'alert alert-error'
+end
+```
+
+In the [sorcery](https://github.com/NoamB/sorcery) gem, used for authentication, here is what its configuration looks like. This one actually has a sub configuration inside of the main one.
+
+```ruby
+Rails.application.config.sorcery.configure do |config|
+  # --- user config ---
+  config.user_config do |user|
+    user.reset_password_email_method_name = :reset_password_email
+  end
+
+  # This line must come after the 'user config' block.
+  # Define which model authenticates with sorcery.
+  config.user_class = "User"
+end
+```
+
+### Example
+
+Here's a simple example for configuring the settings of the [Idioma](https://github.com/leighhalliday/idioma) gem. I'll include all of the code here at the beginning, but I'll break down some of the choices and how to use it below.
+
+```ruby
+module Idioma
+
+  class Configuration
+    attr_writer :locales, :default_locale
+    attr_accessor :redis_backend
+
+    def initialize
+      self.default_locale = :en
+      self.locales = [self.default_locale]
+    end
+
+    def locales
+      proc_or_value(@locales)
+    end
+
+    def default_locale
+      proc_or_value(@default_locale)
+    end
+
+    private
+
+    def proc_or_value(var)
+      var.is_a?(Proc) ? var.call : var
+    end
+
+  end
+
+  # Return a single instance of the Configuration class
+  # @return [Idioma::Configuration] single instance
+  def self.conf
+    @configuration ||= Configuration.new
+  end
+
+  # Configure the settings for this module.
+  # @param [lambda] which will be passed instance of Configuration class
+  def self.configure
+    yield(conf)
+  end
+
+end
+```
+
+### Usage
+
+We usually set this up in a file called idioma.rb inside of the config/initializers folder. One thing to keep in mind is that this code is only run once which happens when the project is initialized. Because I am pulling the setting values in this case from the database, I've chosen to send a lambda as the value instead of a straight value so that it will be evaluated every time the setting is needed. This is so when the DB value changes, it is reflected in the app immediately instead of needing to restart the application.
+
+```ruby
+# config/initializers/idioma.rb
+Idioma.configure do |configure|
+  configure.redis_backend = I18n.backend
+
+  configure.default_locale = -> {
+    Setting.get(:i18n_default_locale).to_sym
+  }
+
+  configure.locales = -> {
+    Setting.get(:i18n_available_locales).split(",").map { |locale| locale.strip.to_sym }
+  }
+end
+```
+
+### Explanation
+
+This method is what handles receiving a lambda or a simple value. It checks to see if it is a Proc, and if so will call it, otherwise it just returns the value.
+
+```ruby
+def proc_or_value(var)
+  var.is_a?(Proc) ? var.call : var
+end
+```
+
+This method returns a memoized instance of the Configuration class... it treats it as a singleton because we don't need multiple instances of it.
+
+```ruby
+def self.conf
+  @configuration ||= Configuration.new
+end
+```
+
+This is the method which is called when actually doing the configuration. It expects a block and an instance of the Configuration class is passed to it.
+
+```ruby
+def self.configure
+  yield(conf)
+end
+```
+
+Lastly, if you want to just grab a setting from the Idioma module somewhere in your code, say, which locales are available to it, you would grab it like this.
+
+```ruby
+available_locales = Idioma.conf.locales
 ```

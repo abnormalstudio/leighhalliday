@@ -1,114 +1,112 @@
 ---
 title: Ruby Introspection - Metaprogramming
 slug: ruby-introspection-metaprogramming
-tags: ruby-on-rails
+tags: ruby, metaprogramming
 date: 2015-03-20
 updated: 2015-03-20
-banner: ../canadaleaf.jpg
+banner: ./banner.jpg
 ---
 
-## What is metaprogramming? 
- 
-You might have heard the term __metaprogramming__ before, but what is it and what does it have to do with Ruby? To start off, let's look at the Wikipedia definition: 
- 
-> Metaprogramming is the writing of computer programs with the ability to treat programs as their data. It means that a program could be designed to read, generate, analyse and/or transform other programs, and even modify itself while running. 
- 
-The part of that definition that I want to focus on today is the part about analyzing computer programs. This could mean many things, but what I want to focus on today is something called __introspection__. 
- 
-## What is introspection? 
- 
-Introspection in general terms means to look inward. Humans can perform introspection, maybe questioning why we made a certain decision or finding out what makes us happy, and Ruby too can perform introspection. 
- 
-In Ruby, introspection is when our code asks questions about itself. Maybe that sounds weird... so let's move on to some examples! 
- 
-## Introspecting our Ruby code 
- 
-The following examples will be looking at this small piece of code below which defines an Alpaca class, which has a couple instance variables and a method: 
- 
-```ruby 
-class Alpaca 
- 
-  attr_accessor :name, :birthdate 
- 
-  def initialize(name, birthdate) 
-    @name      = name 
-    @birthdate = birthdate 
-  end 
- 
-  def spit 
-    "Putsuuey" 
-  end 
- 
-end 
-``` 
- 
-### All objects in Ruby extend from Object 
- 
-In Ruby you are able to create subclasses of core classes or classes that you create yourself. When you do this, you're saying that the class you are creating is like, but is a more specialized version of the parent it extends from. 
- 
-```ruby 
-class Alpaca < Camelid 
-end 
-``` 
- 
-We're saying here that Alpaca is like a Camelid, and inherits any properties or methods that a Camelid has, but also has it's own more specific properties, and may have to modify slightly the behaviour of a more generic Camelid.  
- 
-Well, in Ruby, all classes eventually extend (even though you don't have to explicitly tell it to do so) from the base class of `Object`. `Object` provides many useful methods for introspection! 
- 
-### I just want to see what data I am working with! 
- 
-Luckily, Ruby has a pretty good solution for this and it is the `inspect` method. This method converts the object you are working with into a human-readable form. It's very useful for debugging and when you're not sure what data you are working with. 
- 
-```ruby 
-puts spitty.inspect 
-#<Alpaca:0x007fd849166808 @name="Spitty", @birthdate=#<Date: 1984-11-11 ((2446016j,0s,0n),+0s,2299161j)>> 
-``` 
- 
-This tells us that spitty is an instance of the Alpaca class and that it has 2 instance variables (@name and @birthdate). 
- 
-### What type of class is this? 
- 
-When you want to know what type of class/object you're working with, you can use the `class` method. The object it returns has a `name` method which will return a string representation of the class. 
- 
-```ruby 
-puts spitty.class.name 
-# Alpaca 
-``` 
- 
-If you want to check to see if this object is an instance of a specific class, you can use the `instance_of?` method, which will return a boolean response. 
- 
-```ruby 
-puts spitty.instance_of?(Alpaca) 
-# true 
-``` 
- 
-### What methods are available to me? 
- 
-To answer this question you can call the `methods` method, which will return an array of the methods available to the object instance you are working with. If I were to call it on my Alpaca instance, spitty, most of the methods I see come from it's parent, Object, but I also see the `spit` method that I defined. 
- 
-```ruby 
-puts spitty.methods.inspect 
-[:name, :name=, :birthdate, :birthdate=, :spit, :nil?, :===, :=~, :!~, :eql?, :hash, :<=>, :class, :singleton_class, :clone, :dup, :taint, :tainted?, :untaint, :untrust, :untrusted?, :trust, :freeze, :frozen?, :to_s, :inspect, :methods, :singleton_methods, :protected_methods, :private_methods, :public_methods, :instance_variables, :instance_variable_get, :instance_variable_set, :instance_variable_defined?, :remove_instance_variable, :instance_of?, :kind_of?, :is_a?, :tap, :send, :public_send, :respond_to?, :extend, :display, :method, :public_method, :singleton_method, :define_singleton_method, :object_id, :to_enum, :enum_for, :==, :equal?, :!, :!=, :instance_eval, :instance_exec, :__send__, :__id__] 
-``` 
- 
-If you'd rather just ask the object instance if it has a specific method, you would use the `respond_to?` method. 
- 
-```ruby 
-puts spitty.respond_to?(:spit) 
-# true 
-``` 
- 
-### Which instance variables are defined? 
- 
-To find out which instance variables are defined-you know, the ones with the @ before them-you can use the `instance_variables` method. 
- 
-```ruby 
-puts spitty.instance_variables.inspect 
-[:@name, :@birthdate] 
-``` 
- 
-## Concluding thoughts 
- 
-Metaprogramming and in this case introspection is one of the things that makes Ruby such a powerful and fun to work with language. As the definition from Wikipedia mentioned, metaprogramming can also involve modifying in realtime the code... something we'll touch on in a later article. For now, have fun introspecting the objects you work with!! I recommend [Metaprogramming Ruby 2](https://amzn.to/2pyq8pm) to go deeper on this subject. 
- 
-<a target="_blank"  href="https://www.amazon.com/gp/product/1941222129/ref=as_li_tl?ie=UTF8&camp=1789&creative=9325&creativeASIN=1941222129&linkCode=as2&tag=leigh0b-20&linkId=ae80a179b3b0373ea64894f5d30026e9"><img border="0" src="//ws-na.amazon-adsystem.com/widgets/q?_encoding=UTF8&MarketPlace=US&ASIN=1941222129&ServiceVersion=20070822&ID=AsinImage&WS=1&Format=_SL160_&tag=leigh0b-20" ></a><img src="//ir-na.amazon-adsystem.com/e/ir?t=leigh0b-20&l=am2&o=1&a=1941222129" width="1" height="1" border="0" alt="" style="border:none !important; margin:0px !important;" />
+## What is metaprogramming?
+
+You might have heard the term **metaprogramming** before, but what is it and what does it have to do with Ruby? To start off, let's look at the Wikipedia definition:
+
+> Metaprogramming is the writing of computer programs with the ability to treat programs as their data. It means that a program could be designed to read, generate, analyse and/or transform other programs, and even modify itself while running.
+
+The part of that definition that I want to focus on today is the part about analyzing computer programs. This could mean many things, but what I want to focus on today is something called **introspection**.
+
+## What is introspection?
+
+Introspection in general terms means to look inward. Humans can perform introspection, maybe questioning why we made a certain decision or finding out what makes us happy, and Ruby too can perform introspection.
+
+In Ruby, introspection is when our code asks questions about itself. Maybe that sounds weird... so let's move on to some examples!
+
+## Introspecting our Ruby code
+
+The following examples will be looking at this small piece of code below which defines an Alpaca class, which has a couple instance variables and a method:
+
+```ruby
+class Alpaca
+
+  attr_accessor :name, :birthdate
+
+  def initialize(name, birthdate)
+    @name      = name
+    @birthdate = birthdate
+  end
+
+  def spit
+    "Putsuuey"
+  end
+
+end
+```
+
+### All objects in Ruby extend from Object
+
+In Ruby you are able to create subclasses of core classes or classes that you create yourself. When you do this, you're saying that the class you are creating is like, but is a more specialized version of the parent it extends from.
+
+```ruby
+class Alpaca < Camelid
+end
+```
+
+We're saying here that Alpaca is like a Camelid, and inherits any properties or methods that a Camelid has, but also has it's own more specific properties, and may have to modify slightly the behaviour of a more generic Camelid.
+
+Well, in Ruby, all classes eventually extend (even though you don't have to explicitly tell it to do so) from the base class of `Object`. `Object` provides many useful methods for introspection!
+
+### I just want to see what data I am working with!
+
+Luckily, Ruby has a pretty good solution for this and it is the `inspect` method. This method converts the object you are working with into a human-readable form. It's very useful for debugging and when you're not sure what data you are working with.
+
+```ruby
+puts spitty.inspect
+#<Alpaca:0x007fd849166808 @name="Spitty", @birthdate=#<Date: 1984-11-11 ((2446016j,0s,0n),+0s,2299161j)>>
+```
+
+This tells us that spitty is an instance of the Alpaca class and that it has 2 instance variables (@name and @birthdate).
+
+### What type of class is this?
+
+When you want to know what type of class/object you're working with, you can use the `class` method. The object it returns has a `name` method which will return a string representation of the class.
+
+```ruby
+puts spitty.class.name
+# Alpaca
+```
+
+If you want to check to see if this object is an instance of a specific class, you can use the `instance_of?` method, which will return a boolean response.
+
+```ruby
+puts spitty.instance_of?(Alpaca)
+# true
+```
+
+### What methods are available to me?
+
+To answer this question you can call the `methods` method, which will return an array of the methods available to the object instance you are working with. If I were to call it on my Alpaca instance, spitty, most of the methods I see come from it's parent, Object, but I also see the `spit` method that I defined.
+
+```ruby
+puts spitty.methods.inspect
+[:name, :name=, :birthdate, :birthdate=, :spit, :nil?, :===, :=~, :!~, :eql?, :hash, :<=>, :class, :singleton_class, :clone, :dup, :taint, :tainted?, :untaint, :untrust, :untrusted?, :trust, :freeze, :frozen?, :to_s, :inspect, :methods, :singleton_methods, :protected_methods, :private_methods, :public_methods, :instance_variables, :instance_variable_get, :instance_variable_set, :instance_variable_defined?, :remove_instance_variable, :instance_of?, :kind_of?, :is_a?, :tap, :send, :public_send, :respond_to?, :extend, :display, :method, :public_method, :singleton_method, :define_singleton_method, :object_id, :to_enum, :enum_for, :==, :equal?, :!, :!=, :instance_eval, :instance_exec, :__send__, :__id__]
+```
+
+If you'd rather just ask the object instance if it has a specific method, you would use the `respond_to?` method.
+
+```ruby
+puts spitty.respond_to?(:spit)
+# true
+```
+
+### Which instance variables are defined?
+
+To find out which instance variables are defined-you know, the ones with the @ before them-you can use the `instance_variables` method.
+
+```ruby
+puts spitty.instance_variables.inspect
+[:@name, :@birthdate]
+```
+
+## Concluding thoughts
+
+Metaprogramming and in this case introspection is one of the things that makes Ruby such a powerful and fun to work with language. As the definition from Wikipedia mentioned, metaprogramming can also involve modifying in realtime the code... something we'll touch on in a later article. For now, have fun introspecting the objects you work with!! I recommend [Metaprogramming Ruby 2](https://amzn.to/2pyq8pm) to go deeper on this subject.

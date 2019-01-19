@@ -1,137 +1,139 @@
 ---
 title: Exploring some string methods
 slug: exploring-some-string-methods
-tags: ruby-on-rails
+tags: ruby, strings
 date: 2015-08-13
 updated: 2015-08-13
-banner: ../canadaleaf.jpg
+banner: ./banner.jpg
 ---
 
-I'm working with an API which requires a phone number to be in the format 555-555-5555. As much as you want your users to enter it in that format, they won't always do that... even with placeholder text showing the correct format. 
- 
-To make their lives easier I want to attempt to convert whatever they enter into the correct format as long as I can accurately guess/assume that what they entered can be converted. 
- 
-Examples: 
-- 1112223333 
-- (555) 123-1234 
-- 123 123 1234 
-- 1-123-123-1234 
-- 111.222.3333 
- 
-If they enter something I can't correctly convert, I'll leave it as is and provide the user with a validation error (For example: 123-123-1234 x123, 123fffa, nothing). 
- 
-## The plan 
- 
-How I plan to do this is through a series of transformations. 
-1. Remove all non-digit (0 - 9) characters, replacing them with an empty string. 
-2. If it is 11 chars long and begins with 1, return the string minus the beginning 1. 
-3. If it is 10 chars long, insert dashes (-) after the 3rd and 6th numbers. 
- 
-## The code 
- 
-Below is the code which follows the plan of attempting to convert the given phone number into the correct format. 
- 
-```ruby 
-class NormalizePhone 
-  def self.normalize(phone) 
-    # Replace any non-numbers with "" 
-    temp = phone.to_s.gsub(/[^0-9]*/, "") 
- 
-    # If 11 digits long and first digit is 1, remove it 
-    if temp.size == 11 && temp.start_with?("1") 
-      temp = temp[1..(temp.size - 1)] 
-    end 
- 
-    # Re-insert dashes if 10 digits long 
-    if temp.size == 10 
-      phone = temp.insert(3, "-").insert(7, "-") 
-    end 
- 
-    phone 
-  end 
-end 
-``` 
- 
-## Exploring the methods used 
- 
-Let's take a quick look at the different String methods used to make this code work. 
- 
-### Gsub 
- 
-`gsub` is a great method which looks for a pattern (regular expression) and replaces __ALL__ instances of that pattern with your replacement string. This differs from the `sub` method which only replaces the first instance found. 
- 
-```ruby 
-"(555) 123-1234".gsub(/[^0-9]*/, "") # 5551231234 
-``` 
- 
-### Start with? 
- 
-Next I'm going to use the `start_with?` method to find out if the phone number begins with a "1". If it does and if it is also 11 chars in length, I'll assume that I can chop off what would be the country code (we are dealing with North American phone numbers here). 
- 
-```ruby 
-"11231231234".start_with?("1") # true 
-``` 
- 
-### Slice 
- 
-To chop off the "1" from the beginning of the String I'll use the `slice` method. This is similar to substring in other languages but a bit more powerful because you can pass in a variety of options. I'll be passing in start and length values. 
- 
-```ruby 
-temp = "11231231234" 
-temp.slice(1, temp.length - 1) # "1231231234" 
-``` 
- 
-### Insert 
- 
-If I see that the phone number is now 10 digits long, I'll assume it is correct and add in the - chars which come after the 3rd and 6th numbers. To do this I will use the `insert` method. 
- 
-```ruby 
-"1112223333".insert(3, "-").insert(7, "-") # "111-222-3333" 
-``` 
- 
-## Tests! 
- 
-Here are some tests to ensure that our code works correctly. 
- 
-```ruby 
-describe NormalizePhone do 
- 
-  it "123-123-1234 stays valid" do 
-    expect(NormalizePhone.normalize("123-123-1234")).to eq("123-123-1234") 
-  end 
- 
-  it "1231231234 converts correctly" do 
-    expect(NormalizePhone.normalize("1231231234")).to eq("123-123-1234") 
-  end 
- 
-  it "(123) 123-1234 converts correctly" do 
-    expect(NormalizePhone.normalize("(123) 123-1234")).to eq("123-123-1234") 
-  end 
- 
-  it "123.123.1234 converts correctly" do 
-    expect(NormalizePhone.normalize("123.123.1234")).to eq("123-123-1234") 
-  end 
- 
-  it "nothing remains as is" do 
-    expect(NormalizePhone.normalize("nothing")).to eq("nothing") 
-  end 
- 
-  it "1231231234567 remains as is" do 
-    expect(NormalizePhone.normalize("1231231234567")).to eq("1231231234567") 
-  end 
- 
-  it "123-123-1234 x123 remains as is" do 
-    expect(NormalizePhone.normalize("123-123-1234 x123")).to eq("123-123-1234 x123") 
-  end 
- 
-end 
-``` 
- 
-And the output: 
- 
-``` 
-....... 
- 
-Finished in 0.00266 seconds (files took 0.48769 seconds to load) 
-7 examples, 0 failures 
+I'm working with an API which requires a phone number to be in the format 555-555-5555. As much as you want your users to enter it in that format, they won't always do that... even with placeholder text showing the correct format.
+
+To make their lives easier I want to attempt to convert whatever they enter into the correct format as long as I can accurately guess/assume that what they entered can be converted.
+
+Examples:
+
+- 1112223333
+- (555) 123-1234
+- 123 123 1234
+- 1-123-123-1234
+- 111.222.3333
+
+If they enter something I can't correctly convert, I'll leave it as is and provide the user with a validation error (For example: 123-123-1234 x123, 123fffa, nothing).
+
+## The plan
+
+How I plan to do this is through a series of transformations.
+
+1. Remove all non-digit (0 - 9) characters, replacing them with an empty string.
+2. If it is 11 chars long and begins with 1, return the string minus the beginning 1.
+3. If it is 10 chars long, insert dashes (-) after the 3rd and 6th numbers.
+
+## The code
+
+Below is the code which follows the plan of attempting to convert the given phone number into the correct format.
+
+```ruby
+class NormalizePhone
+  def self.normalize(phone)
+    # Replace any non-numbers with ""
+    temp = phone.to_s.gsub(/[^0-9]*/, "")
+
+    # If 11 digits long and first digit is 1, remove it
+    if temp.size == 11 && temp.start_with?("1")
+      temp = temp[1..(temp.size - 1)]
+    end
+
+    # Re-insert dashes if 10 digits long
+    if temp.size == 10
+      phone = temp.insert(3, "-").insert(7, "-")
+    end
+
+    phone
+  end
+end
+```
+
+## Exploring the methods used
+
+Let's take a quick look at the different String methods used to make this code work.
+
+### Gsub
+
+`gsub` is a great method which looks for a pattern (regular expression) and replaces **ALL** instances of that pattern with your replacement string. This differs from the `sub` method which only replaces the first instance found.
+
+```ruby
+"(555) 123-1234".gsub(/[^0-9]*/, "") # 5551231234
+```
+
+### Start with?
+
+Next I'm going to use the `start_with?` method to find out if the phone number begins with a "1". If it does and if it is also 11 chars in length, I'll assume that I can chop off what would be the country code (we are dealing with North American phone numbers here).
+
+```ruby
+"11231231234".start_with?("1") # true
+```
+
+### Slice
+
+To chop off the "1" from the beginning of the String I'll use the `slice` method. This is similar to substring in other languages but a bit more powerful because you can pass in a variety of options. I'll be passing in start and length values.
+
+```ruby
+temp = "11231231234"
+temp.slice(1, temp.length - 1) # "1231231234"
+```
+
+### Insert
+
+If I see that the phone number is now 10 digits long, I'll assume it is correct and add in the - chars which come after the 3rd and 6th numbers. To do this I will use the `insert` method.
+
+```ruby
+"1112223333".insert(3, "-").insert(7, "-") # "111-222-3333"
+```
+
+## Tests!
+
+Here are some tests to ensure that our code works correctly.
+
+```ruby
+describe NormalizePhone do
+
+  it "123-123-1234 stays valid" do
+    expect(NormalizePhone.normalize("123-123-1234")).to eq("123-123-1234")
+  end
+
+  it "1231231234 converts correctly" do
+    expect(NormalizePhone.normalize("1231231234")).to eq("123-123-1234")
+  end
+
+  it "(123) 123-1234 converts correctly" do
+    expect(NormalizePhone.normalize("(123) 123-1234")).to eq("123-123-1234")
+  end
+
+  it "123.123.1234 converts correctly" do
+    expect(NormalizePhone.normalize("123.123.1234")).to eq("123-123-1234")
+  end
+
+  it "nothing remains as is" do
+    expect(NormalizePhone.normalize("nothing")).to eq("nothing")
+  end
+
+  it "1231231234567 remains as is" do
+    expect(NormalizePhone.normalize("1231231234567")).to eq("1231231234567")
+  end
+
+  it "123-123-1234 x123 remains as is" do
+    expect(NormalizePhone.normalize("123-123-1234 x123")).to eq("123-123-1234 x123")
+  end
+
+end
+```
+
+And the output:
+
+```
+.......
+
+Finished in 0.00266 seconds (files took 0.48769 seconds to load)
+7 examples, 0 failures
 ```

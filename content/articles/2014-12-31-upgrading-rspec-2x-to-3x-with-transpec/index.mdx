@@ -1,68 +1,69 @@
 ---
 title: Easily Upgrading from RSpec 2.x to 3.x with Transpec
 slug: upgrading-rspec-2x-to-3x-with-transpec
-tags: ruby-on-rails
+tags: rspec, ruby-on-rails
 date: 2014-12-31
 updated: 2014-12-31
-banner: ../canadaleaf.jpg
+banner: ./banner.jpg
 ---
 
-### Background 
- 
-At [FlipGive](http://www.flipgive.com) we use [RSpec](https://github.com/rspec/rspec) to handle all of our testing. Over the years we've built up quite a few tests... last count there are 2130 of them, which take 3 minutes and 20 seconds to run. Not the fastest test suite in the world, but certainly not the slowest. 
- 
-We've been working on FlipGive for a few years now, and therefore have been pretty entrenched in some of the older practices in RSpec. 
- 
-```ruby 
-# Like this 
-"String".should == "String" 
-# Or this 
-response.should redirect_to(admin_affiliates_path) 
-# And this too 
-Beneficiary.any_instance.should_receive(:update_attributes).with({'these' => 'params'}) 
-``` 
- 
-We have been on RSpec 2.x for almost 3 years now, and in my mind it was going to be a lot of work to fix the thousands of instances of deprecated code in the 3.x branch. So, with that said I put off doing it. I forget why, but the other day I looked into upgrading RSpec to the latest edition and noticed the [Transpec](http://yujinakayama.me/transpec/) gem written by [Yuji Nakayama](http://yujinakayama.me/). It describes itself as a magical tool, and it most certainly is. 
- 
-### What is Transpec? 
- 
-[Transpec](http://yujinakayama.me/transpec/) looks through all of your RSpec tests, finds the deprecated calls, and replaces them with the updated and recommended syntax. Even though you might be wary of automated code generators, it did an awesome job and produced extremely clean code. 
- 
-All 2100+ tests we have worked as expected after the conversion, and it even provides you a nice output of the changes it made: 
- 
-``` 
-3673 conversions 
-  from: obj.should 
-    to: expect(obj).to 
-971 conversions 
-  from: == expected 
-    to: eq(expected) 
-216 conversions 
-  from: obj.should_not 
-    to: expect(obj).not_to 
-74 conversions 
-  from: Klass.any_instance.stub(:message) 
-    to: allow_any_instance_of(Klass).to receive(:message) 
-etc... 
-``` 
- 
-### How to use Transpec 
- 
-On the website linked to above, you'll find a simple guide on how to use it, and it worked pretty much out of the box for me. We have a local gem that we include via a symlinked file which I had to temporarily write the full path to, but other than that I had no problems at all. 
- 
-The steps are: 
-- Upgrade to the latest 2.99 version of RSpec and get tests passing. 
-- Install Transpec and run code. 
-- Ensure all tests still pass. 
-- Review and commit the changes. 
- 
-Most changes look something like this: 
- 
-```diff 
--        assigns(:beneficiary).should eq(@beneficiary) 
-+        expect(assigns(:beneficiary)).to eq(@beneficiary) 
-``` 
- 
-### Summary 
- 
+### Background
+
+At [FlipGive](http://www.flipgive.com) we use [RSpec](https://github.com/rspec/rspec) to handle all of our testing. Over the years we've built up quite a few tests... last count there are 2130 of them, which take 3 minutes and 20 seconds to run. Not the fastest test suite in the world, but certainly not the slowest.
+
+We've been working on FlipGive for a few years now, and therefore have been pretty entrenched in some of the older practices in RSpec.
+
+```ruby
+# Like this
+"String".should == "String"
+# Or this
+response.should redirect_to(admin_affiliates_path)
+# And this too
+Beneficiary.any_instance.should_receive(:update_attributes).with({'these' => 'params'})
+```
+
+We have been on RSpec 2.x for almost 3 years now, and in my mind it was going to be a lot of work to fix the thousands of instances of deprecated code in the 3.x branch. So, with that said I put off doing it. I forget why, but the other day I looked into upgrading RSpec to the latest edition and noticed the [Transpec](http://yujinakayama.me/transpec/) gem written by [Yuji Nakayama](http://yujinakayama.me/). It describes itself as a magical tool, and it most certainly is.
+
+### What is Transpec?
+
+[Transpec](http://yujinakayama.me/transpec/) looks through all of your RSpec tests, finds the deprecated calls, and replaces them with the updated and recommended syntax. Even though you might be wary of automated code generators, it did an awesome job and produced extremely clean code.
+
+All 2100+ tests we have worked as expected after the conversion, and it even provides you a nice output of the changes it made:
+
+```
+3673 conversions
+  from: obj.should
+    to: expect(obj).to
+971 conversions
+  from: == expected
+    to: eq(expected)
+216 conversions
+  from: obj.should_not
+    to: expect(obj).not_to
+74 conversions
+  from: Klass.any_instance.stub(:message)
+    to: allow_any_instance_of(Klass).to receive(:message)
+etc...
+```
+
+### How to use Transpec
+
+On the website linked to above, you'll find a simple guide on how to use it, and it worked pretty much out of the box for me. We have a local gem that we include via a symlinked file which I had to temporarily write the full path to, but other than that I had no problems at all.
+
+The steps are:
+
+- Upgrade to the latest 2.99 version of RSpec and get tests passing.
+- Install Transpec and run code.
+- Ensure all tests still pass.
+- Review and commit the changes.
+
+Most changes look something like this:
+
+```diff
+-        assigns(:beneficiary).should eq(@beneficiary)
++        expect(assigns(:beneficiary)).to eq(@beneficiary)
+```
+
+### Summary
+
 Create a branch and give Transpec a try if you're still stuck on the 2.x release of RSpec. It took me no more than a couple hours and now our fairly large test suite is caught up with the latest release of RSpec. Thanks to Yuji for creating an awesome gem!

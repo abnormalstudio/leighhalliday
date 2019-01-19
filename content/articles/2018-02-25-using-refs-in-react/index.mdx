@@ -1,162 +1,162 @@
 ---
 title: Using Refs in React
 slug: using-refs-in-react
-tags: frontend
+tags: javascript, react
 date: 2018-02-25
 updated: 2018-02-25
-banner: ../canadaleaf.jpg
+banner: ./banner.jpg
 ---
 
-Currently there are 3 distinct ways of using [refs](https://reactjs.org/docs/refs-and-the-dom.html) in React. A ref gives you access to the underlying DOM element. This is especially useful when interfacing with libraries which require the DOM element. An example of this is [three.js](https://threejs.org/), which wants to render its animation inside a `div`. Another use for refs is when you want to grab the vaue a user has entered into a form `input` element. Below we'll cover the 3 ways you can use refs. 
- 
-The first 2 approaches (callback & createRef) can only be used within a class based component, whereas the last example of the `useRef` hook can only be used within a functional component. 
- 
-The code example [can be found here](https://github.com/leighhalliday/react-ref-demo). 
- 
-## Refs with a callback 
- 
-The oldest way of doing refs in React is by passing a function to the `ref` prop on any component representing a DOM element. The function receives the DOM element, allowing you to save it to a class level variable for later use. 
- 
-```jsx 
-class CallbackRefExample extends React.Component { 
-  render() { 
-    return ( 
-      <form 
-        onSubmit={e => { 
-          e.preventDefault(); 
-          alert(this.inputRef.value); 
-        }} 
-      > 
-        <input 
-          type="text" 
-          defaultValue="callback" 
-          ref={input => { 
-            this.inputRef = input; 
-          }} 
-        /> 
-        <button>Submit</button> 
-      </form> 
-    ); 
-  } 
-} 
-``` 
- 
-## Refs with createRef 
- 
-A newer way is by using `React.createRef()`. This when called returns an object that exposes a property called `current`, which when assigned to a ref will contain a reference to the DOM element. Here I have declared it inside the class, which when used inside the `render()` function is available at `this.inputRef.current`. To use this style of ref, you simple pass the result from `createRef` to the `ref` prop to the component: `<input ref={this.inputRef} />`. 
- 
-```jsx 
-class CreateRefExample extends React.Component { 
-  inputRef = createRef(); 
- 
-  render() { 
-    return ( 
-      <form 
-        onSubmit={e => { 
-          e.preventDefault(); 
-          alert(this.inputRef.current.value); 
-        }} 
-      > 
-        <input ref={this.inputRef} type="text" defaultValue="createRef" /> 
-        <button>Submit</button> 
-      </form> 
-    ); 
-  } 
-} 
-``` 
- 
-## Refs with useRef 
- 
-The latest way to get access to a DOM element ref is with the `useRef` hook introduced in React 16.7. As usual with hooks, it tends to produce the cleanest looking component with the least amount of code. And as a bonus, this is the only approach you're able to take inside of a functional component. 
- 
-```jsx 
-function UseRefExample() { 
-  const inputRef = useRef(); 
- 
-  return ( 
-    <form 
-      onSubmit={e => { 
-        e.preventDefault(); 
-        alert(inputRef.current.value); 
-      }} 
-    > 
-      <input ref={inputRef} type="text" defaultValue="useRef" /> 
-      <button>Submit</button> 
-    </form> 
-  ); 
-} 
-``` 
- 
-## Full example 
- 
-To see the entire example in action, please take a look at the code below: 
- 
-```jsx 
-import React, { createRef, useRef } from "react"; 
- 
-class CallbackRefExample extends React.Component { 
-  render() { 
-    return ( 
-      <form 
-        onSubmit={e => { 
-          e.preventDefault(); 
-          alert(this.inputRef.value); 
-        }} 
-      > 
-        <input 
-          type="text" 
-          defaultValue="callback" 
-          ref={input => { 
-            this.inputRef = input; 
-          }} 
-        /> 
-        <button>Submit</button> 
-      </form> 
-    ); 
-  } 
-} 
- 
-class CreateRefExample extends React.Component { 
-  inputRef = createRef(); 
- 
-  render() { 
-    return ( 
-      <form 
-        onSubmit={e => { 
-          e.preventDefault(); 
-          alert(this.inputRef.current.value); 
-        }} 
-      > 
-        <input ref={this.inputRef} type="text" defaultValue="createRef" /> 
-        <button>Submit</button> 
-      </form> 
-    ); 
-  } 
-} 
- 
-function UseRefExample() { 
-  const inputRef = useRef(); 
- 
-  return ( 
-    <form 
-      onSubmit={e => { 
-        e.preventDefault(); 
-        alert(inputRef.current.value); 
-      }} 
-    > 
-      <input ref={inputRef} type="text" defaultValue="useRef" /> 
-      <button>Submit</button> 
-    </form> 
-  ); 
-} 
- 
-export default function App() { 
-  return ( 
-    <div> 
-      <CallbackRefExample /> 
-      <CreateRefExample /> 
-      <UseRefExample /> 
-    </div> 
-  ); 
-} 
+Currently there are 3 distinct ways of using [refs](https://reactjs.org/docs/refs-and-the-dom.html) in React. A ref gives you access to the underlying DOM element. This is especially useful when interfacing with libraries which require the DOM element. An example of this is [three.js](https://threejs.org/), which wants to render its animation inside a `div`. Another use for refs is when you want to grab the vaue a user has entered into a form `input` element. Below we'll cover the 3 ways you can use refs.
+
+The first 2 approaches (callback & createRef) can only be used within a class based component, whereas the last example of the `useRef` hook can only be used within a functional component.
+
+The code example [can be found here](https://github.com/leighhalliday/react-ref-demo).
+
+## Refs with a callback
+
+The oldest way of doing refs in React is by passing a function to the `ref` prop on any component representing a DOM element. The function receives the DOM element, allowing you to save it to a class level variable for later use.
+
+```jsx
+class CallbackRefExample extends React.Component {
+  render() {
+    return (
+      <form
+        onSubmit={e => {
+          e.preventDefault();
+          alert(this.inputRef.value);
+        }}
+      >
+        <input
+          type="text"
+          defaultValue="callback"
+          ref={input => {
+            this.inputRef = input;
+          }}
+        />
+        <button>Submit</button>
+      </form>
+    );
+  }
+}
+```
+
+## Refs with createRef
+
+A newer way is by using `React.createRef()`. This when called returns an object that exposes a property called `current`, which when assigned to a ref will contain a reference to the DOM element. Here I have declared it inside the class, which when used inside the `render()` function is available at `this.inputRef.current`. To use this style of ref, you simple pass the result from `createRef` to the `ref` prop to the component: `<input ref={this.inputRef} />`.
+
+```jsx
+class CreateRefExample extends React.Component {
+  inputRef = createRef();
+
+  render() {
+    return (
+      <form
+        onSubmit={e => {
+          e.preventDefault();
+          alert(this.inputRef.current.value);
+        }}
+      >
+        <input ref={this.inputRef} type="text" defaultValue="createRef" />
+        <button>Submit</button>
+      </form>
+    );
+  }
+}
+```
+
+## Refs with useRef
+
+The latest way to get access to a DOM element ref is with the `useRef` hook introduced in React 16.7. As usual with hooks, it tends to produce the cleanest looking component with the least amount of code. And as a bonus, this is the only approach you're able to take inside of a functional component.
+
+```jsx
+function UseRefExample() {
+  const inputRef = useRef();
+
+  return (
+    <form
+      onSubmit={e => {
+        e.preventDefault();
+        alert(inputRef.current.value);
+      }}
+    >
+      <input ref={inputRef} type="text" defaultValue="useRef" />
+      <button>Submit</button>
+    </form>
+  );
+}
+```
+
+## Full example
+
+To see the entire example in action, please take a look at the code below:
+
+```jsx
+import React, { createRef, useRef } from "react";
+
+class CallbackRefExample extends React.Component {
+  render() {
+    return (
+      <form
+        onSubmit={e => {
+          e.preventDefault();
+          alert(this.inputRef.value);
+        }}
+      >
+        <input
+          type="text"
+          defaultValue="callback"
+          ref={input => {
+            this.inputRef = input;
+          }}
+        />
+        <button>Submit</button>
+      </form>
+    );
+  }
+}
+
+class CreateRefExample extends React.Component {
+  inputRef = createRef();
+
+  render() {
+    return (
+      <form
+        onSubmit={e => {
+          e.preventDefault();
+          alert(this.inputRef.current.value);
+        }}
+      >
+        <input ref={this.inputRef} type="text" defaultValue="createRef" />
+        <button>Submit</button>
+      </form>
+    );
+  }
+}
+
+function UseRefExample() {
+  const inputRef = useRef();
+
+  return (
+    <form
+      onSubmit={e => {
+        e.preventDefault();
+        alert(inputRef.current.value);
+      }}
+    >
+      <input ref={inputRef} type="text" defaultValue="useRef" />
+      <button>Submit</button>
+    </form>
+  );
+}
+
+export default function App() {
+  return (
+    <div>
+      <CallbackRefExample />
+      <CreateRefExample />
+      <UseRefExample />
+    </div>
+  );
+}
 ```

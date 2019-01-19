@@ -90,4 +90,26 @@ const Single = styled.div`
   }
 `;
 
-export { H1Line, H2Line, H3Line, H4Line, Single };
+const UnorderedList = styled.ul`
+  list-style: initial;
+  margin-left: 1.25rem;
+`;
+
+const OrderedList = styled.ol`
+  list-style: initial;
+`;
+
+const ListItem = styled.li`
+  margin-bottom: 1rem;
+`;
+
+export {
+  H1Line,
+  H2Line,
+  H3Line,
+  H4Line,
+  Single,
+  UnorderedList,
+  OrderedList,
+  ListItem
+};
