@@ -6,16 +6,21 @@ const ArticleAd: React.FunctionComponent = () => (
     css={css`
       #carbonads {
         max-width: 400px;
-        padding: 15px 15px 15px 15px;
-        margin: 1.5rem 0;
+        padding: 1rem;
+        margin: 0px auto;
+        margin-bottom: 1.5rem;
         overflow: hidden;
-        font-size: 13px;
-        line-height: 1.4;
+        font-size: 0.8rem;
+        line-height: 1.2rem;
         text-align: left;
         background-color: rgba(0, 0, 0, 0.05);
         border-radius: 5px;
-        float: right;
-        margin-left: 15px;
+
+        &:after {
+          content: "";
+          display: block;
+          clear: both;
+        }
       }
       #carbonads a {
         text-decoration: none;
