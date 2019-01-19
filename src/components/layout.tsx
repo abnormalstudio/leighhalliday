@@ -147,10 +147,9 @@ const styles = {
       }
     }
 
-    /* .gatsby-image-outer-wrapper,
-    .gatsby-image-wrapper {
-      height: 100%;
-    } */
+    .token.comment {
+      color: #879aae;
+    }
   `
 };
 

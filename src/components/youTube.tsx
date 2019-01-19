@@ -1,5 +1,5 @@
-import React from 'react';
-import styled from '@emotion/styled';
+import React from "react";
+import styled from "@emotion/styled";
 
 interface Props {
   id: string;
@@ -10,11 +10,12 @@ const YouTube = ({ id }: Props) => (
     <EmbedIFrame
       src={`https://www.youtube.com/embed/${id}`}
       allow="autoplay; encrypted-media"
+      title="Embedded YouTube video"
     />
   </EmbedContainer>
 );
 
-const EmbedContainer = styled('div')`
+const EmbedContainer = styled("div")`
   position: relative;
   padding-bottom: 56.25%;
   height: 0;
@@ -22,7 +23,7 @@ const EmbedContainer = styled('div')`
   max-width: 100%;
 `;
 
-const EmbedIFrame = styled('iframe')`
+const EmbedIFrame = styled("iframe")`
   position: absolute;
   top: 0;
   left: 0;

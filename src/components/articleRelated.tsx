@@ -56,6 +56,7 @@ const ArticleRelated = ({ articles }: Props) => (
                 article.frontmatter.banner.childImageSharp.fluid.src
               }')`
             }}
+            title={article.frontmatter.title}
           />
           <Link
             to={`/${article.frontmatter.slug}`}
@@ -63,6 +64,7 @@ const ArticleRelated = ({ articles }: Props) => (
               display: block;
               width: calc(100% - 80px);
             `}
+            title={article.frontmatter.title}
           >
             <h4
               css={css`
