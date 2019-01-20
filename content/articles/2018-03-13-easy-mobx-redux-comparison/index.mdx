@@ -25,7 +25,7 @@ The repository lives at [https://github.com/leighhalliday/easy-mobx-redux-compar
 
 ## Component State to MobX
 
-<img src={MobxImage} src="MobX data flow diagaram" />
+<img src={MobxImage} alt="MobX data flow diagaram" />
 
 In MobX our data lives in a **Store**, which has at its easiest, `observable` properties and `action` functions which can modify the store's values.
 
@@ -102,7 +102,7 @@ export default class App extends React.Component {
 
 ## Component State to Redux
 
-<img src={ReduxImage} src="Redux data flow diagaram" />
+<img src={ReduxImage} alt="Redux data flow diagaram" />
 
 In Redux everything begins by calling the `createStore` function, passing a `reducer`, the initial state, and then `applyMiddleware(thunk)`, which in this case allows us to use the `thunk` middleware to handle asynchronous code.
 
