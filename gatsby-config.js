@@ -129,8 +129,8 @@ module.exports = {
       resolve: `gatsby-plugin-google-analytics`,
       options: {
         trackingId: "UA-56612129-2",
-        anonymize: true,
-        respectDNT: true,
+        anonymize: false,
+        respectDNT: false,
         cookieDomain: "leighhalliday.com"
       }
     },
