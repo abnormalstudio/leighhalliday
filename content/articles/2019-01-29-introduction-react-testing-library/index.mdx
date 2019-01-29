@@ -1,0 +1,109 @@
+---
+title: Introduction to the React Testing Library
+slug: introduction-react-testing-library
+tags: react, testing
+date: 2019-01-29
+updated: 2019-01-29
+banner: ./banner.jpg
+---
+
+import { YouTube } from "$components";
+
+[React Testing Library](https://testing-library.com/react) is an amazing yet simple testing library from [Kent Dodds](https://twitter.com/kentcdodds). It works alongside the testing library [Jest](https://jestjs.io/) to provide React specific testing for snapshots, verifying DOM attributes or content, triggering click (or other) events, etc... you would use it in place of [Enzyme](https://airbnb.io/enzyme/), which although very useful, can tend to be quite a bit more complicated given that it has 3 different ways to render/mount your React components.
+
+In this article we'll be covering the basics of React Testing Library, starting with the bare minimum and working our way up through the [examples](https://testing-library.com/docs/react-testing-library/intro) found in the docs.
+
+## Snapshots
+
+<YouTube id="YQLn7ycfzEo" />
+
+Snapshot tests allow you to take a snapshot (hence the name) of the HTML produced from your React component. By having this, you'll be made aware when you change your component in some way that does not produce the same output as you previously expected. If the output does differ, you can then make a decision to update the snapshot, or to fix your code so that no difference is found.
+
+The component we'll be taking a snapshot of takes in a `text` prop, and puts it into a header and h1 tag.
+
+```jsx
+import React from "react";
+
+export default function Header({ text }) {
+  return (
+    <header>
+      <h1>{text}</h1>
+    </header>
+  );
+}
+```
+
+After importing the necessary packages, we can write a test which calls the `render` function provided by React Testing Library, which returns an object that we can extract `asFragment` from. Using this we can use the built-in functionality from Jest to perform a snapshot test.
+
+```jsx
+import React from "react";
+import { render, cleanup } from "react-testing-library";
+import Header from "./Header";
+
+afterEach(cleanup);
+
+it("renders", () => {
+  const { asFragment } = render(<Header text="Hello!" />);
+  expect(asFragment()).toMatchSnapshot();
+});
+```
+
+## DOM selectors and expectations
+
+If you would like to isolate specific DOM elements to test their content or properties they might have, this is when we'll want to use one of the provided getter/selector functions provided by RTL. In this example we'll look at `getByTestId` and `getByText`. For this test let's modify our component slightly, adding a `data` attribute and a class which we'll be testing for.
+
+```jsx
+export default function Header({ text }) {
+  return (
+    <header>
+      <h1 data-testid="h1tag" className="fancy-h1">
+        {text}
+      </h1>
+    </header>
+  );
+}
+```
+
+For our test, let's ensure the `h1` tag contains a specific class and has the text content we are expecting. For that we'll add a package called [jest-dom](https://github.com/gnapse/jest-dom) that will add on some expectations to Jest. Make sure to add the additional import to your test file (as shown below).
+
+```jsx
+import React from "react";
+import { render, cleanup } from "react-testing-library";
+import "jest-dom/extend-expect";
+import Header from "./Header";
+
+afterEach(cleanup);
+
+it("inserts text in h1", () => {
+  const { getByTestId, getByText } = render(<Header text="Hello!" />);
+
+  expect(getByTestId("h1tag")).toHaveTextContent("Hello!");
+  expect(getByText("Hello!")).toHaveClass("fancy-h1");
+});
+```
+
+This time we used the 2 getter functions to find our DOM element, and then used `toHaveTextContent` and `toHaveClass` to ensure our DOM element matches our expectations.
+
+## Firing events
+
+Coming soon... workin' on it.
+
+## Async code with Axios
+
+Coming soon... workin' on it.
+
+## Working with Redux
+
+Coming soon... workin' on it.
+
+## Working with Reach Router
+
+Coming soon... workin' on it.
+
+## Working with React Router
+
+Coming soon... workin' on it.
+
+## Conclusion
+
+The simplicity of React Testing Library makes it a joy to work with, only exposing enough functionality to write tests which mimic the real user experience with a focus on accessibility. Give this library a try the next time you're tempted to reach for Enzyme.
