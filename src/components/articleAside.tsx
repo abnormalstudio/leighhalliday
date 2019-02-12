@@ -24,9 +24,9 @@ interface Props {
 
 const ArticleAside = ({ articles }: Props) => (
   <aside css={styles.aside}>
-    <ArticleCodefund />
     {articles.length > 0 && <ArticleRelated articles={articles} />}
     <ArticleAbout />
+    <ArticleCodefund />
   </aside>
 );
 
