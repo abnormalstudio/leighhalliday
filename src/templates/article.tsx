@@ -5,14 +5,7 @@ import MDXRenderer from "gatsby-mdx/mdx-renderer";
 import { css } from "emotion";
 import Image from "gatsby-image";
 
-import {
-  Layout,
-  Tags,
-  SEO,
-  ArticleAside,
-  H1Line,
-  ArticleAd
-} from "$components";
+import { Layout, Tags, SEO, ArticleAside, H1Line } from "$components";
 import { splitTags } from "$lib";
 
 interface IArticle {
@@ -104,9 +97,6 @@ const Article = ({ data }: Props) => {
             `}
           >
             <MDXRenderer>{code.body}</MDXRenderer>
-          </div>
-          <div>
-            <ArticleAd />
           </div>
         </article>
 
