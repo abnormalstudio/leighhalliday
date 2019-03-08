@@ -13,7 +13,7 @@ In this article we'll take a look at how to handle async code in React Testing L
 
 ## Async code... waiting for an element
 
-In the example component about the `decrease` function happens asynchronously... it has a 250ms delay thanks to our friend `setTimeout`. So we can't do the same test we did about to test the `increase` function... we have to deal with the asynchronous nature of our code.
+In the example component shown in my article [introducing React Testing Library](/introduction-react-testing-library), the `decrease` function happens asynchronously... it has a 250ms delay thanks to our friend `setTimeout`. So we can't do the same test we did about to test the `increase` function... we have to deal with the asynchronous nature of our code.
 
 For this we will first make our Jest test function contain the `async` keyword, allowing us to use `await` inside of it to wait for a promise to resolve. We can then use `waitForElement` to wait patiently to find the element we're or change that we are looking for.
 
