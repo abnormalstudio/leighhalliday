@@ -1,0 +1,125 @@
+---
+title: Async MobX in React Testing Library
+slug: async-mobx-react-testing-library
+tags: react, testing, react-testing-library
+date: 2019-03-07
+updated: 2019-03-07
+banner: ./banner.jpg
+---
+
+import { YouTube } from "$components";
+
+In this article we'll take a look at how to handle async code in React Testing Library, specifically at how to test and mock a call using Axios.
+
+## Async code... waiting for an element
+
+In the example component about the `decrease` function happens asynchronously... it has a 250ms delay thanks to our friend `setTimeout`. So we can't do the same test we did about to test the `increase` function... we have to deal with the asynchronous nature of our code.
+
+For this we will first make our Jest test function contain the `async` keyword, allowing us to use `await` inside of it to wait for a promise to resolve. We can then use `waitForElement` to wait patiently to find the element we're or change that we are looking for.
+
+```jsx
+it("decrements count delayed", async () => {
+  const { getByText } = render(<Clickers />);
+  fireEvent.click(getByText("Down"));
+
+  const countSpan = await waitForElement(() => getByText("-1"));
+  expect(countSpan).toHaveTextContent("-1");
+});
+```
+
+The `waitForElement` function takes an arrow function which should return the element: `() => getByText("-1")`. In this case we're just confirming that it does have "-1" as its text content, which is definitely redundant because we used "-1" to actually find the element, but it does the job.
+
+## Async code with Axios
+
+<YouTube id="Ngj2f1n9pUw" />
+
+The component we'll be testing here performs an AJAX call using the Axios library. Because we want to avoid real HTTP requests during testing we'll have to mock the Axios library for this test, and because of the async nature of this code we'll have to utilize the `waitForElement` function again to wait until expected element has been rendered by our component.
+
+The `Fetch` component we are testing is below... I will include the `useAxios` function I created, but don't let it throw you off as I'll be covering this in depth in another article + video.
+
+```jsx
+import React, { useState, useEffect } from "react";
+import axios from "axios";
+
+const useAxios = (url, setData) => {
+  useEffect(
+    () => {
+      let mounted = true;
+
+      const loadData = async () => {
+        const result = await axios.get(url);
+        if (mounted) {
+          setData(result.data);
+        }
+      };
+      loadData();
+
+      return () => {
+        mounted = false;
+      };
+    },
+    [url]
+  );
+};
+
+export default function Fetch({ url }) {
+  const [data, setData] = useState(null);
+  useAxios(url, setData);
+
+  if (!data) {
+    return <span data-testid="loading">Loading data...</span>;
+  }
+
+  return <span data-testid="resolved">{data.greeting}</span>;
+}
+```
+
+If you focus on the `Fetch` component, you'll see that I added 2 `data-testid` props so that I can ensure it correctly displays loading data on the first render, and then displays the real data once the `useAxios` function has called the `setData` function to update our state, forcing a re-render of the component.
+
+If the file above lived in `Fetch.js`, our test will live in `Fetch.test.js`, and start with the usual imports needed to use React with react-testing-library.
+
+```js
+import React from "react";
+import { render, cleanup, waitForElement } from "react-testing-library";
+import "jest-dom/extend-expect";
+import axiosMock from "axios";
+import Fetch from "./Fetch";
+
+afterEach(cleanup);
+```
+
+Because we have added `axios.js` to the `__mocks__` folder, the axios import is actually importing our mocked version rather than the real one, and it looks like:
+
+```js
+export default {
+  get: jest.fn().mockResolvedValue({ data: {} })
+};
+```
+
+I'll annotate the test itself by adding comments, explaining why each line is there and what it does.
+
+```jsx
+it("fetches and displays data", async () => {
+  // We'll be explicit about what data Axios is to return when `get` is called.
+  axiosMock.get.mockResolvedValueOnce({ data: { greeting: "hello there" } });
+
+  // Let's render our Fetch component, passing it the url prop and destructuring
+  // the `getByTestId` function so we can find individual elements.
+  const url = "/greeting";
+  const { getByTestId } = render(<Fetch url={url} />);
+
+  // On first render, we expect the "loading" span to be displayed
+  expect(getByTestId("loading")).toHaveTextContent("Loading data...");
+
+  // Because the useAxios call (useEffect) happens after initial render
+  // We need to handle the async nature of an AJAX call by waiting for the
+  // element to be rendered.
+  const resolvedSpan = await waitForElement(() => getByTestId("resolved"));
+
+  // Now with the resolvedSpan in hand, we can ensure it has the correct content
+  expect(resolvedSpan).toHaveTextContent("hello there");
+  // Let's also make sure our Axios mock was called the way we expect
+  expect(axiosMock.get).toHaveBeenCalledTimes(1);
+  expect(axiosMock.get).toHaveBeenCalledWith(url);
+});
+```

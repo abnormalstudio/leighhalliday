@@ -1,0 +1,76 @@
+---
+title: Firing Events in React Testing Library
+slug: firing-events-react-testing-library
+tags: react, testing, react-testing-library
+date: 2019-03-07
+updated: 2019-03-07
+banner: ./banner.jpg
+---
+
+import { YouTube } from "$components";
+
+In this article we'll see how to fire and test events in our React components using the React Testing Library.
+
+<YouTube id="SSyy2sHpmIA" />
+
+With React Testing Library it's very easy to simulate browser events such as a click event. The library comes with a function called `fireEvent` which handles this. Let's first look at the small component we'll be working with:
+
+```jsx
+import React, { useState } from "react";
+
+export default function Clickers() {
+  const [count, setCount] = useState(0);
+
+  const increase = () => {
+    setCount(count + 1);
+  };
+  const decrease = () => {
+    setTimeout(() => {
+      setCount(count - 1);
+    }, 250);
+  };
+
+  return (
+    <div>
+      <button onClick={increase}>Up</button>
+      <button onClick={decrease}>Down</button>
+      <span data-testid="count">{count}</span>
+    </div>
+  );
+}
+```
+
+We are showing 2 buttons to increment or decrement a count that were storing in state via `setState`. The `increase` happens immediately, but the `decrease` happens asynchronously with a 250ms delay.
+
+We'll start with an initial test just to make sure it's rendering the state correctly... this will also include all of the imports we need for subsequent tests even though we aren't using them just yet.
+
+```jsx
+import React from "react";
+import {
+  render,
+  cleanup,
+  fireEvent,
+  waitForElement
+} from "react-testing-library";
+import "jest-dom/extend-expect";
+import Clickers from "./Clickers";
+
+afterEach(cleanup);
+
+it("displays the count", () => {
+  const { getByTestId } = render(<Clickers />);
+  expect(getByTestId("count")).toHaveTextContent("0");
+});
+```
+
+We used the `getByTestId` function to find the element and then were able to use the `toHaveTextContent` expectation function to ensure it has the value we are expecting. Now let's see how we can click the button which says "Up".
+
+```jsx
+it("increments count", () => {
+  const { getByTestId, getByText } = render(<Clickers />);
+  fireEvent.click(getByText("Up"));
+  expect(getByTestId("count")).toHaveTextContent("1");
+});
+```
+
+This test isn't too different from the first one, but we used `fireEvent.click`, passing it the element we wanted to click. This simulates how a user would interact with the button, and we can then ensure that the count element was updated to contain the value "1".
