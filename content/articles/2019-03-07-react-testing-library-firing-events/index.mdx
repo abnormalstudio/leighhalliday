@@ -74,3 +74,7 @@ it("increments count", () => {
 ```
 
 This test isn't too different from the first one, but we used `fireEvent.click`, passing it the element we wanted to click. This simulates how a user would interact with the button, and we can then ensure that the count element was updated to contain the value "1".
+
+## Next steps
+
+With click events covered, let's see how we can test code which happens asynchronously, such as making an Axios call and mocking its response. The next article in this series [can be found here](/async-mobx-react-testing-library).
