@@ -1,0 +1,275 @@
+---
+title: Generating TypeScript Types from GraphQL Schema in Apollo
+slug: generating-types-apollo
+tags: typescript, apollo, graphql
+date: 2019-03-24
+updated: 2019-03-24
+banner: ./banner.jpg
+---
+
+import { YouTube } from "$components";
+
+[GraphQL](https://graphql.org/) is a typed language, so why redefine all of the types ourselves inside our [TypeScript](https://www.typescriptlang.org/) code when we should be able to take advantage of the types coming from GraphQL and have them automatically generated for us? That's exactly what we can do with the [Apollo Tooling](https://github.com/apollographql/apollo-tooling) command `codegen:generate`.
+
+This article is for people familiar with the basics of GraphQL and TypeScript, but would like to see how they can work together in a seamless fashion inside of a React application. We will cover the command, its key options, and some gotchas as we add a product listing using [Shopify's Storefront GraphQL API](https://help.shopify.com/en/api/custom-storefronts/storefront-api).
+
+The sourcecode for this project can be found here: [https://github.com/leighhalliday/apollo-generating-types](https://github.com/leighhalliday/apollo-generating-types)
+
+<YouTube id="1PVrZNi3sb8" />
+
+## A GraphQL Query
+
+The query we'll be running is the following, which can be copy and pasted into the [GraphQL Explorer](https://help.shopify.com/en/api/graphiql) to see what its result is:
+
+```graphql
+query ProductsQuery($preferredContentType: ImageContentType) {
+  products(first: 10) {
+    edges {
+      node {
+        id
+        title
+        description
+        updatedAt
+        ...ProductImages
+      }
+    }
+  }
+}
+
+fragment ProductImages on Product {
+  images(first: 3) {
+    edges {
+      node {
+        id
+        transformedSrc(
+          maxWidth: 150
+          maxHeight: 100
+          preferredContentType: $preferredContentType
+        )
+      }
+    }
+  }
+}
+```
+
+And we're using the following variables:
+
+```json
+{ "preferredContentType": "JPG" }
+```
+
+## Setup
+
+In this project we are working with create-react-app, and if you haven't used TypeScript in a CRA project before, you're in luck, as it's [quite easy to set up](https://www.telerik.com/blogs/typescript-and-react-bff). The purpose if this article isn't to show how GraphQL works with React, as I have covered that a number of times before in articles and on my [YouTube Channel](https://youtube.com/leighhalliday), but for the sake of being thorough, the `App` component has its providers set up like so, with an extra provider layer to enable the use of GraphQL hooks.
+
+```jsx
+import React, { Component } from "react";
+import { ApolloProvider } from "react-apollo";
+import { ApolloProvider as ApolloHooksProvider } from "react-apollo-hooks";
+import createClient from "./apolloClient";
+import Products from "./Products";
+import "./App.css";
+
+const client = createClient();
+
+export default function App() {
+  return (
+    <ApolloProvider client={client}>
+      <ApolloHooksProvider client={client}>
+        <Products />
+      </ApolloHooksProvider>
+    </ApolloProvider>
+  );
+}
+```
+
+## The Command
+
+A complete list of options you can pass to the `apollo codegen:generate` command [can be found here](https://github.com/apollographql/apollo-tooling#apollo-clientcodegen-output). The basic commands I am using in this example are as follows:
+
+```text
+--excludes=node_modules/*
+--includes=**/*.tsx
+--endpoint https://graphql.myshopify.com/api/graphql
+--header \"X-Shopify-Storefront-Access-Token: 078bc5caa0ddebfa89cccb4a1baa1f5c\"
+--target typescript
+--tagName=gql
+--outputFlat src/generated
+```
+
+- excludes: Which files to not look at when generating types
+- includes: Which files to look at when generating types
+- endpoint: Where the GraphQL schema can be found
+- header: Pass along this header when fetching the schema from the endpoint URL
+- target: The type output... can be flow, typescript, etc... we want TypeScript here
+- tagName: When you import `graphql-tag`, what name do you give it?
+- outputFlat: Do you want all the generated files in a single place, or alongside each of the files they are generated from. I prefer a single place so it is easier to wipe out/replace at any point.
+
+We can add a custom script with these (and a couple other options we'll mention below) in our `package.json` file to make generating the types easier:
+
+```json
+{
+  "scripts": {
+    "apollo:generate": "apollo codegen:generate --excludes=node_modules/* --includes=**/*.tsx --endpoint https://graphql.myshopify.com/api/graphql --header \"X-Shopify-Storefront-Access-Token: 078bc5caa0ddebfa89cccb4a1baa1f5c\" --target typescript --tagName gql --outputFlat src/generated --passthroughCustomScalars --customScalarsPrefix Shopify"
+  }
+}
+```
+
+### Apollo Config File
+
+I have seen it say we are required to define an Apollo config file - [apollo.config.js](https://www.apollographql.com/docs/references/apollo-config.html) - even if it ends up being basically empty. If you're presented with this error, define `apollo.config.js` in the root of your folder, and even if basically empty it should solve the issue.
+
+```js
+module.exports = {
+  client: {}
+};
+```
+
+## Using Types
+
+We can extend the `Query` (or `Mutation`) class, passing in the types produced by running the codegen command, allowing the data received as a response and the variables sent to the query to be [statically typed](https://www.apollographql.com/docs/react/recipes/static-typing.html).
+
+```js
+import { Query } from "react-apollo";
+
+class ProductsQuery extends Query<ProductsData, ProductsDataVariables> {}
+
+// Use ProductsQuery rather than Query in the component
+```
+
+With hooks you can pass types to the `useQuery` and `useMutation` functions:
+
+```ts
+const { data, loading } = useQuery<ProductsData, ProductsDataVariables>(
+  PRODUCTS_QUERY,
+  {
+    variables: { preferredContentType: ImageContentType.JPG },
+    ssr: false
+  }
+);
+```
+
+## Custom Scalars
+
+Shopify's GraphQL API defines a number of custom scalar values such as `URL` (An RFC 3986 and RFC 3987 compliant URI string) and `DateTime` (An ISO-8601 encoded UTC date time string). By passing the 2 options mentioned below, we can pass those types on to our application and define custom types. It's important to use a prefix in order to avoid conflicts with predefined types with the same name.
+
+```text
+--passthroughCustomScalars
+--customScalarsPrefix Shopify
+```
+
+Using `global.d.ts` we can define Shopify's custom scalar types:
+
+```ts
+type ShopifyURL = string;
+type ShopifyDateTime = string;
+```
+
+## Our Component
+
+To finally look at the component we are building for this example, we'll start with the imports. We have imported some types that were generated when running the codegen command shown above.
+
+```js
+import React from "react";
+import { useQuery } from "react-apollo-hooks";
+import gql from "graphql-tag";
+import { ProductsData, ProductsDataVariables } from "./generated/ProductsData";
+import { ImageContentType } from "./generated/globalTypes";
+
+const PRODUCTS_QUERY = gql` --exact same query as example above-- `;
+```
+
+Now that our imports and query have been defined, we can use `PRODUCTS_QUERY` along with the types that have been imported to execute the query and display its response. Notice how we used the `ImageContentType` ENUM that was generated in the `globalTypes` file to pass a typed value as a variable to our query.
+
+```jsx
+export default function Products() {
+  // Pass in the types imported, the first one is the data response
+  // the second one are the variables required by the query
+  const { data, loading } = useQuery<ProductsData, ProductsDataVariables>(
+    PRODUCTS_QUERY,
+    {
+      variables: { preferredContentType: ImageContentType.JPG },
+      ssr: false
+    }
+  );
+
+  // Handle loading state or when there is no data
+  if (loading || !data) {
+    return <div>Loading products...</div>;
+  }
+
+  // Render a response now that we have the data
+  return (
+    <div>
+      {data.products.edges.map(({ node: product }) => (
+        <div key={product.id}>
+          <h2>{product.title}</h2>
+          <ul className="images">
+            {product.images.edges.map(({ node: image }, index) => (
+              <li className="image-item" key={image.id || index}>
+                <img src={image.transformedSrc} />
+              </li>
+            ))}
+          </ul>
+        </div>
+      ))}
+    </div>
+  );
+}
+```
+
+If you'd like to see what it looks like using the `Query` component, it can be found below:
+
+```jsx
+// same imports as above
+// same query definition as above
+
+class ProductsQuery extends Query<ProductsData, ProductsDataVariables> {}
+
+export default function Products() {
+  return (
+    <ProductsQuery
+      query={PRODUCTS_QUERY}
+      variables={{ preferredContentType: ImageContentType.JPG }}
+    >
+      {({ data, loading }) => {
+        if (loading || !data) {
+          return <div>Loading products...</div>;
+        }
+
+        return (
+          <div>
+            {data.products.edges.map(({ node: product }) => (
+              <div key={product.id}>
+                <h2>{product.title}</h2>
+                <ul className="images">
+                  {product.images.edges.map(
+                    ({ node: image }, index: number) => (
+                      <li className="image-item" key={image.id || index}>
+                        <img src={image.transformedSrc} />
+                      </li>
+                    )
+                  )}
+                </ul>
+              </div>
+            ))}
+          </div>
+        );
+      }}
+    </ProductsQuery>
+  );
+}
+```
+
+## Gotchas
+
+Here are some of the gotchas you might run into when working with GraphQL / TypeScript code generation:
+
+- Missing the `customScalarsPrefix` option... might have types that clash with default types, such as `URL`.
+- If there are no types in the globals file, TS might complain regarding the `isolatedModules` setting (which is required for create-react-app).
+- Using `outputFlat` option requires each type to be unique across entire application.
+- You are required to give each query a name `query ProductsData { ... }`
+
+## Conclusion
+
+Type systems allow for static analysis and code generation, and using the Apollo Tooling library lets us take advantage of this by generating the types used by our GraphQL queries, even warning us when the queries we are attempting to use reference fields incorrectly or which do not exist. I hope you've enjoyed seeing how you can use this to improve the quality, but mostly to avoid pulling your hair our re-writing types that are already defined!
