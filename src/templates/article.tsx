@@ -86,8 +86,8 @@ const Article = ({ data }: Props) => {
               font-size: 0.75rem;
             `}
           >
-            {date}
-            {updated && <span>, updated {updated}</span>}
+            published {date}
+            {updated && date !== updated && <span>, updated {updated}</span>}
           </div>
 
           <div

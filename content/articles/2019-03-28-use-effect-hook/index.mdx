@@ -1,0 +1,220 @@
+---
+title: Using the useEffect hook
+slug: use-effect-hook
+tags: react, hooks
+date: 2019-03-28
+updated: 2019-03-28
+banner: ./banner.jpg
+---
+
+import { YouTube } from "$components";
+
+[useEffect](https://reactjs.org/docs/hooks-effect.html) is meant to handle any sort of "side effect" (making a change in some external system, logging to the console, making an HTTP request, etc...) that is triggered by a change in your component's data or in reaction to the component rendering. It replaces `componentDidMount`, `componentDidUnmount`, and `componentDidReceiveProps`, or some code that is run any time your state changes. It can be challenging to grasp the nuances of its use, but by understanding when it runs and how to control that, it can become a little bit easier to wrap your head around.
+
+In this article we'll look at how to get an effect to run after every render, just once, or when a particular piece of data changes. We'll also look at the difference between the effect itself, and how to clean up after itself.
+
+<YouTube id="Y0zkFkbtoeA" />
+
+The code referenced in this article can be found at [https://github.com/leighhalliday/use-effect-example](https://github.com/leighhalliday/use-effect-example)
+
+## Run the effect on every render
+
+For the smallest example possible, we have the typical example of the `useEffect` which logs to the console the value of `count` after every render. It is important to note: `useEffect` is run **after** the render. Always think: First render, then effect.
+
+```jsx
+import React, { useState, useEffect } from "react";
+
+export default function Counter() {
+  const [count, setCount] = useState(0);
+
+  useEffect(() => {
+    console.log(`The count is ${count}`);
+  });
+
+  return (
+    <div>
+      <p>Count is {count}</p>
+      <button
+        onClick={() => {
+          setCount(count + 1);
+        }}
+      >
+        increase
+      </button>
+    </div>
+  );
+}
+```
+
+Why does this example run after **every** render? The reason is because no arguments were passed as the 2nd argument to `useEffect`. React uses the 2nd argument to determine whether or not it needs to execute the function passed to useEffect... by passing nothing, React will run the effect every time.
+
+This may cause performance issues or just be a tad overkill, so let's see how to add a little extra control to when our effect functions are run.
+
+## Run the effect only once
+
+Let's say we only wanted the effect to run a single time... think of this as a replacement for `componentDidMount`. To do this, pass a `[]` as the 2nd argument to useEffect:
+
+```js
+import React, { useEffect } from "react";
+
+export default function Mounted() {
+  useEffect(() => {
+    console.log("mounted");
+  }, []);
+
+  return <div>This component has been mounted.</div>;
+}
+```
+
+## Run the effect when data changes
+
+If what you really want is to run the effect only when a specific value changes... say to update some local storage or trigger an HTTP request, you'll want to pass those values you are watching for changes as the 2nd argument. This example will write the user's name to local storage after every time it is updated (triggered by the onChange of the input).
+
+```js
+import React, { useState, useEffect } from "react";
+
+export default function Listen() {
+  const [name, setName] = useState("");
+
+  useEffect(
+    () => {
+      localStorage.setItem("name", name);
+    },
+    [name]
+  );
+
+  return (
+    <div>
+      <input
+        type="text"
+        onChange={e => {
+          setName(e.target.value);
+        }}
+        value={name}
+      />
+    </div>
+  );
+}
+```
+
+## Cleaning up from your effect
+
+Sometimes you need to undo what you've done... to clean up after yourself when the component is to be unmounted. To accomplish this you can return a function from the function passed to `useEffect`... that's a mouthful but let's see a real example, of what would be both `componentDidMount` and `componentDidUnmount` combined into a single effect.
+
+```jsx
+import React, { useEffect } from "react";
+
+export default function Listen() {
+  useEffect(() => {
+    const listener = () => {
+      console.log("I have been resized");
+    };
+    window.addEventListener("resize", listener);
+
+    return () => {
+      window.removeEventListener("resize", listener);
+    };
+  }, []);
+
+  return <div>resize me</div>;
+}
+```
+
+## Avoid setting state on unmounted components
+
+Because effects run after the component has finished rendering, and because they often contain asynchronous code, it's possible that by the time the asynchronous code resolves, the component is no longer even mounted! When it gets around to calling the `setData` function to update the state, you'll receive an error that you can't update state on an unmounted component.
+
+The way we can solve the stated (no pun intended) issue above, is by using a local variable and taking advantage of the "cleanup" function returned from our effect function. By starting it off as `true`, we can toggle it to `false` when the effect is cleaned up, and use this variable to determine whether we still want to call the `setData` function or not.
+
+```jsx
+import React, { useState, useEffect } from "react";
+import Axios from "axios";
+
+export default function Fetcher({ url }) {
+  const [data, setData] = useState(null);
+
+  useEffect(
+    () => {
+      // Start it off by assuming the component is still mounted
+      let mounted = true;
+
+      const loadData = async () => {
+        const response = await Axios.get(url);
+        // We have a response, but let's first check if component is still mounted
+        if (mounted) {
+          setData(response.data);
+        }
+      };
+      loadData();
+
+      return () => {
+        // When cleanup is called, toggle the mounted variable to false
+        mounted = false;
+      };
+    },
+    [url]
+  );
+
+  if (!data) {
+    return <div>Loading data from {url}</div>;
+  }
+
+  return <div>{JSON.stringify(data)}</div>;
+}
+```
+
+## Cancelling an Axios call when component unmounts
+
+With the example above, you may have asked yourself... why even bother waiting for a response if we know for a fact we don't even need it. It turns out Axios has a [way to cancel a request](https://github.com/axios/axios#cancellation). We can use the same method as above, using a local variable along with an effect cleanup function, but this time the local variable will be an Axios cancellation source/token, allowing us to call `source.cancel()` to stop Axios in its tracks.
+
+Just keep in mind that this will raise an exception that we should catch. Axios provides us a way using `Axios.isCancel(error)` to determine if what we caught was because of our own cancellation or some other unexpected error.
+
+```jsx
+import React, { useState, useEffect } from "react";
+import Axios from "axios";
+
+export default function Fetcher({ url }) {
+  const [data, setData] = useState(null);
+
+  useEffect(
+    () => {
+      // Set up a cancellation source
+      let source = Axios.CancelToken.source();
+
+      const loadData = async () => {
+        try {
+          const response = await Axios.get(url, {
+            // Assign the source.token to this request
+            cancelToken: source.token
+          });
+          setData(response.data);
+        } catch (error) {
+          // Is this error because we cancelled it ourselves?
+          if (Axios.isCancel(error)) {
+            console.log(`call for ${url} was cancelled`);
+          } else {
+            throw error;
+          }
+        }
+      };
+      loadData();
+
+      return () => {
+        // Let's cancel the request on effect cleanup
+        source.cancel();
+      };
+    },
+    [url]
+  );
+
+  if (!data) {
+    return <div>Loading data from {url}</div>;
+  }
+
+  return <div>{JSON.stringify(data)}</div>;
+}
+```
+
+## Conclusion
+
+I hope that this article was able to shed some light on a few different ways to take advantage of effects, what causes them to be executed, and how to deal with the issue of an effect possibly executing code _after_ the component has already been unmounted. With `useEffect` we're able to combine both the setup and the cleanup together, where in class based components you'd be required to split the functionality across the `componentDidMount` and `componentDidUnmount` lifecycle events.

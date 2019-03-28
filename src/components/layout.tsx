@@ -93,6 +93,10 @@ const styles = {
       color: #1e8257;
     }
 
+    pre {
+      font-size: 1rem;
+    }
+
     h1 {
       font-size: 2.5rem;
       line-height: 3rem;
@@ -102,7 +106,7 @@ const styles = {
     h2 {
       font-size: 2rem;
       line-height: 2.5rem;
-      margin: 1rem 0 1.25rem 0;
+      margin: 1.25rem 0 1.25rem 0;
     }
     h3 {
       font-size: 1.5rem;
@@ -115,7 +119,8 @@ const styles = {
       margin: 0.5rem 0 0.75rem 0;
     }
 
-    p {
+    p,
+    li {
       margin: 1rem 0px;
       font-size: 1rem;
       line-height: 1.75rem;
