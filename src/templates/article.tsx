@@ -5,7 +5,7 @@ import MDXRenderer from "gatsby-mdx/mdx-renderer";
 import { css } from "emotion";
 import Image from "gatsby-image";
 
-import { Layout, Tags, SEO, ArticleAside, H1Line } from "$components";
+import { Layout, Tags, SEO, ArticleAside, H1Line, BannerAd } from "$components";
 import { splitTags } from "$lib";
 
 interface IArticle {
@@ -70,15 +70,21 @@ const Article = ({ data }: Props) => {
             }
           `}
         >
-          <Image
+          {/* <Image
             fluid={banner.childImageSharp.fluid}
             css={css`
               display: block;
               margin-bottom: 1rem;
             `}
-          />
-          <Tags tags={tags} />
-          <H1Line>{title}</H1Line>
+          /> */}
+
+          <H1Line
+            css={css`
+              margin-top: 0px;
+            `}
+          >
+            {title}
+          </H1Line>
 
           <div
             css={css`
@@ -89,6 +95,10 @@ const Article = ({ data }: Props) => {
             published {date}
             {updated && date !== updated && <span>, updated {updated}</span>}
           </div>
+
+          <Tags tags={tags} />
+
+          <BannerAd />
 
           <div
             css={css`

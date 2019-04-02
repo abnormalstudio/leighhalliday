@@ -18,4 +18,4 @@ export { default as Reset } from "./reset";
 export { default as SEO } from "./seo";
 export { default as Tags } from "./tags";
 export { default as YouTube } from "./youTube";
-export { default as ArticleAd } from "./articleAd";
+export { default as BannerAd } from "./bannerAd";
