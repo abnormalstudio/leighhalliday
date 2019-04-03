@@ -119,6 +119,18 @@ const styles = {
       margin: 0.5rem 0 0.75rem 0;
     }
 
+    blockquote {
+      margin: 1rem 0;
+      padding: 0.5rem 0 0.5rem 1.5rem;
+      border-left: 2px solid rgba(0, 0, 0, 0.75);
+      font-style: italic;
+      font-size: 1.5rem;
+
+      > p {
+        margin: 0px;
+      }
+    }
+
     p,
     li {
       margin: 1rem 0px;
