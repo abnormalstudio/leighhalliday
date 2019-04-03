@@ -1,0 +1,230 @@
+---
+title: Tagged Template Literals
+slug: tagged-template-literals
+tags: es6, javascript
+date: 2019-04-02
+updated: 2019-04-02
+banner: ./banner.jpg
+---
+
+import { YouTube } from "$components";
+
+I kept seeing [Tagged Template Literals](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Template_literals#Tagged_templates) in a number of popular libraries, but I didn't understand how they worked. This article explores what they are, how they're used "in the wild", and we'll then build a small version of a `css` function which dynamically generates some CSS based on the props passed to it.
+
+<YouTube id="quTKcx_INfc" />
+
+## Plain old template literals
+
+We've seen template literals before, where you have have a string using backticks that allow you to embed values using `\${variable}` inside of the string. These immediately produce you a new string, converting any embedded values into their string representation. Tagged template literals are quite a bit different than normal template literals, as we'll see later on.
+
+```js
+const color = "blue";
+const css = `body { color: ${color}; }`;
+// Produces: body { color: blue; }
+```
+
+The above code has essentially hard-coded the `color` variable, which doesn't allow us to easily modify the string produced based on different props that may be received when we're talking about React components. Sure you could wrap this in a function:
+
+```js
+function css(props) {
+  return `body { color: ${props.color}; }`;
+}
+css({ color: "blue" });
+// Produces: body { color: blue; }
+```
+
+But we'll see how Tagged Template Literals allow us to combine the dynamic nature of the function with the ease of use of the template literal.
+
+## In the wild
+
+In the wild we see Tagged Template Literals being used by [styled-components](https://www.styled-components.com/), and note here how we aren't just embedding values, we're embedding a function which will later receive some props and from those props produce different CSS.
+
+```js
+const Button = styled.a`
+  display: inline-block;
+  border-radius: 3px;
+  padding: 0.5rem 0;
+  margin: 0.5rem 1rem;
+  width: 11rem;
+  background: transparent;
+  color: white;
+  border: 2px solid white;
+
+  ${props =>
+    props.primary &&
+    css`
+      background: white;
+      color: palevioletred;
+    `}
+`;
+```
+
+[lit-html](https://lit-html.polymer-project.org/) also uses Tagged Template Literals when generating HTML templates.
+
+```js
+let sayHello = name =>
+  html`
+    <h1>Hello ${name}</h1>
+  `;
+
+render(sayHello("World"), document.body);
+```
+
+Lastly we see [graphql-tag](https://github.com/apollographql/graphql-tag) from the Apollo library using Tagged Template Literals when creating GraphQL tags.
+
+```js
+const query = gql`
+  {
+    user(id: 5) {
+      firstName
+      lastName
+    }
+  }
+`;
+```
+
+## Embedding values
+
+Unlike template literals, Tagged Template Literals pass values to the function they are "tagged" with. This gives you the ability to parse and manipulate the values being embedded into the string.
+
+```js
+function tagged(strings, color) {
+  console.log(strings);
+  console.log(color);
+}
+
+const color = "blue";
+tagged`body { color: ${color}; }`;
+```
+
+If we were to look at the contents of the `strings` array, we'll see 2 elements:
+
+```json
+["body { color: ", "; }"]
+```
+
+It has split our string into everything before the embedded `color` variable, and everything after. It passes the embedded `color` variable as the 2nd argument to the `tagged` function. If we wanted to produce the desired result, we could rebuild the string using normal template literals:
+
+```js
+function tagged(strings, color) {
+  return `${strings[0]}${color}${strings[1]}`;
+}
+
+const color = "blue";
+tagged`body { color: ${color}; }`;
+```
+
+But if were only going to do this, it'd be better to just use a normal template literal, no? Where the power comes in is when you accept embedded functions, not just embedded values (that immediately produce a result to be embedded into the string).
+
+## Embedding functions
+
+With Tagged Template Literals we can embed functions. This allows them to be executed at a later date and produce a value at that point, rather than at the time they are defined. In this example the color is being
+
+```js
+function colorMode(strings, color) {
+  return `${strings[0]}${color()}${strings[1]}`;
+}
+
+const color = () => localStorage.getItem("color") || "black";
+
+tagged`body { color: ${color}; }`;
+// body { color: black; }
+
+// Now update local storage
+localStorage.setItem("color", "white");
+
+tagged`body { color: ${color}; }`;
+// body { color: white; }
+```
+
+The above code fails though because it is only set up to receive a single embedded `color` function... what if I wanted 2, or 3?
+
+## Producing CSS from Props
+
+Now that we've seen the basics, let's produce a `css` function that can take multiple embedded functions, which when called will receive props, allowing them to dynamically generate the CSS.
+
+We know that `strings` contains an array of the string parts, and if we use the spread operator we can places all of the embedded items into an array called `args`:
+
+```js
+function css(strings, ...args) {
+  // ...
+}
+```
+
+What we need to do then is to combine them and place them in their correct order:
+
+- string 0
+- arg 0
+- string 1
+- arg 1
+- string 2
+
+This process can be referred to as `interleaving`:
+
+> insert pages, typically blank ones, between the pages of (a book).
+
+```js
+const interleaved = args.reduce(
+  (acc, arg, index) => {
+    return [...acc, arg, strings[index + 1]];
+  },
+  [strings[0]]
+);
+```
+
+What we'll end up with is an array of "interleaved" `string, arg, string, arg, string`. Instead of joining them back into a single string and executing the functions immediately, let's actually return a function, allowing that process to happen at a later date:
+
+```js
+return props =>
+  interleaved
+    .map(part => (typeof part === "function" ? part(props) : part))
+    .join("");
+```
+
+If the "part" is a function, we'll call it, passing props to it, otherwise we'll just use the "part", and at the end we can finally join that together to produce a string. What this allows us to do is to create a `div` function, calling it multiple times with different props, each time producing unique CSS:
+
+```js
+const div = css`
+  div {
+    color: ${props => props.color};
+    size: ${props => props.size};
+  }
+`;
+
+console.log(div({ color: "black", size: 15 }));
+console.log(div({ color: "white", size: 15 }));
+```
+
+### Entire code example
+
+Here is the entire code example, interleaving the strings and arguments together, returning a function to be called later, which will receive props and piece together the elements of the array to finally be joined again into a single string.
+
+```js
+function css(strings, ...args) {
+  const interleaved = args.reduce(
+    (acc, arg, index) => {
+      return [...acc, arg, strings[index + 1]];
+    },
+    [strings[0]]
+  );
+
+  return props =>
+    interleaved
+      .map(part => (typeof part === "function" ? part(props) : part))
+      .join("");
+}
+
+const div = css`
+  div {
+    color: ${props => props.color};
+    size: ${props => props.size};
+  }
+`;
+
+console.log(div({ color: "black", size: 15 }));
+console.log(div({ color: "white", size: 15 }));
+```
+
+## Conclusion
+
+I have yet to find a solid use for Tagged Template Literals in my own code, but given that it's something I use all the time in the packages mentioned above, it's great to peak under the covers and see how this ES6 JavaScript feature actually works. What ways can you think of where using Tagged Template Literals could be useful?
