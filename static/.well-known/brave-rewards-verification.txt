@@ -1,4 +1,0 @@
-This is a Brave Rewards publisher verification file.
-
-Domain: leighhalliday.com
-Token: 0853f18d423afe10467417d5d6a0ba0eb0572b5a9000fe7c42de92e6f6785d10

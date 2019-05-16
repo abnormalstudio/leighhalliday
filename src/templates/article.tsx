@@ -3,9 +3,15 @@ import Helmet from "react-helmet";
 import React from "react";
 import MDXRenderer from "gatsby-mdx/mdx-renderer";
 import { css } from "emotion";
-import Image from "gatsby-image";
 
-import { Layout, Tags, SEO, ArticleAside, H1Line, BannerAd } from "$components";
+import {
+  Layout,
+  Tags,
+  SEO,
+  ArticleAside,
+  H1Line,
+  ArticleCodeFund
+} from "$components";
 import { splitTags } from "$lib";
 
 interface IArticle {
@@ -70,14 +76,6 @@ const Article = ({ data }: Props) => {
             }
           `}
         >
-          {/* <Image
-            fluid={banner.childImageSharp.fluid}
-            css={css`
-              display: block;
-              margin-bottom: 1rem;
-            `}
-          /> */}
-
           <H1Line
             css={css`
               margin-top: 0px;
@@ -97,8 +95,7 @@ const Article = ({ data }: Props) => {
           </div>
 
           <Tags tags={tags} />
-
-          <BannerAd />
+          <ArticleCodeFund />
 
           <div
             css={css`
