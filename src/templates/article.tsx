@@ -42,6 +42,14 @@ interface Props {
   };
 }
 
+const buildURL = (url: string, obj: object) => {
+  const query = Object.entries(obj)
+    .map(pair => pair.map(encodeURIComponent).join("="))
+    .join("&");
+
+  return `${url}?${query}`;
+};
+
 const Article = ({ data }: Props) => {
   const { excerpt, frontmatter, code } = data.mdx;
   const { title, tags, date, updated } = frontmatter;
@@ -52,7 +60,16 @@ const Article = ({ data }: Props) => {
       <Helmet encodeSpecialCharacters={false}>
         <meta
           property="og:image"
-          content={`https://leighhalliday-og-image-git-master.leighhalliday.now.sh/og.jpg?author=Leigh%20Halliday&website=leighhalliday.com&title=${title}&image=https://res.cloudinary.com/practicaldev/image/fetch/s--7s0lvzBT--/c_fill,f_auto,fl_progressive,h_320,q_auto,w_320/https://thepracticaldev.s3.amazonaws.com/uploads/user/profile_image/32975/a6ab4ad0-c506-4760-a0b2-e661270e95dd.jpeg`}
+          content={buildURL(
+            "https://leighhalliday-og-image-git-master.leighhalliday.now.sh/og.jpg",
+            {
+              author: "Leigh Halliday",
+              website: "leighhalliday.com",
+              title,
+              image:
+                "https://res.cloudinary.com/practicaldev/image/fetch/s--7s0lvzBT--/c_fill,f_auto,fl_progressive,h_320,q_auto,w_320/https://thepracticaldev.s3.amazonaws.com/uploads/user/profile_image/32975/a6ab4ad0-c506-4760-a0b2-e661270e95dd.jpeg"
+            }
+          )}
         />
       </Helmet>
       <div
