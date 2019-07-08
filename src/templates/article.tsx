@@ -54,23 +54,24 @@ const Article = ({ data }: Props) => {
   const { excerpt, frontmatter, code } = data.mdx;
   const { title, tags, date, updated } = frontmatter;
 
+  const ogImageUrl = buildURL(
+    "https://leighhalliday-og-image-git-master.leighhalliday.now.sh/og.jpg",
+    {
+      author: "Leigh Halliday",
+      website: "leighhalliday.com",
+      title,
+      image:
+        "https://res.cloudinary.com/practicaldev/image/fetch/s--7s0lvzBT--/c_fill,f_auto,fl_progressive,h_320,q_auto,w_320/https://thepracticaldev.s3.amazonaws.com/uploads/user/profile_image/32975/a6ab4ad0-c506-4760-a0b2-e661270e95dd.jpeg"
+    }
+  );
+
   return (
     <Layout>
       <SEO keywords={splitTags(tags)} title={title} description={excerpt} />
       <Helmet encodeSpecialCharacters={false}>
-        <meta
-          property="og:image"
-          content={buildURL(
-            "https://leighhalliday-og-image-git-master.leighhalliday.now.sh/og.jpg",
-            {
-              author: "Leigh Halliday",
-              website: "leighhalliday.com",
-              title,
-              image:
-                "https://res.cloudinary.com/practicaldev/image/fetch/s--7s0lvzBT--/c_fill,f_auto,fl_progressive,h_320,q_auto,w_320/https://thepracticaldev.s3.amazonaws.com/uploads/user/profile_image/32975/a6ab4ad0-c506-4760-a0b2-e661270e95dd.jpeg"
-            }
-          )}
-        />
+        <meta property="og:image" content={ogImageUrl} />
+        <meta name="twitter:image:src" content={ogImageUrl} />
+        <meta name="twitter:widgets:new-embed-design" content="on" />
       </Helmet>
       <div
         css={css`
