@@ -71,7 +71,6 @@ const Article = ({ data }: Props) => {
       <Helmet encodeSpecialCharacters={false}>
         <meta property="og:image" content={ogImageUrl} />
         <meta name="twitter:image:src" content={ogImageUrl} />
-        <meta name="twitter:widgets:new-embed-design" content="on" />
       </Helmet>
       <div
         css={css`
