@@ -60,8 +60,7 @@ const Article = ({ data }: Props) => {
       author: "Leigh Halliday",
       website: "leighhalliday.com",
       title,
-      image:
-        "https://res.cloudinary.com/practicaldev/image/fetch/s--7s0lvzBT--/c_fill,f_auto,fl_progressive,h_320,q_auto,w_320/https://thepracticaldev.s3.amazonaws.com/uploads/user/profile_image/32975/a6ab4ad0-c506-4760-a0b2-e661270e95dd.jpeg"
+      image: "https://abnormalstudio.s3.amazonaws.com/leigh-social.jpg"
     }
   );
 

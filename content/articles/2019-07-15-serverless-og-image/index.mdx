@@ -1,0 +1,447 @@
+---
+title: Serverless OG Image
+slug: serverless-og-image
+tags: serverless, now, lambda, node
+date: 2019-07-15
+updated: 2019-07-15
+banner: ./banner.jpg
+---
+
+import { YouTube } from "$components";
+
+If you've ever pasted a URL from an article on [dev.to](https://dev.to/) into Slack, Twitter, Facebook or LinkedIn, you'll notice they have an awesome social share image that is included. Little did you know that they have thousands of people all over the world feverishly editing these images in Photoshop as fast as they can!! Just kidding :)
+
+In February of this year, Zeit, makers of the Now serverless platform posted a blog article entitled [Social Cards as a Service](https://zeit.co/blog/social-og-image-cards-as-a-service). It shows how you can use serverless functions to generate a dynamic image.
+
+This article takes that article and even parts of its codebase, and transforms it into a serverless function that can be called from the [og:image](http://ogp.me/) meta tag to produce a dynamically generated social image.
+
+<img
+  style="max-width: 600px; display: block; margin: 0 auto;"
+  src="https://leighhalliday-og-image-git-master.leighhalliday.now.sh/og.jpg?author=Leigh%20Halliday&website=leighhalliday.com&title=Serverless%20OG%20Image&image=https%3A%2F%2Fabnormalstudio.s3.amazonaws.com%2Fleigh-social.jpg"
+/>
+
+The final version of this code can be found at [https://github.com/leighhalliday/generate-og-image](https://github.com/leighhalliday/generate-og-image)
+
+## Serverless Function on Zeit Now
+
+<YouTube id="Al3tCJKOydY" />
+
+The Now platform requires a `now.json` file to understand what type of serverless function(s) to build. In our case we are specifying the `@now/node` builder, and pointing it at the `src/card.ts` file.
+
+We also want to define routes, so that Now knows how to route a URL to the serverless function which is to process the request.
+
+```json
+{
+  "name": "demo-og-image",
+  "version": 2,
+  "public": false,
+  "builds": [
+    {
+      "src": "src/card.ts",
+      "use": "@now/node",
+      "config": { "maxLambdaSize": "36mb" }
+    }
+  ],
+  "routes": [{ "src": "/og.jpg", "dest": "/src/card.ts" }]
+}
+```
+
+We will eventually make the HTML (and image) this function produces dynamic, but for now we'll hard-code the output. A serverless function must define and export a single (async) function which receives `req` (information about the incoming request, such as query params, URL, etc...) and `res`, a variable allowing you to generate a server response. This feels very much like a Node express app.
+
+```ts
+import { IncomingMessage, ServerResponse } from "http";
+
+export default async function handler(
+  _req: IncomingMessage,
+  res: ServerResponse
+) {
+  try {
+    const html = `
+<!DOCTYPE html>
+<html>
+  <meta charset="utf-8">
+  <title>Generated Image</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <style>
+    body {
+      background: yellow;
+    }
+  </style>
+  <body>
+    <div class="container">
+      <div class="title">Deploying Serverless Function</div>
+      <div class="author">
+        <img src="https://flipgive.imgix.net/images/users/avatars/000/000/010/original/1532032692llamas-and-haircuts-llama-justin-bieber.jpg" class="author-image" />
+        Leigh Halliday
+      </div>
+      <div class="website">leighhalliday.com</div>
+    </div>
+  </body>
+</html>`;
+    res.statusCode = 200;
+    res.setHeader("Content-Type", "text/html");
+    res.end(html);
+  } catch (e) {
+    res.statusCode = 500;
+    res.setHeader("Content-Type", "text/html");
+    res.end("<h1>Internal Error</h1><p>Sorry, there was a problem</p>");
+    console.error(e);
+  }
+}
+```
+
+## Executing Function locally
+
+To run this function locally, after installing the [Now CLI](https://github.com/zeit/now-cli), simply run the command `now dev`. This will build the code, spin up a local HTTP server, and you can visit it at [http://localhost:3000/og.jpg](http://localhost:3000/og.jpg).
+
+## Parsing Serverless Function Query Params
+
+<YouTube id="ANedwsfXpO0" />
+
+In `src/types.d.ts` we'll declare a type that represents the incoming query params that we're about to parse (extract from the URL).
+
+```ts
+interface ParsedRequest {
+  title: string;
+  author: string;
+  image: string;
+  website: string;
+}
+```
+
+With the `ParsedRequest` interface ready for use, in a new file named `src/parser.ts` we'll extract the title, author, image and website from the URL.
+
+```ts
+import { IncomingMessage } from "http";
+import { parse } from "url";
+
+export function parseRequest(req: IncomingMessage) {
+  const { query = {} } = parse(req.url || "", true);
+  const { author, title, website, image, debug } = query;
+
+  if (Array.isArray(author)) {
+    throw new Error("Author can't be array");
+  }
+  if (Array.isArray(title)) {
+    throw new Error("Title can't be array");
+  }
+  if (Array.isArray(website)) {
+    throw new Error("Website can't be array");
+  }
+  if (Array.isArray(image)) {
+    throw new Error("Image can't be array");
+  }
+  if (Array.isArray(debug)) {
+    throw new Error("Debug can't be array");
+  }
+
+  const parsedReq: ParsedRequest = {
+    author,
+    title,
+    website,
+    image
+  };
+
+  return parsedReq;
+}
+```
+
+This allows us to update the `src/card.ts` file to retrieve the parsed variables, and pass them into a new function called `getHtml`, located in `src/template.ts`. This file is responsible for returning the entire HTML (literally everything, the DOCTYPE, CSS, body, etc...) which for now we'll display on the screen.
+
+```ts
+import { IncomingMessage, ServerResponse } from "http";
+import { parseRequest } from "./parser";
+import { getHtml } from "./template";
+import { writeTempFile } from "./file";
+
+export default async function handler(
+  req: IncomingMessage,
+  res: ServerResponse
+) {
+  try {
+    const parsedReq = parseRequest(req);
+    const html = getHtml(parsedReq);
+
+    res.statusCode = 200;
+    res.setHeader("Content-Type", "text/html");
+    res.end(html);
+  } catch (e) {
+    res.statusCode = 500;
+    res.setHeader("Content-Type", "text/html");
+    res.end("<h1>Internal Error</h1><p>There was an error.</p>");
+    console.error(e);
+  }
+}
+```
+
+The `src/template.ts` file may seem long, but it's mostly CSS:
+
+```ts
+function getCss() {
+  return `
+/* Use the meyer reset here: https://meyerweb.com/eric/tools/css/reset/ */
+
+body {
+  background: #95adbe;
+  height: 100vh;
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 18px;
+  padding: 20px;
+}
+
+.container {
+  position: relative;
+  height: calc(100vh - 40px);
+  padding: 20px;
+  background: #f8f8f8;
+  box-shadow: 0 10px 20px rgba(0, 0, 0, 0.19), 0 6px 6px rgba(0, 0, 0, 0.23);
+}
+
+.title {
+  font-size: 8em;
+  line-height: 1.05em;
+  height: 3.15em;
+  overflow: hidden;
+  color: #313131;
+}
+
+.author {
+  position: absolute;
+  bottom: 0px;
+  left: 0px;
+  padding: 20px;
+  font-size: 3em;
+  color: #525252;
+}
+
+.author-image {
+  width: 1.5em;
+  border-radius: 50%;
+  margin-bottom: -9px;
+}
+
+.website {
+  position: absolute;
+  bottom: 0px;
+  right: 0px;
+  padding: 20px;
+  font-size: 2em;
+  color: #525252;
+}
+  `;
+}
+
+export function getHtml(parsedReq: ParsedRequest) {
+  const { title, image, author, website } = parsedReq;
+
+  return `
+<!DOCTYPE html>
+<html>
+  <meta charset="utf-8">
+  <title>Generated Image</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link href="https://fonts.googleapis.com/css?family=Barlow+Condensed&display=swap" rel="stylesheet">
+  <style>
+    ${getCss()}
+  </style>
+  <body>
+    <div class="container">
+      <div class="title">${title}</div>
+      <div class="author">
+        <img src="${image}" class="author-image" />
+        ${author}
+      </div>
+      <div class="website">${website}</div>
+    </div>
+  </body>
+</html>
+`;
+}
+```
+
+## Temporary Files in Serverless Functions
+
+<YouTube id="KlLgjuUQoJs" />
+
+With the HTML being generated nicely in the `src/template.ts` file, we have to begin the task of writing this HTML to disk. The reason we're doing this is so that the Chrome headless browser can render this page and take a screenshot of it. We'll use the operating system's `tmp` file for this.
+
+In a file called `file.ts` we'll generate a unique file path (based on the title and author of the article) and write the HTML contents to it.
+
+```ts
+import { createHash } from "crypto";
+import { join } from "path";
+import { tmpdir } from "os";
+import { promisify } from "util";
+import { writeFile } from "fs";
+
+const promiseWriteFile = promisify(writeFile);
+
+export async function writeTempFile(fileName: string, html: string) {
+  // 1) Create an MD5 hash of the fileName
+  const hashedFileName =
+    createHash("md5")
+      .update(fileName)
+      .digest("hex") + ".html";
+
+  // 2) Build a path which we will write the file contents to
+  const filePath = join(tmpdir(), hashedFileName);
+
+  // 3) Write the HTML contents to this file path
+  await promiseWriteFile(filePath, html);
+
+  // 4) Return the file path
+  return filePath;
+}
+```
+
+Notice that we converted `writeFile` into a promisified version of its self so that we can use `await` rather than utilizing a callback.
+
+With this code done, we can update the `src/card.ts` file to call this new function, leaving us with a `fileUrl` variable that we will ask the Chrome headless browser to render.
+
+```ts
+import { IncomingMessage, ServerResponse } from "http";
+import { parseRequest } from "./parser";
+import { getHtml } from "./template";
+import { writeTempFile } from "./file";
+
+export default async function handler(
+  req: IncomingMessage,
+  res: ServerResponse
+) {
+  try {
+    const parsedReq = parseRequest(req);
+    const html = getHtml(parsedReq);
+
+    const { author, title } = parsedReq;
+    const fileName = `${author}-${title}`;
+    const filePath = await writeTempFile(fileName, html);
+    const fileUrl = `file://${filePath}`;
+    console.log(fileUrl);
+
+    res.statusCode = 200;
+    res.setHeader("Content-Type", "text/html");
+    res.end(html);
+  } catch (e) {
+    res.statusCode = 500;
+    res.setHeader("Content-Type", "text/html");
+    res.end("<h1>Internal Error</h1><p>There was an error.</p>");
+    console.error(e);
+  }
+}
+```
+
+## Serverless Image Generation
+
+<YouTube id="ZjGCiBpDZ7g" />
+
+Finally we will use a Chrome headless browser to render the HTML file we generated in the previous step, taking a snapshot of the page. The start of this file declares the imports needed, along with a function to get the Puppeteer options which will be passed into the headless browser. If you aren't using a Mac, you will need to update the `exePath` to match Chrome's location on your computer. This lives in a file called `src/chromium.ts`.
+
+```ts
+import chrome from "chrome-aws-lambda";
+import { launch } from "puppeteer-core";
+
+const exePath = "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome";
+
+interface Options {
+  args: string[];
+  executablePath: string;
+  headless: boolean;
+}
+
+async function getOptions(isDev: boolean) {
+  let options: Options;
+  if (isDev) {
+    options = {
+      args: [],
+      executablePath: exePath,
+      headless: true
+    };
+  } else {
+    options = {
+      args: chrome.args,
+      executablePath: await chrome.executablePath,
+      headless: chrome.headless
+    };
+  }
+  return options;
+}
+```
+
+Now to the bottom of this file we can add the `getScreenshot` function which is this file's only export. It has the task of spinning up a new headless browser, visiting the File URL, and taking a snapshot of the page.
+
+```ts
+export async function getScreenshot(url: string, isDev: boolean) {
+  const options = await getOptions(isDev);
+  const browser = await launch(options);
+  const page = await browser.newPage();
+  await page.setViewport({ width: 1200, height: 630 });
+  await page.goto(url);
+  return page.screenshot({ type: "jpeg", quality: 100 });
+}
+```
+
+So what happens to `src/card.ts` in order to use this new function, and where does the `isDev` variable come from? Near the top of `card.ts` we'll set up a variable that looks at a special environment variable provided by Now which tells us which environment the function is being executed in. There is a special region of `dev1` when running the code locally.
+
+```js
+const isDev = process.env.NOW_REGION === "dev1";
+```
+
+We'll now update the function to call the screenshot function, and send that as the server response, noting that the `Content-Type` header has been updated and we are setting a `Cache-Control` header as well. The cache header has an interesting value of `s-max-age=21600`. Now works as a serverless platform but also as a CDN. Setting this value caches the response of the serverless function in their CDN, meaning that even if the browser doesn't have it cached, it won't have to regenerate the image, it can just serve the one it already has on hand. This is great for this particular use-case, because for a given article title, the card is never going to change.
+
+```js
+const file = await getScreenshot(fileUrl, isDev);
+
+res.statusCode = 200;
+res.setHeader("Content-Type", "image/jpeg");
+res.setHeader(
+  "Cache-Control",
+  "public,immutable,no-transform,s-max-age=21600,max-age=21600"
+);
+res.end(file);
+```
+
+The final version of the `src/card.ts` file looks like:
+
+```ts
+import { IncomingMessage, ServerResponse } from "http";
+import { parseReqs } from "./parser";
+import { getHtml } from "./template";
+import { writeTempFile } from "./file";
+import { getScreenshot } from "./chromium";
+
+const isDev = process.env.NOW_REGION === "dev1";
+
+export default async function handler(
+  req: IncomingMessage,
+  res: ServerResponse
+) {
+  try {
+    const parsedReqs = parseReqs(req);
+    const html = getHtml(parsedReqs);
+
+    const { title, author } = parsedReqs;
+    const fileName = [title, author].join("-");
+    const filePath = await writeTempFile(fileName, html);
+    const fileUrl = `file://${filePath}`;
+
+    const file = await getScreenshot(fileUrl, isDev);
+
+    res.statusCode = 200;
+    res.setHeader("Content-Type", "image/jpeg");
+    res.setHeader(
+      "Cache-Control",
+      "public,immutable,no-transform,s-max-age=21600,max-age=21600"
+    );
+    res.end(file);
+  } catch (e) {
+    res.statusCode = 500;
+    res.setHeader("Content-Type", "text/html");
+    res.end("<h1>Internal Error</h1><p>Sorry, an error occurred.</p>");
+    console.error(e);
+  }
+}
+```
+
+## Conclusion
+
+We're just scratching the surface of what you can do with serverless functions. The ease of use of the Zeit Now platform, coupled with on-demand processing power and scale of serverless functions opens up interesting use cases which span from a Serverless OG Image function like the one we worked through here, to a full-blown monorepo with a Next.js app, Node, Go and PHP (among other languages) all working together.
