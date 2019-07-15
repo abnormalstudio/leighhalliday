@@ -8,6 +8,7 @@ banner: ./banner.jpg
 ---
 
 import { YouTube } from "$components";
+import Image from "./image";
 
 If you've ever pasted a URL from an article on [dev.to](https://dev.to/) into Slack, Twitter, Facebook or LinkedIn, you'll notice they have an awesome social share image that is included. Little did you know that they have thousands of people all over the world feverishly editing these images in Photoshop as fast as they can!! Just kidding :)
 
@@ -15,9 +16,9 @@ In February of this year, Zeit, makers of the Now serverless platform posted a b
 
 This article takes that article and even parts of its codebase, and transforms it into a serverless function that can be called from the [og:image](http://ogp.me/) meta tag to produce a dynamically generated social image.
 
-<img
-  style="max-width: 600px; display: block; margin: 0 auto;"
-  src="https://leighhalliday-og-image-git-master.leighhalliday.now.sh/og.jpg?author=Leigh%20Halliday&website=leighhalliday.com&title=Serverless%20OG%20Image&image=https%3A%2F%2Fabnormalstudio.s3.amazonaws.com%2Fleigh-social.jpg"
+<Image
+  url="https://leighhalliday-og-image-git-master.leighhalliday.now.sh/og.jpg?author=Leigh%20Halliday&website=leighhalliday.com&title=Serverless%20OG%20Image&image=https%3A%2F%2Fabnormalstudio.s3.amazonaws.com%2Fleigh-social.jpg"
+  alt="Serverless OG Example"
 />
 
 The final version of this code can be found at [https://github.com/leighhalliday/generate-og-image](https://github.com/leighhalliday/generate-og-image)
@@ -48,7 +49,7 @@ We also want to define routes, so that Now knows how to route a URL to the serve
 
 We will eventually make the HTML (and image) this function produces dynamic, but for now we'll hard-code the output. A serverless function must define and export a single (async) function which receives `req` (information about the incoming request, such as query params, URL, etc...) and `res`, a variable allowing you to generate a server response. This feels very much like a Node express app.
 
-```ts
+```js
 import { IncomingMessage, ServerResponse } from "http";
 
 export default async function handler(
@@ -100,7 +101,7 @@ To run this function locally, after installing the [Now CLI](https://github.com/
 
 In `src/types.d.ts` we'll declare a type that represents the incoming query params that we're about to parse (extract from the URL).
 
-```ts
+```js
 interface ParsedRequest {
   title: string;
   author: string;
@@ -111,7 +112,7 @@ interface ParsedRequest {
 
 With the `ParsedRequest` interface ready for use, in a new file named `src/parser.ts` we'll extract the title, author, image and website from the URL.
 
-```ts
+```js
 import { IncomingMessage } from "http";
 import { parse } from "url";
 
@@ -148,7 +149,7 @@ export function parseRequest(req: IncomingMessage) {
 
 This allows us to update the `src/card.ts` file to retrieve the parsed variables, and pass them into a new function called `getHtml`, located in `src/template.ts`. This file is responsible for returning the entire HTML (literally everything, the DOCTYPE, CSS, body, etc...) which for now we'll display on the screen.
 
-```ts
+```js
 import { IncomingMessage, ServerResponse } from "http";
 import { parseRequest } from "./parser";
 import { getHtml } from "./template";
@@ -176,7 +177,7 @@ export default async function handler(
 
 The `src/template.ts` file may seem long, but it's mostly CSS:
 
-```ts
+```js
 function getCss() {
   return `
 /* Use the meyer reset here: https://meyerweb.com/eric/tools/css/reset/ */
@@ -267,7 +268,7 @@ With the HTML being generated nicely in the `src/template.ts` file, we have to b
 
 In a file called `file.ts` we'll generate a unique file path (based on the title and author of the article) and write the HTML contents to it.
 
-```ts
+```js
 import { createHash } from "crypto";
 import { join } from "path";
 import { tmpdir } from "os";
@@ -298,7 +299,7 @@ Notice that we converted `writeFile` into a promisified version of its self so t
 
 With this code done, we can update the `src/card.ts` file to call this new function, leaving us with a `fileUrl` variable that we will ask the Chrome headless browser to render.
 
-```ts
+```js
 import { IncomingMessage, ServerResponse } from "http";
 import { parseRequest } from "./parser";
 import { getHtml } from "./template";
@@ -336,7 +337,7 @@ export default async function handler(
 
 Finally we will use a Chrome headless browser to render the HTML file we generated in the previous step, taking a snapshot of the page. The start of this file declares the imports needed, along with a function to get the Puppeteer options which will be passed into the headless browser. If you aren't using a Mac, you will need to update the `exePath` to match Chrome's location on your computer. This lives in a file called `src/chromium.ts`.
 
-```ts
+```js
 import chrome from "chrome-aws-lambda";
 import { launch } from "puppeteer-core";
 
@@ -369,7 +370,7 @@ async function getOptions(isDev: boolean) {
 
 Now to the bottom of this file we can add the `getScreenshot` function which is this file's only export. It has the task of spinning up a new headless browser, visiting the File URL, and taking a snapshot of the page.
 
-```ts
+```js
 export async function getScreenshot(url: string, isDev: boolean) {
   const options = await getOptions(isDev);
   const browser = await launch(options);
@@ -402,7 +403,7 @@ res.end(file);
 
 The final version of the `src/card.ts` file looks like:
 
-```ts
+```js
 import { IncomingMessage, ServerResponse } from "http";
 import { parseReqs } from "./parser";
 import { getHtml } from "./template";
