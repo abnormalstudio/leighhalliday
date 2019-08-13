@@ -42,9 +42,8 @@ const About = () => (
             My name is Leigh Halliday! I'm currently based out of Toronto (well,
             Rockwood!), Canada, where I live with my wonderful wife Marian
             Serna. I am a developer at{" "}
-            <a href="https://www.flipgive.com">FlipGive</a> and at{" "}
-            <a href="https://www.abnormalstudio.com">ABNORMAL studio</a>. I
-            produce React and JavaScript tutorials on{" "}
+            <a href="https://www.flipgive.com">FlipGive</a>. I produce React and
+            JavaScript tutorials on{" "}
             <a href="https://www.youtube.com/leighhalliday">YouTube</a>.
           </p>
 

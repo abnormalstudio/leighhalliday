@@ -84,7 +84,7 @@ module.exports = {
     siteUrl: "https://www.leighhalliday.com",
     title: "Leigh Halliday",
     description:
-      "Leigh is a developer at FlipGive & ABNORMAL studio. He writes about Ruby, Rails, React, and JavaScript.",
+      "Leigh is a developer at FlipGive. He writes about Ruby, Rails, React and JavaScript.",
     author: "@leighchalliday"
   },
   plugins: [
