@@ -54,6 +54,12 @@ const About = () => (
           </p>
 
           <p>
+            If you'd like to see the tools I use for development, they're all
+            listed on my{" "}
+            <a href="https://uses.tools/leighhalliday">uses.tools</a> profile.
+          </p>
+
+          <p>
             I love back country camping, travelling, growing sprouts, making
             guacamole, brewing kombucha, hablando en espańol, doing exercise,
             and hiking.
