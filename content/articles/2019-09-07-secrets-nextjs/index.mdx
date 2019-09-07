@@ -1,0 +1,110 @@
+---
+title: Secrets and Environment Variables in Next.js and Now
+slug: secrets-env-vars-nextjs-now
+tags: serverless, now, nextjs
+date: 2019-09-07
+updated: 2019-09-07
+banner: ./banner.jpg
+---
+
+import { YouTube } from "$components";
+
+Zeit has great documentation, but it took me a while to understand the difference between environment variables (secrets) on the serverless side vs how to get env vars exposed and available to the React code which runs client side, in the browser. This article covers the difference between build step vs serverless env variables.
+
+<YouTube id="pRbQcy9f5ew" />
+
+Code is available at: [https://github.com/leighhalliday/secrets-env-vars-nextjs-now](https://github.com/leighhalliday/secrets-env-vars-nextjs-now)
+
+## Build vs Serverless secrets
+
+[Serverless secrets](https://zeit.co/docs/v2/serverless-functions/env-and-secrets/) are secrets that will only run on the server. You can put your top secret information here, such as database passwords, Stripe API Keys, etc...
+
+[Build step secrets](https://zeit.co/docs/v2/build-step#using-environment-variables-and-secrets) are also run on the server, but only during the [build step](https://zeit.co/docs/v2/build-step), not during subsequent execution of your client side code. This is the step that happens first after deploying code, and is where webpack code is executed to build the optimized JavaScript files. If you want to expose secrets client side (in your React code), you will need these secrets available to the build step.
+
+## Add secrets locally
+
+To use secrets locally during development of the app, you will put them inside files:
+
+- `.env`: For your serverless env variables.
+- `.env.build`: For your build step env variables.
+
+The format of these files looks like:
+
+```
+DEMO_KEY="ABCD"
+DEMO_SECRET="EFGH"
+```
+
+## Add secrets to Now
+
+In order for your secrets to be available to your code on the Now platform, you will need to add them with the following command:
+
+```
+now secrets add demo-key ABCD
+```
+
+This command doesn't yet expose them as either serverless or build step variables, but it makes them available to us by configuring the `now.json` file, pointing to the variables we added via the `now` command line tool.
+
+## Exposing Serverless Secrets
+
+Inside of the `now.json` file, by adding an `env` property, we can define the environment variables available during serverless execution, with the value **NOT** being the actual secret, but pointing to the variable we added to the now platform.
+
+```json
+{
+  "env": {
+    "DEMO_KEY": "@demo-key",
+    "DEMO_SECRET": "@demo-secret"
+  }
+}
+```
+
+## Exposing Build Secrets
+
+Inside of the `now.json` file, by adding `build` property, we can define the environment variables available during build step execution, with the value **NOT** being the actual secret, but pointing to the variable we added to the now platform.
+
+```json
+{
+  "build": {
+    "env": {
+      "DEMO_KEY": "@demo-key"
+    }
+  }
+}
+```
+
+## Expose secrets client side
+
+Just because the environment variable is available during the build step does not mean we can access it in our client side code. To do that we have to copy the build step env variable and expose it via the Next.js configuration of webpack.
+
+```js
+// next.config.js
+exports.default = {
+  env: {
+    DEMO_KEY: process.env.DEMO_KEY
+  }
+};
+```
+
+## Accessing secrets
+
+Now that the secrets have been exposed, we can access them using the typical node method, which looks like `process.env.DEMO_KEY`.
+
+Here is an example of client side code accessing an environment variable that came by way of the build step (and subsequent `next.config.js` exposing it through webpack).
+
+```jsx
+// pages/index.js
+const Index = () => <div>Demo Key = {process.env.DEMO_KEY}</div>;
+```
+
+And here is how to access an environment variable during servereless execution:
+
+```js
+// pages/api/graphql.js
+export default async (_req, res) => {
+  return res.end(`Demo Secret = ${process.env.DEMO_SECRET}`);
+};
+```
+
+## Conclusion
+
+In this article we looked at the differences between serverless environment variables vs build step environment variables, and how to expose build step env vars to our client side code by modifying the Next.js configuration file.
