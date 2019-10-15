@@ -64,7 +64,10 @@ const Tag = ({ data, pageContext: { page, tag, prevUrl, nextUrl } }: Props) => {
 export const pageQuery = graphql`
   query($tagRegex: String!, $limit: Int!, $skip: Int!) {
     allMdx(
-      filter: { frontmatter: { tags: { regex: $tagRegex } } }
+      filter: {
+        frontmatter: { tags: { regex: $tagRegex } }
+        fields: { sourceInstanceName: { eq: "articles" } }
+      }
       sort: { fields: [frontmatter___date], order: DESC }
       limit: $limit
       skip: $skip

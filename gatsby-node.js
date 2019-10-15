@@ -31,9 +31,7 @@ const createArticlePages = (graphql, createPage) =>
                   slug
                   tags
                 }
-                code {
-                  scope
-                }
+                body
               }
             }
           }
@@ -196,4 +194,21 @@ exports.onCreateWebpackConfig = ({ actions }) => {
       }
     }
   });
+};
+
+exports.onCreateNode = ({ node, actions, getNode }) => {
+  const { createNodeField } = actions;
+  if (node.internal.type === `Mdx`) {
+    const parent = getNode(node.parent);
+    createNodeField({
+      name: `sourceInstanceName`,
+      node,
+      value: parent.sourceInstanceName
+    });
+    createNodeField({
+      name: `name`,
+      node,
+      value: parent.name
+    });
+  }
 };

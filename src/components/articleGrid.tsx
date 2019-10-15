@@ -1,5 +1,5 @@
 import React from "react";
-import { css } from "emotion";
+import { css } from "@emotion/core";
 import Link from "gatsby-link";
 import Image from "gatsby-image";
 import { Tags, H3Line } from "$components";

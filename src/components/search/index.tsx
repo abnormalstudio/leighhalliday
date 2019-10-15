@@ -5,7 +5,7 @@ import {
   PoweredBy,
   Index
 } from "react-instantsearch-dom";
-import { css } from "emotion";
+import { css } from "@emotion/core";
 import ArticleHits from "./articleHits";
 import TagHits from "./tagHits";
 import CloseIcon from "../../images/icons/close.svg";

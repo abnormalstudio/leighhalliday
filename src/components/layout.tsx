@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from "react";
 import { StaticQuery, graphql } from "gatsby";
-import { MDXProvider } from "@mdx-js/tag";
+import { MDXProvider } from "@mdx-js/react";
 import { Global, css } from "@emotion/core";
-import Helmet from "react-helmet";
+import { Helmet } from "react-helmet";
 import "prismjs/themes/prism-okaidia.css";
 
 import Header from "./header";
@@ -95,6 +95,15 @@ const styles = {
 
     pre {
       font-size: 1rem;
+    }
+
+    code {
+      background-color: aliceblue;
+      padding: 0 2px;
+    }
+
+    em {
+      font-style: italic;
     }
 
     h1 {

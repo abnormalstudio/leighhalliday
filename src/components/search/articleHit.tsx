@@ -28,9 +28,7 @@ const ArticleHit: React.FunctionComponent<ArticleHitProps> = ({ hit }) => (
         margin-bottom: 0.75rem;
       `}
     >
-      {format(parseISO(hit.date), "MMM d, YYYY", {
-        awareOfUnicodeTokens: true
-      })}
+      {format(parseISO(hit.date), "MMM d, yyyy", {})}
     </div>
     <Tags tags={hit.tags.join(", ")} />
     <p>

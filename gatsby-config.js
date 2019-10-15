@@ -103,6 +103,13 @@ module.exports = {
         path: `${__dirname}/content/articles`
       }
     },
+    {
+      resolve: `gatsby-source-filesystem`,
+      options: {
+        name: `snippets`,
+        path: `${__dirname}/content/snippets`
+      }
+    },
     "gatsby-plugin-sharp",
     "gatsby-transformer-sharp",
     "gatsby-plugin-emotion",
@@ -136,7 +143,7 @@ module.exports = {
     },
     "gatsby-plugin-typescript",
     {
-      resolve: "gatsby-mdx",
+      resolve: "gatsby-plugin-mdx",
       options: {
         gatsbyRemarkPlugins: [
           {

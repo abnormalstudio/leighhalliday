@@ -8,21 +8,20 @@ const preToCodeBlock = (preProps: any) => {
     // MDXTag props
     preProps.children.props &&
     // if MDXTag is going to render a <code>
-    preProps.children.props.name === "code"
+    preProps.children.props.mdxType === "code"
   ) {
     // we have a <pre><code> situation
     const {
       children: codeString,
-      props: { className, ...props }
+      className = "language-txt"
     } = preProps.children.props;
 
     return {
       codeString: codeString.trim(),
-      language: className && className.split("-")[1],
-      ...props
+      language: className && className.split("-")[1]
     };
   }
-  return undefined;
+  return null;
 };
 
 const Pre = (preProps: any) => {

@@ -1,5 +1,5 @@
 import React from "react";
-import { css } from "emotion";
+import { css } from "@emotion/core";
 import ArticleRelated from "./articleRelated";
 import ArticleAbout from "./articleAbout";
 

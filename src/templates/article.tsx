@@ -1,8 +1,8 @@
 import { graphql } from "gatsby";
-import Helmet from "react-helmet";
+import { Helmet } from "react-helmet";
 import React from "react";
-import MDXRenderer from "gatsby-mdx/mdx-renderer";
-import { css } from "emotion";
+import { MDXRenderer } from "gatsby-plugin-mdx";
+import { css } from "@emotion/core";
 
 import {
   Layout,
@@ -18,7 +18,7 @@ interface IArticle {
   id: string;
   timeToRead: number;
   excerpt: string;
-  code: any;
+  body: any;
   frontmatter: {
     slug: string;
     title: string;
@@ -51,7 +51,7 @@ const buildURL = (url: string, obj: object) => {
 };
 
 const Article = ({ data }: Props) => {
-  const { excerpt, frontmatter, code } = data.mdx;
+  const { excerpt, frontmatter, body } = data.mdx;
   const { title, tags, date, updated } = frontmatter;
 
   const ogImageUrl = buildURL(
@@ -122,7 +122,7 @@ const Article = ({ data }: Props) => {
               margin-bottom: 2rem;
             `}
           >
-            <MDXRenderer>{code.body}</MDXRenderer>
+            <MDXRenderer>{body}</MDXRenderer>
           </div>
         </article>
 
@@ -154,12 +154,14 @@ export const pageQuery = graphql`
           }
         }
       }
-      code {
-        body
-      }
+      body
     }
     allMdx(
-      filter: { id: { ne: $id }, frontmatter: { tags: { regex: $tagRegex } } }
+      filter: {
+        id: { ne: $id }
+        frontmatter: { tags: { regex: $tagRegex } }
+        fields: { sourceInstanceName: { eq: "articles" } }
+      }
       sort: { fields: [frontmatter___date], order: DESC }
       limit: 4
     ) {

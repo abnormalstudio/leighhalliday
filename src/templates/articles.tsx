@@ -1,7 +1,7 @@
 import { graphql } from "gatsby";
 import React from "react";
 import Link from "gatsby-link";
-import { css } from "emotion";
+import { css } from "@emotion/core";
 import { Layout, SEO, ArticleGrid, H1Line, Single } from "$components";
 
 interface ArticleNode {
@@ -63,6 +63,7 @@ const Articles = ({ data, pageContext: { page, prevUrl, nextUrl } }: Props) => {
 export const pageQuery = graphql`
   query($limit: Int!, $skip: Int!) {
     allMdx(
+      filter: { fields: { sourceInstanceName: { eq: "articles" } } }
       sort: { fields: [frontmatter___date], order: DESC }
       limit: $limit
       skip: $skip

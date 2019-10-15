@@ -1,5 +1,5 @@
 import React from "react";
-import { css } from "emotion";
+import { css } from "@emotion/core";
 import Link from "gatsby-link";
 import { H3Line } from "$components";
 
@@ -52,9 +52,7 @@ const ArticleRelated = ({ articles }: Props) => (
               background-position: center;
             `}
             style={{
-              backgroundImage: `url('${
-                article.frontmatter.banner.childImageSharp.fluid.src
-              }')`
+              backgroundImage: `url('${article.frontmatter.banner.childImageSharp.fluid.src}')`
             }}
             title={article.frontmatter.title}
           />
