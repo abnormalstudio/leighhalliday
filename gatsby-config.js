@@ -190,6 +190,7 @@ module.exports = {
             query: `
             {
               allMdx(
+                filter: { fields: { sourceInstanceName: { eq: "articles" } } }
                 sort: { fields: [frontmatter___date], order: DESC }
                 limit: 1000
               ) {
