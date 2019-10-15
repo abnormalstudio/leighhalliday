@@ -3,7 +3,9 @@ require("dotenv").config({
 });
 
 const articlesQuery = `{
-  allMdx {
+  allMdx(
+    filter: { fields: { sourceInstanceName: { eq: "articles" } } }
+  ) {
     edges {
       node {
         id
@@ -21,7 +23,9 @@ const articlesQuery = `{
 }`;
 
 const tagsQuery = `{
-  allMdx {
+  allMdx(
+    filter: { fields: { sourceInstanceName: { eq: "articles" } } }
+  ) {
     edges {
       node {
         id
