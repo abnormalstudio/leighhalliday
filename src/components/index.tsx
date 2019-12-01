@@ -2,6 +2,7 @@ export { default as ArticleAside } from "./articleAside";
 export { default as ArticleGrid } from "./articleGrid";
 export { default as ArticleTile } from "./articleTile";
 export { default as ArticleCodefund } from "./articleCodefund";
+export { default as ArticleCarbon } from "./articleCarbon";
 export { default as Header } from "./header";
 export {
   H1Line,
