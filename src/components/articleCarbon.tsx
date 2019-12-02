@@ -2,12 +2,26 @@ import React from "react";
 import { css } from "@emotion/core";
 
 const ArticleCarbon: React.FunctionComponent = () => {
-  // if (process.env.NODE_ENV === "development") {
-  //   return <div>Carbon Ad</div>;
-  // }
+  if (process.env.NODE_ENV === "development") {
+    return <div>Carbon Ad</div>;
+  }
+
+  const wrapperRef = React.useRef(null);
+
+  React.useEffect(() => {
+    if (wrapperRef && wrapperRef.current) {
+      const script = document.createElement("script");
+      script.src =
+        "//cdn.carbonads.com/carbon.js?serve=CK7DT23E&placement=leighhallidaycom";
+      script.async = true;
+      script.id = "_carbonads_js";
+      wrapperRef.current.appendChild(script);
+    }
+  }, []);
 
   return (
     <div
+      ref={wrapperRef}
       css={css`
         #carbonads {
           font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
@@ -20,6 +34,7 @@ const ArticleCarbon: React.FunctionComponent = () => {
           max-width: 330px;
           background-color: hsl(0, 0%, 98%);
           box-shadow: 0 1px 4px 1px hsla(0, 0%, 0%, 0.1);
+          margin: 0 auto;
         }
 
         #carbonads a {
@@ -77,14 +92,7 @@ const ArticleCarbon: React.FunctionComponent = () => {
           line-height: 1;
         }
       `}
-    >
-      <script
-        async
-        type="text/javascript"
-        src="//cdn.carbonads.com/carbon.js?serve=CK7DT23E&placement=leighhallidaycom"
-        id="_carbonads_js"
-      ></script>
-    </div>
+    ></div>
   );
 };
 
