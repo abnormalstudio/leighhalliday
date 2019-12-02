@@ -10,7 +10,7 @@ import {
   SEO,
   ArticleAside,
   H1Line,
-  ArticleCarbon
+  ArticleCodefund
 } from "$components";
 import { splitTags } from "$lib";
 
@@ -114,7 +114,7 @@ const Article = ({ data }: Props) => {
           </div>
 
           <Tags tags={tags} />
-          <ArticleCarbon />
+          <ArticleCodefund />
 
           <div
             css={css`
