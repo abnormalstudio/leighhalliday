@@ -76,14 +76,7 @@ const ArticleCarbon: React.FunctionComponent = () => {
         .carbon-poweredby {
           display: block;
           padding: 8px 10px;
-          background: repeating-linear-gradient(
-              -45deg,
-              transparent,
-              transparent 5px,
-              hsla(0, 0%, 0%, 0.025) 5px,
-              hsla(0, 0%, 0%, 0.025) 10px
-            )
-            hsla(203, 11%, 95%, 0.4);
+          background: hsla(203, 11%, 95%, 0.4);
           text-align: center;
           text-transform: uppercase;
           letter-spacing: 0.5px;
