@@ -135,3 +135,36 @@ duck = Product.new('Duck Egg', localFarmer, 0.25)
 # Dig through the Structs + Hash to get value
 puts duck.dig(:vendor, :address, :city) # Toronto
 ```
+
+## Struct comparison
+
+Structs are compared by value equality rather than referential equality. If you aren't quite sure what that means, take the following example:
+
+```ruby
+SelectOption = Struct.new(:display, :value)
+
+select1 = SelectOption.new(display: "True", value: true)
+select2 = SelectOption.new(display: "True", value: true)
+
+select1 == select2 # true
+```
+
+Comparing `select1` and `select2` gave us a value of `true` even though they were different instances. Now let's look at a similar example using a class:
+
+```ruby
+class SelectOptionClass
+  attr_accessor :display, :value
+
+  def initialize(display:, value:)
+    @display = display
+    @value = value
+  end
+end
+
+select1 = SelectOptionClass.new(display: "True", value: true)
+select2 = SelectOptionClass.new(display: "True", value: true)
+
+select1 == select2 # false
+```
+
+Even though the instance variables inside of each `SelectOptionClass` are the same, comparing them results in `false`.
