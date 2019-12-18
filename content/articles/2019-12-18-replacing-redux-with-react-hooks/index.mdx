@@ -1,0 +1,285 @@
+---
+title: Replacing Redux with React Hooks
+slug: replacing-redux-with-react-hooks
+tags: react, redux, hooks
+date: 2019-12-18
+updated: 2019-12-18
+banner: ./banner.jpg
+---
+
+import { YouTube } from "$components";
+
+[Redux](https://redux.js.org/) has been the go-to way to manage state within your React application for years. It's popularity is due in large part because when it was introduced, it solved a number of problems which were difficult to do in vanilla React on its own. A few of its key features were to:
+
+- Manage state globally within a single store
+- Update state immutably through actions and reducers
+- Inject state and actions at any point of the component tree
+
+While React has always had state management built-in as one of its core features, it didn't provide an easy way to solve the three items mentioned above. With the introduction of [Hooks](https://reactjs.org/docs/hooks-intro.html), all three of those key features that Redux provides can now be done using the built-in functionality that ships with React.
+
+State can now be managed globally, updated immutably through actions and reducers by using the [useReducer](https://reactjs.org/docs/hooks-reference.html#usereducer) hook, and the state and actions can be injected at any point of the component tree easily by using the [useContext](https://reactjs.org/docs/hooks-reference.html#usecontext) hook.
+
+<YouTube id="eBYJ7O482Dc" />
+
+In this article we will convert an app which uses Redux to use vanilla React alongside the `useReducer` and `useContext` hooks.
+
+Full source-code for this demo [can be found here](https://github.com/leighhalliday/redux-context-reducers).
+
+## Initial State
+
+Our app will be showing a number of restaurants, allowing the user to apply a couple different filters to view a subset of the data. Both versions of the app will have initial values for the state, which we will store in a variable called `initialState`:
+
+```js
+const initialState = {
+  rating: 3,
+  price: 1
+};
+```
+
+## Actions
+
+A `reducer` is a concept (and function) in both Redux and the `useReducer` hook. It receives the existing version of the state alongside an action. The reducer's job is to take those two inputs, and return a new version of the state by updating it immutably.
+
+An action received by a reducer looks like the following, with `type` being required, and any other data being passed alongside the type optional:
+
+```js
+{
+  type: 'SET_RATING',
+  value: 3
+}
+```
+
+The actions are shared between both versions of this app, and you will notice the reducer is nearly identical. Here are the possible action (types) which will be used in our application:
+
+```js
+const actions = {
+  SET_RATING: "SET_RATING",
+  SET_PRICE: "SET_PRICE",
+  RESET: "RESET"
+};
+```
+
+## Reducer
+
+As mentioned previously, the reducer function is for the most part shared between the Redux and React versions of this application. The only difference is that the React version's function definition doesn't contain `= initialState`, while this is required by the Redux version to initialize things.
+
+```jsx
+function reducer(state = initialState, action) {
+  switch (action.type) {
+    case actions.SET_RATING:
+      return { ...state, rating: action.value };
+    case actions.SET_PRICE:
+      return { ...state, price: action.value };
+    case actions.RESET:
+      return { ...state, ...initialState };
+    default:
+      return state;
+  }
+}
+```
+
+## Redux Version
+
+Redux's state is stored within something called a `store`, and you have to create one by calling the `createStore` function and passing in the `reducer`.
+
+Once the store has been defined, it can be given to a `Provider`, enabling the store to be accessed at lower levels of the component tree without "prop-drilling"... passing props from the top, one level at a time, until you get to the component they are actually needed at.
+
+```jsx
+const store = createStore(reducer);
+
+export default function VersionRedux() {
+  return (
+    <Provider store={store}>
+      <ConnectedFilters />
+      <ConnectedResults />
+    </Provider>
+  );
+}
+```
+
+### Connecting Components in Redux
+
+By passing our store to the Redux provider, it allows us to avoid prop-drilling. The way we inject our store's state into a lower-level component is by "connecting" them. `connect` is an HOC (Higher Order Component) which allows us to inject (as props) two things to the component we are connecting it to:
+
+- State: Straight forward, inject as props values which come from our global state stored in Redux
+- Dispatch: These are functions which call the `dispatch` function. `dispatch` is a function which triggers a call to the reducer, sending an action to have the state updated.
+
+```jsx
+// Connecting the Filters component to our Redux store
+const ConnectedFilters = connect(
+  state => {
+    return {
+      rating: state.rating,
+      price: state.price
+    };
+  },
+  dispatch => {
+    return {
+      setRating: value => dispatch({ type: actions.SET_RATING, value }),
+      setPrice: value => dispatch({ type: actions.SET_PRICE, value }),
+      reset: () => dispatch({ type: actions.RESET })
+    };
+  }
+)(Filters);
+
+// All of the state and dispatch functions arrive to this component as props
+function Filters({ rating, setRating, price, setPrice, reset }) {
+  return (
+    <div>
+      <div>
+        {[1, 2, 3, 4, 5].map(num => (
+          <button
+            key={num}
+            onClick={() => {
+              setRating(num);
+            }}
+            className={rating >= num ? "active" : ""}
+          >
+            <span role="img" aria-label={`${num} star`}>
+              ⭐️
+            </span>
+          </button>
+        ))}
+      </div>
+
+      <div>
+        {[1, 2, 3].map(num => (
+          <button
+            key={num}
+            onClick={() => {
+              setPrice(num);
+            }}
+            className={price >= num ? "active" : ""}
+          >
+            <span role="img" aria-label={`${num} money bag`}>
+              💰
+            </span>
+          </button>
+        ))}
+      </div>
+
+      <div>
+        <button onClick={reset}>reset</button>
+      </div>
+    </div>
+  );
+}
+
+// Connecting our Results component to the Redux store
+const ConnectedResults = connect(state => {
+  return {
+    rating: state.rating,
+    price: state.price
+  };
+})(Results);
+
+// All of the state and dispatch functions arrive to this component as props
+function Results({ rating, price }) {
+  const filtered = restaurants.filter(
+    restaurant => restaurant.rating >= rating && restaurant.price >= price
+  );
+
+  return (
+    <ul>
+      {filtered.map(restaurant => (
+        <li key={restaurant.name}>
+          <h2>{restaurant.name}</h2>
+
+          <p>
+            {[...Array(restaurant.rating)].map((_, n) => (
+              <span role="img" aria-label="star" key={n}>
+                ⭐️
+              </span>
+            ))}
+            <br />
+            {[...Array(restaurant.price)].map((_, n) => (
+              <span role="img" aria-label="money bag" key={n}>
+                💰
+              </span>
+            ))}
+          </p>
+        </li>
+      ))}
+    </ul>
+  );
+}
+```
+
+## React Version
+
+Now that we have covered the Redux version... it's time to remove Redux 🧐. The initial state, the action types, and the reducer stay the same, but how we define our "store" and how we inject this store's state and dispatch functions into our components is what changes.
+
+The `VersionContext` component below also uses a `Provider`, but this provider is one that we will define below. It will receive some `children` components, and wrap the `RestaurantContext.Provider` around them, allowing us to access our state/dispatch actions within both `Filters` and `Results`.
+
+```jsx
+export default function VersionContext() {
+  return (
+    <Provider>
+      <Filters />
+      <Results />
+    </Provider>
+  );
+}
+
+// Create context to be used within the Provider
+const RestaurantContext = React.createContext();
+
+function Provider({ children }) {
+  const [state, dispatch] = React.useReducer(reducer, initialState);
+
+  const value = {
+    rating: state.rating,
+    price: state.price,
+    setRating: value => {
+      dispatch({ type: actions.SET_RATING, value });
+    },
+    setPrice: value => {
+      dispatch({ type: actions.SET_PRICE, value });
+    },
+    reset: () => {
+      dispatch({ type: actions.RESET });
+    }
+  };
+
+  return (
+    <RestaurantContext.Provider value={value}>
+      {children}
+    </RestaurantContext.Provider>
+  );
+}
+```
+
+Inside of the `Provider` we used the `useReducer` hook to give us access to our state, and the dispatch function to pass actions to our reducer.
+
+We then defined an object called `value` which was a combination of our state plus any functions which can be called to dispatch actions to the reducer. This `value` is what is now available to our children via the context provider.
+
+### useContext Hook
+
+In the Redux version, we were required to map state to props and dispatch to props for every component we wanted to connect to our Redux store. In the React version, we can take advantage of the `useContext` hook, allowing us to access anything on the `value` object (state + dispatch functions), directly inside of our component, without having to receive them as props from some HOC (Higher Order Component).
+
+```js
+function Filters() {
+  const { rating, setRating, price, setPrice, reset } = React.useContext(
+    RestaurantContext
+  );
+
+  return <div>left out because it is identical</div>;
+}
+```
+
+We do the same to our `Results` function, by accessing the `rating` and `price` state properties via the `useContext` hook.
+
+```js
+function Results() {
+  const { rating, price } = React.useContext(RestaurantContext);
+  const filtered = restaurants.filter(
+    restaurant => restaurant.rating >= rating && restaurant.price >= price
+  );
+
+  return <div>left out because it is identical</div>;
+}
+```
+
+## Conclusion
+
+In this article we were able to see how we can get a lot of the same benefits provided by Redux directly in React itself since the introduction of the `useReducer` and `useContext` hooks. This article wasn't meant to bring Redux down, but rather show the power React provides even before reaching to additional packages and libraries.
