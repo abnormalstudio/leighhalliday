@@ -17,7 +17,7 @@ Performance can begin to degrade pretty quickly when you are trying to show larg
 
 Full source code of this project can be [found here](https://github.com/leighhalliday/mapbox-clustering).
 
-## Map setup
+## Mapbox setup in React
 
 Before fetching data to display, before clustering that data to display on the map, we need to set Mapbox up. I have an intro to Mapbox video if you haven't worked with the [react-map-gl](https://uber.github.io/react-map-gl) package before.
 
@@ -27,7 +27,7 @@ We will also create a `mapRef` variable to store a reference to the map itself. 
 
 When developing this locally, I am storing my Mapbox token in a file called `.env.local`, and by naming it with the prefix `REACT_APP_`, it will get loaded into the app automatically by create react app.
 
-```js
+```jsx
 export default function App() {
   // setup map
   const [viewport, setViewport] = useState({
@@ -60,7 +60,7 @@ export default function App() {
 }
 ```
 
-## Preparing data
+## Preparing data for supercluster
 
 Data from an external/remote source will most likely need to be massaged into the format required by the supercluster library. The example below [uses SWR](https://www.leighhalliday.com/how-does-swr-work) to fetch remote data using hooks.
 
@@ -81,6 +81,8 @@ An example of the data looks like:
   }
 ]
 ```
+
+Fetching the data using SWR and converting it into the proper format looks like:
 
 ```js
 const fetcher = (...args) => fetch(...args).then(response => response.json());
@@ -222,7 +224,7 @@ Styling the clusters is up to you, I have some simple styles applied to each of 
 
 Then as I am mapping the clusters, I change the size of the cluster with a calculation based on how many points the cluster contains: `${10 + (pointCount / points.length) * 20}px`.
 
-```js
+```jsx
 export default function App() {
   // setup map
   // load and prepare data
@@ -308,7 +310,7 @@ setViewport({
 
 Where do the snippets of code above live? I have put them inside of an `onClick` event on the Marker's div for each cluster being rendered.
 
-```js
+```jsx
 <Marker key={`cluster-${cluster.id}`} latitude={latitude} longitude={longitude}>
   <div
     className="cluster-marker"
