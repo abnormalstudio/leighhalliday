@@ -1,0 +1,320 @@
+---
+title: Google Maps Marker Clustering
+slug: google-maps-clustering
+tags: react, hooks, maps
+date: 2019-12-27
+updated: 2019-12-27
+banner: ./banner.jpg
+---
+
+import ZoomImage from "./zoom.gif";
+
+Performance can begin to degrade pretty quickly when you are trying to show large amounts of data on a map. Even at hundreds of markers using [Google Maps](https://cloud.google.com/maps-platform/) via [google-map-react](https://github.com/google-map-react/google-map-react), you may feel it start to lag. By clustering the points together you can improve performance greatly, all while presenting the data in a more approachable way.
+
+[Supercluster](https://github.com/mapbox/supercluster) is the go-to package for clustering points together on a map. For using supercluster together with React I created a [useSupercluster](https://github.com/leighhalliday/use-supercluster) hook to make things easier. This article shows how to integrate clustering with supercluster into your React with Google Maps app.
+
+<img
+  src={ZoomImage}
+  alt="Zooming with clusters"
+  loading="lazy"
+  style={{ width: "100%" }}
+/>
+
+Full source code of this project can be [found here](https://github.com/leighhalliday/google-maps-clustering).
+
+## Google Maps setup in React
+
+Unlike Mapbox, Google Maps manages most of the state for our map (coordinates, zoom, etc.), so it is fairly minimal work to get things up and running.
+
+We'll need to create a `mapRef` variable to store a reference to the map itself. This is required in order to call functions on the map, in our case to programmatically position the map which we'll cover later on.
+
+When developing this locally, I am storing my Google Maps token in a file called `.env.local`, and by naming it with the prefix `REACT_APP_`, it will get loaded into the app automatically by create react app. This is passed in to the `bootstrapURLKeys` prop. No additional script tags are needed as the `google-map-react` package handles this side of things for us.
+
+The `yesIWantToUseGoogleMapApiInternals` is important for us to have as the `onGoogleApiLoaded` callback function which sets our map ref requires it to be there.
+
+```jsx
+export default function App() {
+  // setup map
+  const mapRef = useRef();
+
+  // load and prepare data
+  // get map bounds
+  // get clusters
+
+  // return map
+  return (
+    <div style={{ height: "100vh", width: "100%" }}>
+      <GoogleMapReact
+        bootstrapURLKeys={{ key: process.env.REACT_APP_GOOGLE_KEY }}
+        defaultCenter={{ lat: 52.6376, lng: -1.135171 }}
+        defaultZoom={10}
+        yesIWantToUseGoogleMapApiInternals
+        onGoogleApiLoaded={({ map }) => {
+          mapRef.current = map;
+        }}
+      >
+        {/* markers here */}
+      </GoogleMapReact>
+    </div>
+  );
+}
+```
+
+## Preparing data for supercluster
+
+Data from an external/remote source will most likely need to be massaged into the format required by the supercluster library. The example below [uses SWR](https://www.leighhalliday.com/how-does-swr-work) to fetch remote data using hooks.
+
+We must produce an array of [GeoJSON Feature](https://tools.ietf.org/html/rfc7946#section-3.2) objects, with the geometry of each object being a [GeoJSON Point](https://tools.ietf.org/html/rfc7946#section-3.1.2).
+
+An example of the data looks like:
+
+```json
+[
+  {
+    "type": "Feature",
+    "properties": {
+      "cluster": false,
+      "crimeId": 78212911,
+      "category": "anti-social-behaviour"
+    },
+    "geometry": { "type": "Point", "coordinates": [-1.135171, 52.6376] }
+  }
+]
+```
+
+Fetching the data using SWR and converting it into the proper format looks like:
+
+```js
+const fetcher = (...args) => fetch(...args).then(response => response.json());
+
+export default function App() {
+  // setup map
+
+  // load and prepare data
+  const url =
+    "https://data.police.uk/api/crimes-street/all-crime?lat=52.629729&lng=-1.131592&date=2019-10";
+  const { data, error } = useSwr(url, { fetcher });
+  const crimes = data && !error ? data : [];
+  const points = crimes.map(crime => ({
+    type: "Feature",
+    properties: { cluster: false, crimeId: crime.id, category: crime.category },
+    geometry: {
+      type: "Point",
+      coordinates: [
+        parseFloat(crime.location.longitude),
+        parseFloat(crime.location.latitude)
+      ]
+    }
+  }));
+
+  // get map bounds
+  // get clusters
+  // return map
+}
+```
+
+## Getting map bounds
+
+For supercluster to return the clusters based on the array of points we created in the previous section, we need to provide it with two additional pieces of information:
+
+- The map bounds: `[westLng, southLat, eastLng, northLat]`
+- The map zoom: Integer representing the level of zoom our map is at
+
+Both of these values are provided to us with an `onChange` callback event that we can listen to on `GoogleMapReact` component. Inside of the event function, we can set the two state properties we set up to store this information.
+
+```jsx
+export default function App() {
+  // setup map
+  // load and prepare data
+
+  // get map bounds
+  const [bounds, setBounds] = useState(null);
+  const [zoom, setZoom] = useState(10);
+
+  // get clusters
+
+  // return map
+  return (
+    <div style={{ height: "100vh", width: "100%" }}>
+      <GoogleMapReact
+        onChange={({ zoom, bounds }) => {
+          setZoom(zoom);
+          setBounds([
+            bounds.nw.lng,
+            bounds.se.lat,
+            bounds.se.lng,
+            bounds.nw.lat
+          ]);
+        }}
+      >
+        {/* markers here */}
+      </GoogleMapReact>
+    </div>
+  );
+}
+```
+
+## Fetching clusters from hook
+
+With our `points` in the correct order, and with the `bounds` and `zoom` accessible, it's time to retrieve the clusters. This will use the `useSupercluster` hook provided by the [use-supercluster](https://www.npmjs.com/package/use-supercluster) package.
+
+It provides you through a destructured object an array of clusters and, if you need it, the `supercluster` instance variable.
+
+```js
+export default function App() {
+  // setup map
+  // load and prepare data
+  // get map bounds
+
+  // get clusters
+  const { clusters, supercluster } = useSupercluster({
+    points,
+    bounds,
+    zoom,
+    options: { radius: 75, maxZoom: 20 }
+  });
+
+  // return map
+}
+```
+
+Clusters are an array of [GeoJSON Feature](https://tools.ietf.org/html/rfc7946#section-3.2) objects, but some of them represent a cluster of points, and some represent individual points that you created above. A lot of it depends on your zoom level and how many points would be within a specific radius. When the number of points gets small enough, supercluster gives us individual points rather than clusters. The example below has a cluster (as denoted by the properties on it) and an individual point (which in our case represents a crime).
+
+```json
+[
+  {
+    "type": "Feature",
+    "id": 1461,
+    "properties": {
+      "cluster": true,
+      "cluster_id": 1461,
+      "point_count": 857,
+      "point_count_abbreviated": 857
+    },
+    "geometry": {
+      "type": "Point",
+      "coordinates": [-1.132138301050194, 52.63486758501364]
+    }
+  },
+  {
+    "type": "Feature",
+    "properties": {
+      "cluster": false,
+      "crimeId": 78212911,
+      "category": "anti-social-behaviour"
+    },
+    "geometry": { "type": "Point", "coordinates": [-1.135171, 52.6376] }
+  }
+]
+```
+
+## Displaying clusters as markers
+
+Because the `clusters` array contains features which represent either a cluster or an individual point, we have to handle that while mapping them. Either way, they both have coordinates, and we can use the `cluster` property to determine which is which.
+
+Styling the clusters is up to you, I have some simple styles applied to each of the markers:
+
+```css
+.cluster-marker {
+  color: #fff;
+  background: #1978c8;
+  border-radius: 50%;
+  padding: 10px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.crime-marker {
+  background: none;
+  border: none;
+}
+
+.crime-marker img {
+  width: 25px;
+}
+```
+
+Then as I am mapping the clusters, I change the size of the cluster with a calculation based on how many points the cluster contains: `${10 + (pointCount / points.length) * 20}px`.
+
+```jsx
+const Marker = ({ children }) => children;
+
+export default function App() {
+  // setup map
+  // load and prepare data
+  // get map bounds
+  // get clusters
+
+  // return map
+  return (
+    <div style={{ height: "100vh", width: "100%" }}>
+      <GoogleMapReact>
+        {clusters.map(cluster => {
+          const [longitude, latitude] = cluster.geometry.coordinates;
+          const {
+            cluster: isCluster,
+            point_count: pointCount
+          } = cluster.properties;
+
+          if (isCluster) {
+            return (
+              <Marker
+                key={`cluster-${cluster.id}`}
+                lat={latitude}
+                lng={longitude}
+              >
+                <div
+                  className="cluster-marker"
+                  style={{
+                    width: `${10 + (pointCount / points.length) * 20}px`,
+                    height: `${10 + (pointCount / points.length) * 20}px`
+                  }}
+                  onClick={() => {}}
+                >
+                  {pointCount}
+                </div>
+              </Marker>
+            );
+          }
+
+          return (
+            <Marker
+              key={`crime-${cluster.properties.crimeId}`}
+              lat={latitude}
+              lng={longitude}
+            >
+              <button className="crime-marker">
+                <img src="/custody.svg" alt="crime doesn't pay" />
+              </button>
+            </Marker>
+          );
+        })}
+      </GoogleMapReact>
+    </div>
+  );
+}
+```
+
+## Animated zoom transition into a cluster
+
+We can always zoom into the map ourselves as the user, but supercluster provides a function called `getClusterExpansionZoom`, which when passed a cluster ID, it will return us which zoom level we need to change the map to in order for the cluster to be broken down into additional smaller clusters or individual points.
+
+```js
+() => {
+  const expansionZoom = Math.min(
+    supercluster.getClusterExpansionZoom(cluster.id),
+    20
+  );
+  mapRef.current.setZoom(expansionZoom);
+  mapRef.current.panTo({ lat: latitude, lng: longitude });
+};
+```
+
+But where does the above function live? It can be passed to the `onClick` prop of the `div` which represents a cluster.
+
+## Conclusion
+
+Using `google-map-react`, we have the ability to use Google Maps within our React app. Using `use-supercluster` we are able to use supercluster as a hook to render clusters of points onto our map.
+
+Because we have access to the instance of supercluster, we're even able to grab the "leaves" (the individual points which make up a cluster) via the `supercluster.getLeaves(cluster.id)` function. With this we can show details about the x number of points contained within a cluster.
