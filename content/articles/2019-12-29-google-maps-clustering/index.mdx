@@ -7,18 +7,14 @@ updated: 2019-12-29
 banner: ./banner.jpg
 ---
 
+import { YouTube } from "$components";
 import GoogleZoomImage from "./google-zoom.gif";
 
 Performance can begin to degrade pretty quickly when you are trying to show large amounts of data on a map. Even at hundreds of markers using [Google Maps](https://cloud.google.com/maps-platform/) via [google-map-react](https://github.com/google-map-react/google-map-react), you may feel it start to lag. By clustering the points together you can improve performance greatly, all while presenting the data in a more approachable way.
 
 [Supercluster](https://github.com/mapbox/supercluster) is the go-to package for clustering points together on a map. For using supercluster together with React I created a [useSupercluster](https://github.com/leighhalliday/use-supercluster) hook to make things easier. This article shows how to integrate clustering with supercluster into your React with Google Maps app.
 
-<img
-  src={GoogleZoomImage}
-  alt="Zooming with clusters"
-  loading="lazy"
-  style={{ width: "100%" }}
-/>
+<YouTube id="-NI5e_GTIko" />
 
 Full source code of this project can be [found here](https://github.com/leighhalliday/google-maps-clustering).
 
@@ -59,6 +55,13 @@ export default function App() {
   );
 }
 ```
+
+<img
+  src={GoogleZoomImage}
+  alt="Zooming with clusters"
+  loading="lazy"
+  style={{ width: "100%" }}
+/>
 
 ## Preparing data for supercluster
 
