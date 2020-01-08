@@ -1,0 +1,340 @@
+---
+title: Leaflet Marker Clustering
+slug: leaflet-clustering
+tags: react, hooks, maps
+date: 2020-01-08
+updated: 2020-01-08
+banner: ./banner.jpg
+---
+
+Performance can begin to degrade pretty quickly when you are trying to show large amounts of data on a map. Even at hundreds of markers using [Leaflet](https://leafletjs.com/) via [React Leaflet](https://react-leaflet.js.org/), you may feel it start to lag. By clustering the points together you can improve performance greatly, all while presenting the data in a more approachable way.
+
+[Supercluster](https://github.com/mapbox/supercluster) is the go-to package for clustering points together on a map. For using supercluster together with React I created a [useSupercluster](https://github.com/leighhalliday/use-supercluster) hook to make things easier. This article shows how to integrate clustering with supercluster into your React with Leaflet app.
+
+Full source code of this project can be [found here](https://github.com/leighhalliday/leaflet-clustering).
+
+## Leaflet setup in React
+
+To start with Leaflet we will import a few components from the `react-leaflet` package. I have also included the remaining imports we will need for this demo along with comments explaining what they will be used for.
+
+Within the return statement we have the `Map` component. We're required to pass `center` and `zoom` props in order for it to work, but it's very important to note that without the `TileLayer` component inside of it, the map will render blank. This adds correct attribution which points back to OpenStreetMap.
+
+```jsx
+import React, { useRef, useState } from "react";
+// Used for the map itself
+import { Map, Marker, TileLayer } from "react-leaflet";
+// Used when making custom Marker icons
+import L from "leaflet";
+// Used to fetch remote data
+import useSwr from "swr";
+// Used to cluster points
+import useSupercluster from "use-supercluster";
+// Styling
+import "./App.css";
+
+export default function App() {
+  // state and refs
+  // load and prepare data
+  // get map bounds
+  // get clusters
+
+  // return map
+  return (
+    <Map center={[52.6376, -1.135171]} zoom={13}>
+      <TileLayer
+        url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+        attribution='&copy; <a href="http://osm.org/copyright">OpenStreetMap</a> contributors'
+      />
+      {/* markers here*/}
+    </Map>
+  );
+}
+```
+
+For the map to look and work correctly, we'll need to set some styles:
+
+```css
+.leaflet-container {
+  width: 100%;
+  height: 100vh;
+}
+```
+
+## Preparing data for supercluster
+
+Data from an external/remote source will most likely need to be massaged into the format required by the supercluster library. The example below [uses SWR](https://www.leighhalliday.com/how-does-swr-work) to fetch remote data using hooks.
+
+We must produce an array of [GeoJSON Feature](https://tools.ietf.org/html/rfc7946#section-3.2) objects, with the geometry of each object being a [GeoJSON Point](https://tools.ietf.org/html/rfc7946#section-3.1.2).
+
+An example of the data looks like:
+
+```json
+[
+  {
+    "type": "Feature",
+    "properties": {
+      "cluster": false,
+      "crimeId": 78212911,
+      "category": "anti-social-behaviour"
+    },
+    "geometry": { "type": "Point", "coordinates": [-1.135171, 52.6376] }
+  }
+]
+```
+
+Fetching the data using SWR and converting it into the proper format looks like:
+
+```js
+const fetcher = (...args) => fetch(...args).then(response => response.json());
+
+export default function App() {
+  // state and refs
+
+  // load and prepare data
+  const url =
+    "https://data.police.uk/api/crimes-street/all-crime?lat=52.629729&lng=-1.131592&date=2019-10";
+  const { data, error } = useSwr(url, { fetcher });
+  const crimes = data && !error ? data : [];
+  const points = crimes.map(crime => ({
+    type: "Feature",
+    properties: { cluster: false, crimeId: crime.id, category: crime.category },
+    geometry: {
+      type: "Point",
+      coordinates: [
+        parseFloat(crime.location.longitude),
+        parseFloat(crime.location.latitude)
+      ]
+    }
+  }));
+
+  // get map bounds
+  // get clusters
+  // return map
+}
+```
+
+## Getting map bounds
+
+For supercluster to return the clusters based on the array of points we created in the previous section, we need to provide it with two additional pieces of information:
+
+- The map bounds: `[westLng, southLat, eastLng, northLat]`
+- The map zoom: Integer representing the level of zoom our map is at
+
+These values will come from the the `bounds` and `zoom` state properties which don't yet have values assigned to them. In order to get their value, we will start by attaching a `mapRef` ref value to the map.
+
+With the ref in place, we can create a function called `updateMap` which can be called whenever the map has been updated, allowing us to grab new bounds and zoom properties from the `mapRef`. This will be called once upon initial render via the `useEffect` hook, and will also be called via the `onMoveEnd` prop. This handles both initial render and subsequent changes to the map made by the user dragging it around or zooming in or out.
+
+```jsx
+export default function App() {
+  // state and refs
+  const [bounds, setBounds] = useState(null);
+  const [zoom, setZoom] = useState(13);
+  const mapRef = useRef();
+
+  // load and prepare data
+
+  // get map bounds
+  function updateMap() {
+    const b = mapRef.current.leafletElement.getBounds();
+    setBounds([
+      b.getSouthWest().lng,
+      b.getSouthWest().lat,
+      b.getNorthEast().lng,
+      b.getNorthEast().lat
+    ]);
+    setZoom(mapRef.current.leafletElement.getZoom());
+  }
+
+  React.useEffect(() => {
+    updateMap();
+  }, []);
+
+  // get clusters
+
+  // return map
+  return (
+    <Map
+      center={[52.6376, -1.135171]}
+      zoom={13}
+      onMoveEnd={updateMap}
+      ref={mapRef}
+    >
+      {/* markers here */}
+    </Map>
+  );
+}
+```
+
+## Fetching clusters from hook
+
+With our `points` in the correct order, and with the `bounds` and `zoom` accessible, it's time to retrieve the clusters. This will use the `useSupercluster` hook provided by the [use-supercluster](https://www.npmjs.com/package/use-supercluster) package.
+
+It provides you through a destructured object an array of clusters and, if you need it, the `supercluster` instance variable.
+
+```js
+export default function App() {
+  // state and refs
+  // load and prepare data
+  // get map bounds
+
+  // get clusters
+  const { clusters, supercluster } = useSupercluster({
+    points,
+    bounds,
+    zoom,
+    options: { radius: 75, maxZoom: 20 }
+  });
+
+  // return map
+}
+```
+
+Clusters are an array of [GeoJSON Feature](https://tools.ietf.org/html/rfc7946#section-3.2) objects, but some of them represent a cluster of points, and some represent individual points that you created above. A lot of it depends on your zoom level and how many points would be within a specific radius. When the number of points gets small enough, supercluster gives us individual points rather than clusters. The example below has a cluster (as denoted by the properties on it) and an individual point (which in our case represents a crime).
+
+```json
+[
+  {
+    "type": "Feature",
+    "id": 1461,
+    "properties": {
+      "cluster": true,
+      "cluster_id": 1461,
+      "point_count": 857,
+      "point_count_abbreviated": 857
+    },
+    "geometry": {
+      "type": "Point",
+      "coordinates": [-1.132138301050194, 52.63486758501364]
+    }
+  },
+  {
+    "type": "Feature",
+    "properties": {
+      "cluster": false,
+      "crimeId": 78212911,
+      "category": "anti-social-behaviour"
+    },
+    "geometry": { "type": "Point", "coordinates": [-1.135171, 52.6376] }
+  }
+]
+```
+
+## Displaying clusters as markers
+
+Because the `clusters` array contains features which represent either a cluster or an individual point, we have to handle that while mapping them. Either way, they both have coordinates, and we can use the `cluster` property to determine which is which.
+
+Styling the clusters is up to you, I have some simple styles applied to each of the markers:
+
+```css
+.leaflet-div-icon {
+  background: none !important;
+  border: none !important;
+}
+
+.cluster-marker {
+  color: #fff;
+  background: #1978c8;
+  border-radius: 50%;
+  padding: 10px;
+  width: 10px;
+  height: 10px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+```
+
+Then as I am mapping the clusters, I change the size of the cluster with a calculation based on how many points the cluster contains: `${10 + (pointCount / points.length) * 20}px`.
+
+Icons can be customized in Leaflet in a number of ways, but we will examine two of them. First of all, if you want to display an image as the marker cluster, it can be done using the `L.Icon` class which comes directly from Leaflet. We will use this when rendering individual points (non-clustered).
+
+For clustered markers, we want to change the size of the marker and place the number of points contained within it inside of the marker. Because this can't be done with an image, we can use the `L.divIcon` function to create HTML based markers. I created a `fetchIcon` function which given a `count` (number of points within cluster) and the `size` (how many pixels width and height we want the div to be) we can create new icons on the fly. It caches them inside of the `icons` object to avoid re-creating the same icon over and over again.
+
+```jsx
+const cuffs = new L.Icon({
+  iconUrl: "/handcuffs.svg",
+  iconSize: [25, 25]
+});
+
+const icons = {};
+const fetchIcon = (count, size) => {
+  if (!icons[count]) {
+    icons[count] = L.divIcon({
+      html: `<div class="cluster-marker" style="width: ${size}px; height: ${size}px;">
+        ${count}
+      </div>`
+    });
+  }
+  return icons[count];
+};
+
+export default function App() {
+  // state and refs
+  // load and prepare data
+  // get map bounds
+  // get clusters
+
+  // return map
+  return (
+    <Map>
+      {clusters.map(cluster => {
+        // every cluster point has coordinates
+        const [longitude, latitude] = cluster.geometry.coordinates;
+        // the point may be either a cluster or a crime point
+        const {
+          cluster: isCluster,
+          point_count: pointCount
+        } = cluster.properties;
+
+        // we have a cluster to render
+        if (isCluster) {
+          return (
+            <Marker
+              key={`cluster-${cluster.id}`}
+              position={[latitude, longitude]}
+              icon={fetchIcon(
+                pointCount,
+                10 + (pointCount / points.length) * 40
+              )}
+            />
+          );
+        }
+
+        // we have a single point (crime) to render
+        return (
+          <Marker
+            key={`crime-${cluster.properties.crimeId}`}
+            position={[latitude, longitude]}
+            icon={cuffs}
+          />
+        );
+      })}
+    </Map>
+  );
+}
+```
+
+## Animated zoom transition into a cluster
+
+We can always zoom into the map ourselves as the user, but supercluster provides a function called `getClusterExpansionZoom`, which when passed a cluster ID, it will return us which zoom level we need to change the map to in order for the cluster to be broken down into additional smaller clusters or individual points.
+
+```js
+() => {
+  const expansionZoom = Math.min(
+    supercluster.getClusterExpansionZoom(cluster.id),
+    17
+  );
+  const leaflet = mapRef.current.leafletElement;
+  leaflet.setView([latitude, longitude], expansionZoom, {
+    animate: true
+  });
+};
+```
+
+But where does the above function live? It can be passed to the `onClick` prop of the `div` which represents a cluster.
+
+## Conclusion
+
+Using `react-leaflet`, we have the ability to use Leaflet within our React app. Using `use-supercluster` we are able to use supercluster as a hook to render clusters of points onto our map.
+
+Because we have access to the instance of supercluster, we're even able to grab the "leaves" (the individual points which make up a cluster) via the `supercluster.getLeaves(cluster.id)` function. With this we can show details about the x number of points contained within a cluster.
