@@ -1,0 +1,200 @@
+---
+title: How to Publish an NPM Package
+slug: publish-npm-package
+tags: npm, javascript, hooks
+date: 2020-01-09
+updated: 2020-01-09
+banner: ./banner.jpg
+---
+
+Publishing an NPM package with TypeScript has never been easier with the help of [tsdx](https://github.com/jaredpalmer/tsdx), a wonderful package from [Jared Palmer](https://twitter.com/jaredpalmer), who also happens to be the creator of [Formik](https://formik.com/) for easily building forms in React.
+
+With tsdx, without ever having published a package to NPM before, was able to publish and release multiple changes of my [use-supercluster](https://www.npmjs.com/package/use-supercluster) package without any difficulty.
+
+In this short article we will cover the steps to set up a project with tsdx, test it, publish it to NPM, and release a change.
+
+## Initiating
+
+```
+yarn global add tsdx
+tsdx create use-supercluster
+```
+
+You will be asked to choose a template: `basic`, `react` or `react-with-storybook`. We will be choosing `react` because `ues-supercluster` is a React hook, meaning that it will only ever be used within a React application.
+
+It will then proceed to create a new directory for you, creating all of the files and configuration needed to get started.
+
+## Your Package's Code
+
+Everything for your project should start from the `src/index.ts` file. This is where you will export all of your functions, classes, etc. Our project will be exporting a single function to be used as a React hook, meaning we'll use the `export default useSupercluster` construct.
+
+Without going into the specifics of what this hook does (not important for this article), the file looks like this. And don't worry, all those TypeScript definitions confuse me too!
+
+```ts
+import { useRef, useState } from "react";
+import Supercluster from "supercluster";
+import { BBox, GeoJsonProperties } from "geojson";
+import { useDeepCompareEffectNoCheck } from "use-deep-compare-effect";
+import dequal from "dequal";
+
+export interface UseSuperclusterArgument<P, C> {
+  points: Array<Supercluster.PointFeature<P>>;
+  bounds?: BBox;
+  zoom: number;
+  options?: Supercluster.Options<P, C>;
+}
+
+const useSupercluster = <
+  P extends GeoJsonProperties = Supercluster.AnyProps,
+  C extends GeoJsonProperties = Supercluster.AnyProps
+>({
+  points,
+  bounds,
+  zoom,
+  options
+}: UseSuperclusterArgument<P, C>) => {
+  // actual code removed
+};
+
+export default useSupercluster;
+```
+
+Meaning that when this package is installed in someones app, you would import it with the line `import useSupercluster from 'use-supercluster'`.
+
+## Testing
+
+We are able to test our application using [jest](https://jestjs.io/), but I have also installed [React Testing Library](https://testing-library.com/docs/react-testing-library/intro) because this hook must be tested within a React app. Because our code lives inside of `src/index.ts`, we can import it with `import useSupercluster from "../src"`. I won't be going into details about how this hook works, how React Testing Library works, etc... as those are entire topics all on their own, but it's meant to show a possible example of testing your package and what the imports look like.
+
+```tsx
+import React from "react";
+import { BBox, GeoJsonProperties } from "geojson";
+import Supercluster from "supercluster";
+import { render, waitForElement } from "@testing-library/react";
+import "@testing-library/jest-dom/extend-expect";
+import useSupercluster from "../src";
+
+describe("useSupercluster", () => {
+  it("renders clusters", async () => {
+    const points: Array<Supercluster.PointFeature<GeoJsonProperties>> = [
+      // 3 additional elements removed to shorten example
+      {
+        type: "Feature",
+        properties: {
+          cluster: false,
+          crimeId: 78213197,
+          category: "anti-social-behaviour"
+        },
+        geometry: { type: "Point", coordinates: [-1.133691, 52.63625] }
+      }
+    ];
+
+    const bounds: BBox = [
+      -1.2411810957931664,
+      52.61208435908725,
+      -1.0083656811012531,
+      52.64495957533833
+    ];
+
+    const App = () => {
+      const { clusters } = useSupercluster({
+        points,
+        bounds,
+        zoom: 10,
+        options: { radius: 75, maxZoom: 20 }
+      });
+
+      return (
+        <ul>
+          {clusters.map(point => {
+            const properties = point.properties || {};
+            if (properties.cluster) {
+              return <li key={point.id}>points: {properties.point_count}</li>;
+            } else {
+              return <li key={properties.crimeId}>{properties.category}</li>;
+            }
+          })}
+        </ul>
+      );
+    };
+
+    const { getByText } = render(<App />);
+    const clusterNode = await waitForElement(() => getByText("points: 4"));
+    expect(clusterNode).toBeInTheDocument();
+  });
+});
+```
+
+Our package can be tested by running the command `yarn test` from the console.
+
+```txt
+ PASS  test/index.test.tsx
+  useSupercluster
+    ✓ renders clusters (38ms)
+
+Test Suites: 1 passed, 1 total
+Tests:       1 passed, 1 total
+Snapshots:   0 total
+Time:        3.344s
+```
+
+## Our App's Dependencies
+
+When creating a package, you have to worry about three different types of dependencies.
+
+### Dependencies
+
+These are dependencies specific to your package required to be installed along with our own package when a user adds it to their project. Be careful not to include anything you don't need here, because it all gets passed down to the person who installs our package.
+
+### Dev Dependencies (devDependencies)
+
+These are dependencies required to develop the application, but which don't need to be shipped with the final code. Things that go here include testing libraries, TypeScript, tsdx, and any `peerDependencies` which we will cover below.
+
+### Peer Dependencies (peerDependencies)
+
+Peer dependencies will not be installed automatically when someone installs this package. They are assumed to be installed independently (or already installed) by the user of this package. If we are creating a React hook for Supercluster, we can treat both `react` and `supercluster` as peer dependencies.
+
+## Extra package.json Details
+
+Because we used `tsdx` to initialize our project, the `package.json` file is set up well to begin with, but we can augment the data with a few additional properties that show different details when published to its [page on NPM](https://www.npmjs.com/package/use-supercluster).
+
+I added `repository`, `homepage`, and `keywords`, but there is a full description of [available properties](https://docs.npmjs.com/files/package.json) available on NPM's website.
+
+```json
+{
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/leighhalliday/use-supercluster.git"
+  },
+  "homepage": "https://github.com/leighhalliday/use-supercluster",
+  "keywords": ["react", "supercluster", "clustering", "maps", "hook"]
+}
+```
+
+## README
+
+The `README.md` file is important to fill out well, because that is what will be displayed to a user on your package's page on NPM. Try to include a description of what the package does, how to install it, and maybe a quick example of how to use it.
+
+## First Release
+
+Once we're ready for the public to start using our package, it's time to push it to NPM. This is separate from pushing it to GitHub which can be done at any point. The project starts on version `0.1.0`, but it's up to you to control versioning, following [semver](https://semver.org/) to decide which of the three numbers gets incremented.
+
+```json
+{
+  "version": "0.1.0"
+}
+```
+
+The following command `yarn publish` will ask you to log in using your NPM credentials. You will need to set up an account on [NPM](https://www.npmjs.com/) first in order to complete this step. What `tsdx` does at this point is to produce built versions of your package in the `dist` folder, which is what gets uploaded to NPM.
+
+You should receive an email that it has been published, and you can now search for it on NPM!
+
+## New Versions
+
+Releasing a new version of the app is only two steps:
+
+1. Bump the version number in the `package.json` file.
+2. Run `yarn publish` command to re-build and push code to NPM.
+
+## Conclusion
+
+We have created a new NPM package from start to finish with the help of `tsdx`. It has been developed, tested, versioned, published, and re-published.
