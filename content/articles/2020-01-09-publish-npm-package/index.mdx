@@ -13,7 +13,7 @@ With tsdx, without ever having published a package to NPM before, was able to pu
 
 In this short article we will cover the steps to set up a project with tsdx, test it, publish it to NPM, and release a change.
 
-## Initiating
+## Initiating an NPM Package
 
 ```
 yarn global add tsdx
@@ -61,7 +61,7 @@ export default useSupercluster;
 
 Meaning that when this package is installed in someones app, you would import it with the line `import useSupercluster from 'use-supercluster'`.
 
-## Testing
+## Testing Our NPM Package
 
 We are able to test our application using [jest](https://jestjs.io/), but I have also installed [React Testing Library](https://testing-library.com/docs/react-testing-library/intro) because this hook must be tested within a React app. Because our code lives inside of `src/index.ts`, we can import it with `import useSupercluster from "../src"`. I won't be going into details about how this hook works, how React Testing Library works, etc... as those are entire topics all on their own, but it's meant to show a possible example of testing your package and what the imports look like.
 
@@ -141,7 +141,7 @@ Time:        3.344s
 
 When creating a package, you have to worry about three different types of dependencies.
 
-### Dependencies
+### Regular Dependencies (dependencies)
 
 These are dependencies specific to your package required to be installed along with our own package when a user adds it to their project. Be careful not to include anything you don't need here, because it all gets passed down to the person who installs our package.
 
@@ -170,11 +170,11 @@ I added `repository`, `homepage`, and `keywords`, but there is a full descriptio
 }
 ```
 
-## README
+## Don't Forget The README
 
 The `README.md` file is important to fill out well, because that is what will be displayed to a user on your package's page on NPM. Try to include a description of what the package does, how to install it, and maybe a quick example of how to use it.
 
-## First Release
+## Our First Release
 
 Once we're ready for the public to start using our package, it's time to push it to NPM. This is separate from pushing it to GitHub which can be done at any point. The project starts on version `0.1.0`, but it's up to you to control versioning, following [semver](https://semver.org/) to decide which of the three numbers gets incremented.
 
