@@ -50,6 +50,21 @@ const buildURL = (url: string, obj: object) => {
   return `${url}?${query}`;
 };
 
+const preloads = [
+  "https://srv.carbonads.net",
+  "https://pixel.adsafeprotected.com",
+  "https://static.adsafeprotected.com",
+  "https://cdn.carbonads.com",
+  "https://s.ytimg.com",
+  "https://fonts.gstatic.com",
+  "https://i.ytimg.com",
+  "https://googleads.g.doubleclick.net",
+  "https://yt3.ggpht.com",
+  "https://www.google.com",
+  "https://stats.g.doubleclick.net",
+  "https://www.google.ca"
+];
+
 const Article = ({ data }: Props) => {
   const { excerpt, frontmatter, body } = data.mdx;
   const { title, tags, date, updated } = frontmatter;
@@ -70,6 +85,9 @@ const Article = ({ data }: Props) => {
       <Helmet encodeSpecialCharacters={false}>
         <meta property="og:image" content={ogImageUrl} />
         <meta name="twitter:image:src" content={ogImageUrl} />
+        {preloads.map(url => (
+          <link rel="preconnect" href={url} key={url} />
+        ))}
       </Helmet>
       <div
         css={css`
