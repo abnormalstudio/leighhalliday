@@ -21,7 +21,7 @@ While I'm sure people have used these methods for some pretty creative solutions
 
 ### Registering Interceptor or Observer
 
-I like to register interceptors and observers in an initializer file. __Observer__ classes must implement the __delivered_email__ class method, while __Interceptor__ classes must implement the class level method called __delivering_email__. Both of these methods accept a single parameter which is an instance of Mail::Message.
+I like to register interceptors and observers in an initializer file. **Observer** classes must implement the **delivered_email** class method, while **Interceptor** classes must implement the class level method called **delivering_email**. Both of these methods accept a single parameter which is an instance of `Mail::Message`.
 
 ```ruby
 # config/initializers/action_mailer.rb
@@ -47,9 +47,9 @@ end
 
 ### Halting Delivery
 
-To halt deliver, again since you are modifying data before it is delivered, will need to be an Interceptor. Here you can access the __perform_deliveries__ method and set that to false, if needed. Say because your system determined that you are sending too many emails to a specific user.
+To halt deliver, again since you are modifying data before it is delivered, will need to be an Interceptor. Here you can access the **perform_deliveries** method and set that to false, if needed. Say because your system determined that you are sending too many emails to a specific user.
 
-You could also raise an Exception instead of changing the __perform_deliveries__ method like I've done below.
+You could also raise an Exception instead of changing the **perform_deliveries** method like I've done below.
 
 ```ruby
 class MailThrottleInterceptor
@@ -70,10 +70,10 @@ end
 
 ### Logging Data
 
-Logging data can be done in an Observer, because you don't need to modify anything in the outgoing message, and you only want to run it after the email has been delivered. Keep in mind that observers must implement the __delivered_email__ method which differs from Interceptors.
+Logging data can be done in an Observer because you don't need to modify anything in the outgoing message, and you only want to run it after the email has been delivered. Keep in mind that observers must implement the **delivered_email** method which differs from Interceptors.
 
 ```ruby
-class MailThrottleObserver
+class MailLoggerObserver
   def self.delivered_email(mail)
     EmailLogger.log(mail)
   end
