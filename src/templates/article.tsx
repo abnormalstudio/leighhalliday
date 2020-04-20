@@ -51,18 +51,19 @@ const buildURL = (url: string, obj: object) => {
 };
 
 const preloads = [
-  "https://srv.carbonads.net",
-  "https://pixel.adsafeprotected.com",
-  "https://static.adsafeprotected.com",
   "https://cdn.carbonads.com",
-  "https://s.ytimg.com",
   "https://fonts.gstatic.com",
-  "https://i.ytimg.com",
   "https://googleads.g.doubleclick.net",
-  "https://yt3.ggpht.com",
-  "https://www.google.com",
+  "https://i.ytimg.com",
+  "https://pixel.adsafeprotected.com",
+  "https://s.ytimg.com",
+  "https://srv.carbonads.net",
+  "https://static.adsafeprotected.com",
+  "https://static.doubleclick.net",
   "https://stats.g.doubleclick.net",
   "https://www.google.ca",
+  "https://www.google.com",
+  "https://yt3.ggpht.com",
 ];
 
 const Article = ({ data }: Props) => {
