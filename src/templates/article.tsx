@@ -10,7 +10,7 @@ import {
   SEO,
   ArticleAside,
   H1Line,
-  ArticleCarbon
+  ArticleCarbon,
 } from "$components";
 import { splitTags } from "$lib";
 
@@ -44,7 +44,7 @@ interface Props {
 
 const buildURL = (url: string, obj: object) => {
   const query = Object.entries(obj)
-    .map(pair => pair.map(encodeURIComponent).join("="))
+    .map((pair) => pair.map(encodeURIComponent).join("="))
     .join("&");
 
   return `${url}?${query}`;
@@ -62,7 +62,7 @@ const preloads = [
   "https://yt3.ggpht.com",
   "https://www.google.com",
   "https://stats.g.doubleclick.net",
-  "https://www.google.ca"
+  "https://www.google.ca",
 ];
 
 const Article = ({ data }: Props) => {
@@ -75,7 +75,7 @@ const Article = ({ data }: Props) => {
       author: "Leigh Halliday",
       website: "leighhalliday.com",
       title,
-      image: "https://abnormalstudio.s3.amazonaws.com/leigh-social.jpg"
+      image: "https://abnormalstudio.s3.amazonaws.com/leigh-social.jpg",
     }
   );
 
@@ -85,8 +85,8 @@ const Article = ({ data }: Props) => {
       <Helmet encodeSpecialCharacters={false}>
         <meta property="og:image" content={ogImageUrl} />
         <meta name="twitter:image:src" content={ogImageUrl} />
-        {preloads.map(url => (
-          <link rel="preconnect" href={url} key={url} />
+        {preloads.map((url) => (
+          <link rel="preconnect" href={url} key={url} crossorigin />
         ))}
       </Helmet>
       <div
@@ -145,7 +145,9 @@ const Article = ({ data }: Props) => {
         </article>
 
         <ArticleAside
-          articles={data.allMdx ? data.allMdx.edges.map(edge => edge.node) : []}
+          articles={
+            data.allMdx ? data.allMdx.edges.map((edge) => edge.node) : []
+          }
         />
       </div>
     </Layout>
