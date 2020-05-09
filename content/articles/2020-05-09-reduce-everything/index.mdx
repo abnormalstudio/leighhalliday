@@ -119,9 +119,9 @@ result = people.reduce((acc, person) => {
 
 The reduce callback function when immitating `Array.prototype.find()` contains three possibilities:
 
-1. The accumulator is not null, meaning we have already found the value, so let's return it.
-2. The current array element meets our criteria, so let's return it.
-3. By returning null we tell the next iteration that the value has not yet been found.
+- The accumulator is not null, meaning we have already found the value, so let's return it.
+- The current array element meets our criteria, so let's return it.
+- By returning null we tell the next iteration that the value has not yet been found.
 
 ```js
 result = people.reduce((acc, person) => {
