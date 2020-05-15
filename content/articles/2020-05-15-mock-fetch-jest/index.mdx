@@ -1,0 +1,215 @@
+---
+title: How To Mock Fetch in Jest
+slug: mock-fetch-jest
+tags: javascript, testing, jest, mocks
+date: 2020-05-15
+updated: 2020-05-15
+banner: ./banner.jpg
+---
+
+import { YouTube } from "$components";
+
+Making HTTP requests in tests isn't a great idea in most situations... it can slow your tests down, is unreliable, and the API you are making requests to may not appreciate it either. So how do you avoid making HTTP requests in your tests? If you are using [fetch](), you're in the right place, if you are using [Axios](), head on [over here](https://www.leighhalliday.com/mocking-axios-in-jest-testing-async-functions).
+
+We're going to be [mocking](https://jestjs.io/docs/en/es6-class-mocks) [fetch](https://developer.mozilla.org/en-US/docs/Web/API/Fetch_API) calls today in our Jest tests, starting with a manual mock, introducing a packing to make it easier and more flexible, and then seeing how we can test React components which rely on remote data.
+
+<YouTube id="mHXhuPHiDj8" />
+
+The source code for this article [is available here](https://github.com/leighhalliday/mock-fetch-jest-demo).
+
+The function reponsible for these network calls looks like so:
+
+```js
+// src/utils/currency.js
+async function convert(base, destination) {
+  try {
+    const result = await fetch(
+      `https://api.exchangeratesapi.io/latest?base=${base}`
+    );
+    const data = await result.json();
+    return data.rates[destination];
+  } catch (e) {
+    return null;
+  }
+}
+
+export { convert };
+```
+
+## Manual Mock
+
+One option when manually mocking a module is to create a folder named `__mocks__` and place a file in it with the same name as the module you are mocking. In our case we can do this, and that is because fetch is available globally. So instead we will override the `global.fetch` function with our own fake/mock version of it.
+
+Keep in mind that fetch is a little funny in that if you want the JSON response, you are dealing with 2 promises.
+
+```js
+// src/utils/currency.test.js
+global.fetch = jest.fn(() =>
+  Promise.resolve({
+    json: () => Promise.resolve({ rates: { CAD: 1.42 } }),
+  })
+);
+```
+
+With our mock in place, we can write code that tests the `convert` function.
+
+```js
+// src/utils/currency.test.js
+import { convert } from "./currency";
+
+global.fetch = jest.fn(() =>
+  Promise.resolve({
+    json: () => Promise.resolve({ rates: { CAD: 1.42 } }),
+  })
+);
+
+beforeEach(() => {
+  fetch.mockClear();
+});
+
+it("finds exchange", async () => {
+  const rate = await convert("USD", "CAD");
+
+  expect(rate).toEqual(1.42);
+  expect(fetch).toHaveBeenCalledTimes(1);
+});
+```
+
+The `beforeEach` to clear mocks isn't really required at this point because we only have a single test, but it's good practise to have so you get a fresh start between tests.
+
+### Manual Mocks With Failure
+
+The test above tests the happy path, but if we want to verify that failure is handled by our function, we can override the mocked function to have it reject the promise. Calling `fetch.mockImplementationOnce` allows us to override the default mock behaviour just for this one test.
+
+```js
+// src/utils/currency.test.js
+it("returns null when exception", async () => {
+  fetch.mockImplementationOnce(() => Promise.reject("API is down"));
+
+  const rate = await convert("USD", "CAD");
+
+  expect(rate).toEqual(null);
+  expect(fetch).toHaveBeenCalledWith(
+    "https://api.exchangeratesapi.io/latest?base=USD"
+  );
+});
+```
+
+## Auto Mocking Fetch
+
+It can get tedious manually mocking fetch, you might forget to do it, and there's honestly a better and easier way out there! The package [jest-fetch-mock](https://www.npmjs.com/package/jest-fetch-mock) gives us more control and avoids us having to handle the double promise response that fetch has.
+
+After installing the package, if you are using create-react-app, there is already a file named `src/setupTests.js` where you can put global Jest code. Inside of this file we'll add two lines, to mock fetch calls by default.
+
+```js
+// src/setupTests.js
+import fetchMock from "jest-fetch-mock";
+
+fetchMock.enableMocks();
+```
+
+Now we can update our tests to use this new approach. It doesn't look too different, but the function `fetch.mockResponseOnce` allows us to easily decide what data fetch will return.
+
+```js
+// src/utils/currency.test.js
+import { convert } from "./currency";
+
+beforeEach(() => {
+  fetch.resetMocks();
+});
+
+it("finds exchange", async () => {
+  fetch.mockResponseOnce(JSON.stringify({ rates: { CAD: 1.42 } }));
+
+  const rate = await convert("USD", "CAD");
+
+  expect(rate).toEqual(1.42);
+  expect(fetch).toHaveBeenCalledTimes(1);
+});
+```
+
+### Handling Failure
+
+Using `jest-fetch-mock` it is easy to handle failure using `fetch.mockReject`. It's also possible to mimic different server status and handle [multiple requests in a single test](https://github.com/jefflau/jest-fetch-mock#mocking-multiple-fetches-with-fetchmockresponses), but I'll leave that to the reader to investigate further.
+
+```js
+// src/utils/currency.test.js
+it("returns null when exception", async () => {
+  fetch.mockReject(() => Promise.reject("API is down"));
+
+  const rate = await convert("USD", "CAD");
+
+  expect(rate).toEqual(null);
+  expect(fetch).toHaveBeenCalledWith(
+    "https://api.exchangeratesapi.io/latest?base=USD"
+  );
+});
+```
+
+## Testing React
+
+If you aren't testing the function directly which makes `fetch` calls, but rather are testing a React component which calls this function, it isn't too different. This component uses the [swr](https://swr.now.sh/) package. We are going to use the `convert` function as the fetcher funciton that swr expects. If you are new to swr, I made a video on it [available here](https://www.leighhalliday.com/how-does-swr-work).
+
+```jsx
+// src/App.js
+import React from "react";
+import useSWR from "swr";
+import { convert } from "./utils/currency";
+
+export default function App() {
+  const [base, dest] = ["USD", "CAD"];
+  const { data: rate, error } = useSWR([base, dest], convert);
+
+  if (error) return "Error!";
+  if (!rate) return "Loading!";
+
+  return (
+    <div>
+      {base} to {dest}: {rate}
+    </div>
+  );
+}
+```
+
+The only thing you need to do is to remember to mock fetch with the correct response that you are expecting. And remember that using a library such as `useSWR` will sometimes change state, requiring you to wrap `act(() => {})` around your code, and you will need to use `findByText` as opposed to `getByText` because the text isn't available on first render.
+
+```jsx
+// src/App.test.js
+import React from "react";
+import { render } from "@testing-library/react";
+import App from "./App";
+
+test("renders learn react link", async () => {
+  fetch.mockResponseOnce(JSON.stringify({ rates: { CAD: 1.42 } }));
+
+  const { findByText } = render(<App />);
+  const element = await findByText(/USD to CAD: 1.42/i);
+  expect(element).toBeInTheDocument();
+});
+```
+
+## Mock Interfaces Not Internals
+
+The fact that `convert` uses fetch seems like an implementation/internal detail that our React component shouldn't really worry itself about. Let's instead mock the interface, the `convert` function itself. That way we don't even need to worry about mocking fetch.
+
+```jsx
+// src/App.test.js
+import React from "react";
+import { render } from "@testing-library/react";
+import App from "./App";
+
+// Mock the currency module (which contains the convert function)
+jest.mock("./utils/currency", () => {
+  return {
+    convert: jest.fn().mockImplementation(() => {
+      return 1.42;
+    }),
+  };
+});
+
+test("renders learn react link", async () => {
+  const { findByText } = render(<App />);
+  const element = await findByText(/USD to CAD: 1.42/i);
+  expect(element).toBeInTheDocument();
+});
+```
