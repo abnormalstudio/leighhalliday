@@ -97,6 +97,8 @@ it("returns null when exception", async () => {
 
 ## Auto Mocking Fetch
 
+<YouTube id="yhUep7E9O20" />
+
 It can get tedious manually mocking fetch, you might forget to do it, and there's honestly a better and easier way out there! The package [jest-fetch-mock](https://www.npmjs.com/package/jest-fetch-mock) gives us more control and avoids us having to handle the double promise response that fetch has.
 
 After installing the package, if you are using create-react-app, there is already a file named `src/setupTests.js` where you can put global Jest code. Inside of this file we'll add two lines, to mock fetch calls by default.
@@ -147,6 +149,8 @@ it("returns null when exception", async () => {
 ```
 
 ## Testing React
+
+<YouTube id="rvVEWbMkD0A" />
 
 If you aren't testing the function directly which makes `fetch` calls, but rather are testing a React component which calls this function, it isn't too different. This component uses the [swr](https://swr.now.sh/) package. We are going to use the `convert` function as the fetcher funciton that swr expects. If you are new to swr, I made a video on it [available here](https://www.leighhalliday.com/how-does-swr-work).
 
