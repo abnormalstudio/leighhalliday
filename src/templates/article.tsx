@@ -89,6 +89,7 @@ const Article = ({ data }: Props) => {
         {preloads.map((url) => (
           <link rel="preconnect" href={url} key={url} crossorigin />
         ))}
+        <meta name="monetization" content="$ilp.uphold.com/24HhrUGG7ekn" />
       </Helmet>
       <div
         css={css`
