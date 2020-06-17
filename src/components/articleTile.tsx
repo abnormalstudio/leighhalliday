@@ -20,7 +20,7 @@ const ArticleTile = ({ title, slug, tags, banner }: Props) => {
       <div
         css={styles.image}
         style={{
-          backgroundImage: `url('${banner.childImageSharp.fluid.src}')`
+          backgroundImage: `url('${banner.childImageSharp.fluid.src}')`,
         }}
       />
       <div css={styles.content}>
@@ -31,7 +31,7 @@ const ArticleTile = ({ title, slug, tags, banner }: Props) => {
         >
           {splitTags(tags)
             .slice(0, 3)
-            .map(tag => (
+            .map((tag) => (
               <span key={tag}>
                 <Link to={`/tags/${tag}`}>#{tag}</Link>{" "}
               </span>
@@ -71,8 +71,8 @@ const ArticleTile = ({ title, slug, tags, banner }: Props) => {
 const styles = {
   outer: css`
     position: relative;
-    width: calc(25vw - 2px);
-    height: calc(25vw - 2px);
+    width: 25vw;
+    height: 25vw;
     color: rgba(255, 255, 255, 0.9);
 
     ::before {
@@ -88,14 +88,13 @@ const styles = {
     }
 
     @media (max-width: 768px) {
-      width: calc(50vw - 2px);
-      height: calc(50vw - 2px);
-      margin-bottom: 4px;
+      width: 50vw;
+      height: 50vw;
     }
 
     @media (max-width: 500px) {
-      width: calc(100vw);
-      height: calc(50vw);
+      width: 100vw;
+      height: 100vw;
       margin-bottom: 4px;
     }
 
@@ -120,7 +119,7 @@ const styles = {
     background: transparent;
     z-index: 2;
     text-align: center;
-  `
+  `,
 };
 
 export default ArticleTile;
