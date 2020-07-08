@@ -54,7 +54,7 @@ Geospatial queries become efficient by applying [geospatial indexes](https://doc
 
 To ensure that only valid points are entered into our database, we can add [schema validation](https://docs.mongodb.com/manual/core/schema-validation/) to this collection of locations which will require that the appropriate fields are always there, with the correct formats.
 
-This schema validation requires that the `location` field exists, that it is an object with a `type` field with an enum value of `Point`, and a `coordinates` field of two numbers between -180 and 180. Keep in mind that latitudes should be restricted between -90 and 90, but I am not sure how to ensure that the 2nd number of an array has a different range of values from the first one... if anyone knows, let me know 😜!
+This schema validation requires that the `location` field exists, that it is an object with a `type` field with an enum value of `Point`, and a `coordinates` field of two numbers, the longitude between -180 and 180, and the latitude between -90 and 90. Thankfully json-schema has array [Tuple validation](https://json-schema.org/understanding-json-schema/reference/array.html#id6) which allows us to specify different validations for different positions of elements in the array, which is important in our case where it must be `[longitude, latitude]`.
 
 ```js
 {
@@ -83,11 +83,18 @@ This schema validation requires that the `location` field exists, that it is an 
             ],
             minItems: 2,
             maxItems: 2,
-            items: {
-              bsonType: 'double',
-              minimum: -180,
-              maximum: 180
-            }
+            items: [
+              {
+                bsonType: 'double',
+                minimum: -180,
+                maximum: 180
+              },
+              {
+                bsonType: 'double',
+                minimum: -90,
+                maximum: 90
+              }
+            ]
           }
         }
       }
