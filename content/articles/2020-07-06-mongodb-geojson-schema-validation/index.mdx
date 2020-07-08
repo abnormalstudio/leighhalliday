@@ -1,0 +1,97 @@
+---
+title: MongoDB GeoJSON Schema Validation
+slug: mongodb-geojson-schema-validation
+tags: javascript, mongodb
+date: 2020-07-06
+updated: 2020-07-06
+banner: ./banner.jpg
+---
+
+If you want to save the location of someone, something, or somewhere, you'll need to store its coordinates. In this article we'll be looking at a `Point`, a singular location with latitude and longitude. We'll see how [GeoJSON points](https://docs.mongodb.com/manual/reference/geojson/) should be stored in MongoDB to allow for [geospatial queries](https://docs.mongodb.com/manual/reference/operator/query-geospatial/) efficiently, using [geospatial indexes](https://docs.mongodb.com/manual/geospatial-queries/#geospatial-indexes). And maybe more importantly, how can you use [schema validation](https://docs.mongodb.com/manual/core/schema-validation/) to ensure that the data entering your collection document's is valid?
+
+Did you know there is a data structure specification for encoding data structures named [GeoJSON](https://geojson.org/)? It allows you to define different types of geographic data such as a `Point`, `LineString`, `Polygon`, MultiPoint, `MultiLineString`, and `MultiPolygon`.
+
+## A Geographic Document in MongoDB
+
+Storing a Point in a MongoDB Document requires the field to have a name. In our case it is called `location`, which is itself a document with two other fields:
+
+- `type`: One of the GeoJSON geographic types... in our case, a `Point`.
+- `coordinates`: An array of two decimal numbers. The first is the `longitude` and the second is the `latitude`.
+
+```json
+{
+  "_id": {
+    "$oid": "5f0237bdcb57b0146028b79d"
+  },
+  "location": {
+    "type": "Point",
+    "coordinates": [-79.3832, 43.6]
+  }
+  // other fields
+}
+```
+
+## Querying Nearby Points
+
+By applying a `$near` filter on the `location` field, we can find all points within 100km (100000 meters) of `[-79.3832, 43.6532]`.
+
+```js
+{
+  location: {
+    $near: {
+      $maxDistance: 100000,
+      $geometry: { type: "Point", coordinates: [-79.3832, 43.6532] },
+    },
+  },
+};
+```
+
+## Making Geospatial Queries Efficient
+
+Geospatial queries become efficient by applying [geospatial indexes](https://docs.mongodb.com/manual/geospatial-queries/#geospatial-indexes) to the fields containing geo data. The type of index that should be used in this case is a `2dsphere`, applied to the `location` field. Voila!
+
+## Validating Points using MongoDB Schema Validation
+
+To ensure that only valid points are entered into our database, we can add [schema validation](https://docs.mongodb.com/manual/core/schema-validation/) to this collection of locations which will require that the appropriate fields are always there, with the correct formats.
+
+This schema validation requires that the `location` field exists, that it is an object with a `type` field with an enum value of `Point`, and a `coordinates` field of two numbers between -180 and 180. Keep in mind that latitudes should be restricted between -90 and 90, but I am not sure how to ensure that the 2nd number of an array has a different range of values from the first one... if anyone knows, let me know 😜!
+
+```js
+{
+  $jsonSchema: {
+    bsonType: 'object',
+    required: [
+      'location'
+    ],
+    properties: {
+      location: {
+        bsonType: 'object',
+        required: [
+          'type',
+          'coordinates'
+        ],
+        properties: {
+          type: {
+            bsonType: 'string',
+            'enum': [
+              'Point'
+            ]
+          },
+          coordinates: {
+            bsonType: [
+              'array'
+            ],
+            minItems: 2,
+            maxItems: 2,
+            items: {
+              bsonType: 'double',
+              minimum: -180,
+              maximum: 180
+            }
+          }
+        }
+      }
+    }
+  }
+}
+```
