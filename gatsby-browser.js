@@ -2,7 +2,7 @@ const Appsignal = require("@appsignal/javascript");
 const { ErrorBoundary } = require("@appsignal/react");
 
 const appsignal = new Appsignal({
-  key: process.env.APPSIGNAL_KEY,
+  key: process.env.GATSBY_APPSIGNAL_KEY,
 });
 
 const FallbackComponent = () => <div>Uh oh! There was an error :(</div>;
