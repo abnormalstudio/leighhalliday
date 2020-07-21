@@ -1,20 +1,20 @@
-// const React = require("react");
-// const Appsignal = require("@appsignal/javascript").default;
-// const ErrorBoundary = require("@appsignal/react").default;
+import React from "react";
+import Appsignal from "@appsignal/javascript";
+import { ErrorBoundary } from "@appsignal/react";
 
-// console.log(ErrorBoundary, "appsignal");
+const appsignal = new Appsignal({
+  key: process.env.GATSBY_APPSIGNAL_KEY,
+});
 
-// const appsignal = new Appsignal({
-//   key: process.env.GATSBY_APPSIGNAL_KEY,
-// });
+const FallbackComponent = () => <div>Uh oh! There was an error :(</div>;
 
-// const FallbackComponent = () => <div>Uh oh! There was an error :(</div>;
+const wrapRootElement = ({ element }) => (
+  <ErrorBoundary
+    instance={appsignal}
+    fallback={(error) => <FallbackComponent />}
+  >
+    {element}
+  </ErrorBoundary>
+);
 
-// exports.wrapRootElement = ({ element }) => (
-//   <ErrorBoundary
-//     instance={appsignal}
-//     fallback={(error) => <FallbackComponent />}
-//   >
-//     {element}
-//   </ErrorBoundary>
-// );
+export { wrapRootElement };
