@@ -71,7 +71,7 @@ const ArticleTile = ({ title, slug, tags, banner }: Props) => {
 const styles = {
   outer: css`
     position: relative;
-    width: 25vw;
+    width: 25%;
     height: 25vw;
     color: rgba(255, 255, 255, 0.9);
 
@@ -88,12 +88,12 @@ const styles = {
     }
 
     @media (max-width: 768px) {
-      width: 50vw;
+      width: 50%;
       height: 50vw;
     }
 
     @media (max-width: 500px) {
-      width: 100vw;
+      width: 100%;
       height: 100vw;
       margin-bottom: 4px;
     }
