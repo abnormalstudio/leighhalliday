@@ -41,9 +41,7 @@ const Navigation = () => (
         <Link to="/about">About</Link>
       </li>
       <li>
-        <a href="https://courses.leighhalliday.com/next-level-next-js">
-          Courses
-        </a>
+        <a href="https://next.leighhalliday.com">Next.js Course</a>
       </li>
     </ul>
   </nav>
