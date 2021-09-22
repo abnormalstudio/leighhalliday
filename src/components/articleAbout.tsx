@@ -22,8 +22,7 @@ const ArticleAbout = () => (
         <H3Line>About Me</H3Line>
         <Image fluid={data.file.childImageSharp.fluid} alt="Leigh Halliday" />
         <p>
-          Developer at FlipGive & ABNORMAL studio. Writing about Ruby, Rails,
-          React, and JavaScript.
+          Engineering Manager at Wrapbook. Writing about Ruby, Rails, React, and JavaScript.
         </p>
         <p>
           <Link to="/about">Read more</Link>
